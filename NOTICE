@@ -1,0 +1,11 @@
+Catan Lens
+Copyright (c) 2026 buffbeefalo
+
+The files in bench/catanatron/ are licensed separately under the GNU General
+Public License v3.0 or later; see bench/catanatron/LICENSE.
+
+CATAN is a trademark of Catan GmbH. This project is not affiliated with or
+endorsed by Catan GmbH or Catan Studio, and this license grants no rights in
+that trademark.
+
+The demo videos are narrated with Kokoro (https://huggingface.co/hexgrad/Kokoro-82M), Apache-2.0.

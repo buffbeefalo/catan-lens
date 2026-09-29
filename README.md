@@ -76,5 +76,5 @@ translations, or new drill levels. Keep every scoring change tied to a source in
 ## License
 
 [MIT](LICENSE), except [`bench/catanatron/`](bench/catanatron), which imports the GPL-licensed Catanatron and is
-therefore GPL-3.0-or-later. The demo videos are narrated with [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)
+therefore GPL-3.0-or-later (see [NOTICE](NOTICE)). The demo videos are narrated with [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)
 (Apache-2.0).
