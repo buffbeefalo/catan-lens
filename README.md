@@ -1,21 +1,65 @@
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/media/logo-dark.svg">
+  <img src="docs/media/logo-light.svg" alt="" width="88">
+</picture>
+
 # Catan Lens
 
-**Where should I put my first two settlements?** Catan Lens looks at every legal corner on a Catan board,
-scores it with rules that strong players agree on, and explains the best spot in plain sentences.
+**Where should I put my first two settlements?**
 
-**[Open the app](https://buffbeefalo.github.io/catan-lens/)** · **[How it works, with videos](https://buffbeefalo.github.io/catan-lens/how-it-works.html)**
+Catan Lens scores every legal corner on a Catan board with rules that strong players agree on,<br>
+and explains the best spot in plain sentences. Free, open source, and it runs entirely in your browser.
 
-[![Catan Lens in one minute](public/media/overview.jpg)](https://buffbeefalo.github.io/catan-lens/how-it-works.html)
+[![Tests](https://img.shields.io/github/actions/workflow/status/buffbeefalo/catan-lens/ci.yml?branch=main&label=tests&style=flat-square)](https://github.com/buffbeefalo/catan-lens/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/buffbeefalo/catan-lens?style=flat-square&color=2f6b46)](https://github.com/buffbeefalo/catan-lens/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2f6b46?style=flat-square)](LICENSE)
+[![Runtime dependencies: none](https://img.shields.io/badge/runtime%20dependencies-none-2f6b46?style=flat-square)](package.json)
 
-- **Explore** random boards that follow the official setup (3–4 players, or the 5–6 player board). A gold ring marks
-  the best open corner; click any corner for a grade and exactly what the best one has that yours lacks.
-- **Mark opponents** as they place; the ranking only counts what is still open. **Projected placements** plays out
-  the snake draft for every seat, and the suggested starting road avoids corners others are likely to take first.
-- **Drill** sixteen levels, easy to hard, on the table you choose. Hints stay hidden until you commit.
-- **Your board**: paint the real board on your table; every ranking then applies to it, and the link carries it.
-- Runs entirely in your browser: no account, no tracking, no server. Zero runtime dependencies.
+**[Open the app](https://buffbeefalo.github.io/catan-lens/)** &nbsp;·&nbsp; **[Watch the videos](https://buffbeefalo.github.io/catan-lens/how-it-works.html)** &nbsp;·&nbsp; **[Read how it works](docs/HOW-IT-WORKS.md)**
 
-Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio. CATAN is a trademark of Catan GmbH.
+<a href="https://buffbeefalo.github.io/catan-lens/"><img src="docs/media/hero.jpg" alt="Catan Lens: a Catan board with the best opening corner ringed in gold, and a card explaining what it produces" width="100%"></a>
+
+</div>
+
+## See it in action
+
+<table>
+<tr>
+<td width="50%"><a href="https://buffbeefalo.github.io/catan-lens/how-it-works.html#overview"><img src="docs/media/video-overview.jpg" alt="Watch: Catan Lens in one minute"></a></td>
+<td width="50%"><a href="https://buffbeefalo.github.io/catan-lens/how-it-works.html#walkthrough"><img src="docs/media/video-walkthrough.jpg" alt="Watch: How Catan Lens works"></a></td>
+</tr>
+<tr>
+<td><b>Catan Lens in one minute</b><br>The best corner, why it wins, and how your own pick compares.</td>
+<td><b>How Catan Lens works</b><br>The scoring, the snake draft, Drill mode and entering your own board.</td>
+</tr>
+</table>
+
+## What it does
+
+<table>
+<tr>
+<td width="50%"><img src="docs/media/feature-why.jpg" alt="The Why this corner? card listing production, the harbour and room to grow"></td>
+<td width="50%"><img src="docs/media/feature-draft.jpg" alt="Projected placements: numbered badges on the board for every seat's likely picks"></td>
+</tr>
+<tr>
+<td><b>The best corner, explained.</b> Random boards follow the official setup (3–4 players, or the 5–6 player board). A gold ring marks the best open corner; <i>Why this corner?</i> gives the reasons in plain sentences. Click any other corner for a grade and exactly what the best one has that yours lacks.</td>
+<td><b>Plays out the draft.</b> Mark opponents as they place and the ranking only counts what is still open. <i>Projected placements</i> plays the snake draft for every seat, and the suggested starting road avoids corners others are likely to take first.</td>
+</tr>
+<tr>
+<td><img src="docs/media/feature-drill.jpg" alt="Drill mode: level cleared, with a track of sixteen levels"></td>
+<td><img src="docs/media/feature-board.jpg" alt="Your board: painting resources and numbers to match a real table"></td>
+</tr>
+<tr>
+<td><b>Drill until it is second nature.</b> Sixteen levels, easy to hard, on the table you choose. Hints stay hidden until you commit; a miss shows your rank and offers a fresh board at the same level.</td>
+<td><b>Use your real board.</b> Paint the board in front of you, set its numbers and harbours, and every ranking applies to it. The link carries the whole board, so your table can open it too.</td>
+</tr>
+</table>
+
+No account, no tracking, no server: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
+
+<sub>Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio. CATAN is a trademark of Catan GmbH.</sub>
 
 ## How it works
 
@@ -73,8 +117,15 @@ Ideas and fixes are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md). Good places
 corners your pick takes away from others), Seafarers boards, real Cities & Knights rules instead of re-weighting,
 translations, or new drill levels. Keep every scoring change tied to a source in RESEARCH.md and to a test.
 
+## The demo videos
+
+Both videos are rebuilt from the real app by [`video/`](video): a script drives the app, the corners it clicks come from
+the app's own scoring code, and a renderer draws the camera moves, cursor and cards frame by frame. The narration is
+spoken locally by [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice) (Apache-2.0); every line is
+checked word for word by a speech recogniser, and `video/qa.py` checks loudness, sync, captions and picture quality
+before a release. See [video/README.md](video/README.md).
+
 ## License
 
 [MIT](LICENSE), except [`bench/catanatron/`](bench/catanatron), which imports the GPL-licensed Catanatron and is
-therefore GPL-3.0-or-later (see [NOTICE](NOTICE)). The demo videos are narrated with [Kokoro](https://huggingface.co/hexgrad/Kokoro-82M)
-(Apache-2.0).
+therefore GPL-3.0-or-later (see [NOTICE](NOTICE)).

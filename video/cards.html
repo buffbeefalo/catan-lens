@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- The video's designed frames: the backdrop the app window sits on, and the title, results and end cards.
+     cards.cjs loads this page, calls __load(...) once and __seek(t) per frame; every frame is a pure function of t. -->
+<style>
+  :root{--ink:#1d2b1f;--cream:#f4efe4;--mut:#b9c4b5;--gold:#f1ce78;--green:#2f6b46;--leaf:#6fae7f;
+        --disp:'Iowan Old Style','Palatino Linotype',Palatino,'P052',Georgia,serif;--ui:'Trebuchet MS','Segoe UI',sans-serif;
+        --mono:ui-monospace,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace}
+  *{box-sizing:border-box}
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--ink);color:var(--cream);font-family:var(--ui)}
+  .bg{position:absolute;inset:0;background:radial-gradient(1400px 900px at 30% 20%,#2c4633 0%,#213527 45%,#18251b 100%)}
+  .bg svg{position:absolute;inset:0;opacity:.07}
+  .glow{position:absolute;inset:0;background:radial-gradient(700px 500px at 78% 88%,rgba(241,206,120,.10),transparent 70%)}
+  .win{position:absolute;left:192px;top:71px;width:1536px;height:938px;border-radius:14px;background:#f4efe4;overflow:hidden;
+       box-shadow:0 40px 90px rgba(0,0,0,.42),0 10px 28px rgba(0,0,0,.28),0 0 0 1px rgba(255,255,255,.06)}
+  .win .chrome{height:38px;background:#e8e2d4;border-bottom:1px solid rgba(29,43,31,.12);display:flex;align-items:center;padding:0 16px;gap:8px}
+  .win .chrome i{width:12px;height:12px;border-radius:50%;background:#d8d0c0;display:block}
+  .win .chrome i:nth-child(1){background:#e2766a}.win .chrome i:nth-child(2){background:#e6bb57}.win .chrome i:nth-child(3){background:#78b86b}
+  .win .addr{position:absolute;left:50%;transform:translateX(-50%);top:7px;height:24px;min-width:420px;padding:0 18px;border-radius:7px;background:#f7f3ea;color:#5b675c;
+       font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .win .addr svg{width:11px;height:11px}
+  .layer{position:absolute;inset:0;display:none}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .mark{width:168px;height:168px;margin-bottom:34px}
+  .mark path{fill:none;stroke:var(--cream);stroke-width:5;stroke-linejoin:round}
+  .mark .ring{fill:none;stroke:var(--gold);stroke-width:6}
+  .mark .dot{fill:var(--gold)}
+  h1{font-family:var(--disp);font-weight:600;font-size:124px;letter-spacing:-.01em;margin:0;line-height:1.05}
+  .line{font-size:40px;color:var(--mut);margin-top:22px}
+  .url{margin-top:56px;display:inline-flex;align-items:center;gap:16px;padding:18px 34px;border-radius:999px;background:rgba(244,239,228,.08);border:1.5px solid rgba(244,239,228,.22);font-size:34px;font-family:var(--mono);color:var(--cream)}
+  .url i{width:14px;height:14px;border-radius:50%;background:var(--gold);display:inline-block}
+  .small{position:absolute;left:0;right:0;bottom:56px;text-align:center;font-size:22px;color:rgba(185,196,181,.75)}
+  .facts{margin-top:30px;font-size:30px;color:var(--mut);letter-spacing:.01em}
+  /* results */
+  #results .wrap{position:absolute;left:190px;right:190px;top:150px}
+  #results h2{font-family:var(--disp);font-weight:600;font-size:76px;margin:0}
+  #results .sub{font-size:28px;color:var(--mut);margin:18px 0 64px;max-width:1300px;line-height:1.4}
+  .row{display:grid;grid-template-columns:560px 1fr;align-items:center;gap:36px;margin:0 0 30px}
+  .row .lab{font-size:32px;text-align:right;color:var(--cream)}
+  .track{position:relative;height:62px}
+  .bar{position:absolute;left:0;top:0;bottom:0;border-radius:10px;background:#6d7a6e}
+  .row.lens .bar{background:linear-gradient(90deg,#3f8a5a,#5fa874)}
+  .row .val{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:34px;font-weight:600;white-space:nowrap;padding-left:22px}
+  .val small{font-size:22px;color:var(--mut);font-weight:400;margin-left:10px}
+  #rows{position:relative}
+  .fair{position:absolute;top:-14px;bottom:14px;width:0;border-left:3px dashed rgba(241,206,120,.85)}
+  .fair span{position:absolute;top:-40px;left:-110px;width:220px;text-align:center;font-size:22px;color:var(--gold)}
+  #results .note{font-size:26px;color:var(--mut);margin-top:40px}
+</style>
+</head>
+<body>
+<div class="bg"><svg width="1920" height="1080"><defs><pattern id="hex" width="84" height="145.5" patternUnits="userSpaceOnUse" patternTransform="translate(10 -20)">
+  <path d="M42 0 L84 24.25 L84 72.75 L42 97 L0 72.75 L0 24.25 Z M42 97 L42 145.5" fill="none" stroke="#f4efe4" stroke-width="1.5"/></pattern></defs>
+  <rect width="1920" height="1080" fill="url(#hex)"/></svg><div class="glow"></div></div>
+
+<div class="layer" id="window"><div class="win"><div class="chrome"><i></i><i></i><i></i><div class="addr"><svg viewBox="0 0 12 12"><rect x="2" y="5" width="8" height="6" rx="1.2" fill="#5b675c"/><path d="M4 5 V3.6 a2 2 0 0 1 4 0 V5" fill="none" stroke="#5b675c" stroke-width="1.3"/></svg><span id="w-url"></span></div></div></div></div>
+
+<div class="layer center" id="title">
+  <svg class="mark" viewBox="0 0 168 168"><path id="hexpath" d="M84 10 L148 47 L148 121 L84 158 L20 121 L20 47 Z"/><circle class="ring" cx="148" cy="121" r="17"/><circle class="dot" cx="148" cy="121" r="6"/></svg>
+  <h1 id="t-title"></h1>
+  <div class="line" id="t-line"></div>
+</div>
+
+<div class="layer center" id="end">
+  <svg class="mark" viewBox="0 0 168 168"><path d="M84 10 L148 47 L148 121 L84 158 L20 121 L20 47 Z"/><circle class="ring" cx="148" cy="121" r="17"/><circle class="dot" cx="148" cy="121" r="6"/></svg>
+  <h1 id="e-title"></h1>
+  <div class="line" id="e-line"></div>
+  <div class="url"><i></i><span id="e-url"></span></div>
+  <div class="facts">Open source · MIT licence · Runs in your browser</div>
+  <div class="small">Unofficial fan tool, not affiliated with Catan GmbH or Catan Studio. CATAN is a trademark of Catan GmbH.</div>
+</div>
+
+<div class="layer" id="results"><div class="wrap">
+  <h2>Does following it win?</h2>
+  <div class="sub" id="r-sub"></div>
+  <div id="rows"></div>
+  <div class="note">Only the opening differs. The rest of every game is played by the same bot.</div>
+</div></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const clamp = x => Math.max(0, Math.min(1, x));
+const ease = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const out = x => 1 - Math.pow(1 - clamp(x), 3);
+// appear(el, t, at): fade + rise over 0.7 s from `at`
+function appear(el, t, at, rise = 26, dur = .7) { const k = out((t - at) / dur); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * rise}px)`; return k; }
+let D = null, card = null;
+window.__load = (data, which) => {
+  D = data; card = which;
+  for (const l of document.querySelectorAll('.layer')) l.style.display = 'none';
+  if (which === 'backdrop') { $('#window').style.display = 'block'; $('#w-url').textContent = D.site; return; }
+  if (which === 'intro') { $('#title').style.display = 'flex'; $('#t-title').textContent = D.intro.title; $('#t-line').textContent = D.intro.line; }
+  if (which === 'outro') { $('#end').style.display = 'flex'; $('#e-title').textContent = D.outro.title; $('#e-line').textContent = D.outro.line; $('#e-url').textContent = D.site; }
+  if (which === 'results') {
+    $('#results').style.display = 'block';
+    $('#r-sub').textContent = `${(D.results.games * D.results.arms.length).toLocaleString('en-US')} complete four-player games between Catanatron's strong bots, in ${D.results.runs} independent runs. One seat's opening comes from each strategy. A fair seat wins 25%.`;
+    $('#rows').innerHTML = D.results.arms.map(a => `<div class="row${a.key.startsWith('lens') ? ' lens' : ''}"><div class="lab">${a.label}</div><div class="track"><div class="bar"></div><div class="val"><b>0.0%</b><small>± ${a.ci.toFixed(1)}</small></div></div></div>`).join('') + '<div class="fair"><span>fair seat, 25%</span></div>';
+  }
+};
+// Returns true once nothing moves any more, so the renderer can hold the last frame.
+window.__seek = t => {
+  if (card === 'intro') {
+    const p = $('#title .mark path'), L = 444;
+    p.style.strokeDasharray = L; p.style.strokeDashoffset = L * (1 - ease(t / 1.1));
+    const ring = $('#title .ring'), dot = $('#title .dot'), k = out((t - .9) / .5);
+    ring.style.opacity = dot.style.opacity = k; ring.setAttribute('r', 17 * (0.4 + 0.6 * k) + 10 * (1 - k) * (t > .9));
+    appear($('#t-title'), t, .55); appear($('#t-line'), t, .95);
+    return t > 1.7;
+  }
+  if (card === 'outro') {
+    const m = $('#end .mark'); appear(m, t, .1, 18);
+    appear($('#e-title'), t, .3); appear($('#e-line'), t, .55); appear($('.url'), t, .85); appear($('.facts'), t, 1.1); appear($('.small'), t, 1.4, 0);
+    return t > 2.2;
+  }
+  if (card === 'results') {
+    appear($('#results h2'), t, .15); appear($('#r-sub'), t, .45);
+    const rows = [...document.querySelectorAll('.row')], width = 900, max = 30;
+    rows.forEach((r, i) => {
+      const a = D.results.arms[i], at = 1.1 + i * .45, k = ease((t - at) / 1.2);
+      appear(r, t, at - .25, 16, .5);
+      const w = width * a.win / max * k;
+      r.querySelector('.bar').style.width = w + 'px';
+      r.querySelector('.val').style.left = w + 'px';
+      r.querySelector('.val b').textContent = (a.win * k).toFixed(1) + '%';
+    });
+    const f = $('.fair'); f.style.left = (596 + width * 25 / max) + 'px'; f.style.opacity = out((t - 3.6) / .6);
+    appear($('#results .note'), t, 4.4, 10);
+    return t > 5.2;
+  }
+  return true;
+};
+</script>
+</body>
+</html>

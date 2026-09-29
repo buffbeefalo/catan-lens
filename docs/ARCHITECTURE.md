@@ -25,8 +25,10 @@ bench/
   production-report.mjs   deterministic opening report (MIT)
   lens-bridge.mjs         JSON-lines bridge so another engine can ask Catan Lens for picks
   catanatron/             full-game benchmark in Catanatron (GPL-3.0-or-later)
-video/              how the demo videos are made: scenes.mjs -> narrate.py -> record.cjs -> assemble.py
-docs/               HOW-IT-WORKS.md, RESEARCH.md (sources and weights), this file
+video/              how the demo videos are made: scenes.mjs -> narrate.py -> cards.cjs + record.cjs
+                    -> render.py -> assemble.py -> qa.py (see video/README.md)
+docs/               HOW-IT-WORKS.md, RESEARCH.md (sources and weights), this file;
+                    media/ holds the README images, drawn from the videos' own frames
 serve.js            zero-dependency local server (npm start)
 ```
 

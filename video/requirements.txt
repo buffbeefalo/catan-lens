@@ -1,0 +1,7 @@
+# Python tools for the demo videos (narration, speech check, picture, mix). Linux aarch64/x86_64 with CUDA, Python 3.12.
+# Install torch and torchaudio for your platform first (https://pytorch.org), then: pip install -r video/requirements.txt
+qwen-tts==0.1.1
+faster-whisper>=1.1
+numpy
+soundfile
+pillow>=10
