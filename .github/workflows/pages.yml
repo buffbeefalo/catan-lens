@@ -1,0 +1,39 @@
+# Publishes public/ to GitHub Pages. The demo MP4s are not stored in git: they are attached to the
+# latest GitHub Release and copied into the site here.
+name: Pages
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p _site/docs
+          cp -r public/. _site/
+          cp docs/RESEARCH.md _site/docs/
+          gh release download --repo "$GITHUB_REPOSITORY" --pattern '*.mp4' --dir _site/media || echo "no release videos yet"
+          ls -la _site _site/media
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

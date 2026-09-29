@@ -1,0 +1,79 @@
+WEBVTT
+
+00:00:00.400 --> 00:00:02.064
+How does Catan Lens decide?
+
+00:00:02.344 --> 00:00:08.253
+It scores every legal corner with a few rules that strong players agree on, and production comes first.
+
+00:00:08.884 --> 00:00:10.548
+Each number token has dots.
+
+00:00:10.828 --> 00:00:14.007
+A six or an eight has five, a two or a twelve has one.
+
+00:00:14.287 --> 00:00:18.404
+The dots count the ways two dice can roll that number, out of thirty-six.
+
+00:00:19.041 --> 00:00:23.692
+A corner collects from up to three hexes, so its production is the sum of their dots.
+
+00:00:23.972 --> 00:00:28.196
+Wheat and ore count a little more, because they build cities and development cards.
+
+00:00:28.834 --> 00:00:32.375
+A resource that is rare on this particular board is worth more.
+
+00:00:32.655 --> 00:00:38.095
+Smaller bonuses go to wood with brick, wheat with ore, a harbour you can feed, and room to grow.
+
+00:00:38.375 --> 00:00:40.082
+Repeating a number costs a little.
+
+00:00:40.720 --> 00:00:49.104
+Every rule traces back to a published source: expert guides, champion interviews, and a statistical study of four hundred online games.
+
+00:00:49.742 --> 00:00:51.385
+Placement is a snake draft.
+
+00:00:51.665 --> 00:00:58.193
+Projected placements plays it out for every seat, so you can see what will probably be gone before your turn comes back.
+
+00:00:58.473 --> 00:01:02.995
+The suggested road avoids corners other players are likely to take first.
+
+00:01:03.637 --> 00:01:05.664
+Drill mode turns this into practice.
+
+00:01:05.944 --> 00:01:10.168
+Set the table first: how many players, and whether you play Cities and Knights.
+
+00:01:10.448 --> 00:01:14.885
+Then climb sixteen levels, easy to hard, with hints hidden until you commit.
+
+00:01:15.519 --> 00:01:20.554
+Miss, and you see your rank and what the level needed, then get a fresh board at the same level.
+
+00:01:21.185 --> 00:01:23.617
+Hit the best corner, and the level is cleared.
+
+00:01:23.897 --> 00:01:30.318
+Later levels demand the exact best corner on near-ties, from any seat, and for your second settlement too.
+
+00:01:30.952 --> 00:01:32.360
+Playing at a real table?
+
+00:01:32.640 --> 00:01:34.240
+Your board lets you copy it.
+
+00:01:34.520 --> 00:01:41.112
+Pick a resource and tap hexes to paint them, choose Numbers to set tokens, and tap the coast to place harbours.
+
+00:01:42.511 --> 00:01:48.484
+Every ranking then applies to your board, and Copy link saves the whole thing so you can share it with your table.
+
+00:01:49.118 --> 00:01:50.846
+Does the advice actually win?
+
+00:01:51.126 --> 00:02:03.478
+In thousands of simulated games between strong bots, openings chosen by Catan Lens won about as often as the bots' own searched openings, and far more often than just grabbing the most dots.

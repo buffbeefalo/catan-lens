@@ -1,0 +1,16 @@
+name: Bug report
+description: Something in the app is wrong or broken
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Link to the board
+      description: Use "Copy link" in the app; it restores the exact board and pieces.
+  - type: input
+    attributes:
+      label: Browser and device

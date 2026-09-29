@@ -1,0 +1,2 @@
+# Catanatron from source (the PyPI release lacks the value-function bot). GPL-3.0-or-later.
+catanatron @ git+https://github.com/bcollazo/catanatron.git@ecf931181b9a65bb4116a2153fb78c16f1438e00

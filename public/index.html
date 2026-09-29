@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Catan Lens</title>
+<meta name="color-scheme" content="only light">
+<meta name="darkreader-lock">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1 class="wordmark">Catan Lens</h1><a class="sub-link" href="how-it-works.html">How it works</a></div>
+  <div class="header-actions"><button class="btn" id="new">New board</button><button class="btn ghost" id="share">Copy link</button></div>
+</header>
+<div class="bar" id="bar">
+  <div class="mode-nav" role="group" aria-label="Practice mode">
+    <button class="toggle" id="practice" aria-pressed="true">Explore</button>
+    <button class="toggle" id="drill" aria-pressed="false" title="Sixteen levels, easy to hard, on a table you set first (players and Cities &amp; Knights); clear one to unlock the next; after a miss you get a new board at the same level">Drill</button>
+    <button class="toggle" id="custom" aria-pressed="false" title="Enter the board in front of you: paint resources, set number tokens and harbours; every ranking then applies to your real board and the link carries it">Your board</button>
+  </div>
+  <button class="toggle hint-toggle" id="showbest" aria-pressed="true" title="Show the ranked corners and the best-corner card. Turn off to test yourself first.">Show best</button>
+  <details class="table-settings" id="settings">
+    <summary><span>Table settings</span><span id="table-summary">4 players · Seat 1</span></summary>
+    <div class="settings-grid">
+  <span class="ctl">Players <span class="seg" id="players" role="group" aria-label="Players"></span></span>
+  <span class="ctl">Your seat <span class="seg" id="seat" role="group" aria-label="Your seat in the placement order"></span></span>
+  <button class="toggle" id="cak" aria-pressed="false" title="Weighting only: re-weights the same placement heuristic the way Cities &amp; Knights players value ore, wheat, wood and commodity hexes. It does not simulate the starting city, commodities, knights or barbarians.">Cities &amp; Knights</button>
+  <button class="toggle" id="balanced" aria-pressed="true" title="Keep 6 and 8 apart, as the official variable setup does">Balanced setup</button>
+  <button class="toggle" id="randseat" aria-pressed="false" title="Roll your seat in the turn order on every new board instead of choosing it">Random seat</button>
+  <span class="ctl">Seed <input class="seed" id="seed" inputmode="numeric" aria-label="Board seed"></span>
+    </div>
+    <p class="note" id="plan-note"></p>
+  </details>
+</div>
+<main class="wrap">
+  <section class="board" aria-label="Board">
+    <svg id="svg" role="group" aria-label="Catan board — choose an open corner"></svg>
+  </section>
+  <aside class="panel" id="panel"></aside>
+</main>
+<footer class="foot">Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio; CATAN is their trademark. Rankings are an opening heuristic, not win probabilities, and the Cities &amp; Knights switch only changes the weights. <a href="https://github.com/buffbeefalo/catan-lens">Open source on GitHub</a>.</footer>
+<script type="module" src="app.js"></script>
+</body>
+</html>

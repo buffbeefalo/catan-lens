@@ -1,0 +1,13 @@
+name: Idea or strategy rule
+description: Suggest a feature, or a placement rule strong players use that the app is missing
+labels: [idea]
+body:
+  - type: textarea
+    attributes:
+      label: The idea
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Source
+      description: For strategy rules, where does this advice come from (guide, interview, data)? Every scoring rule in the app cites one.

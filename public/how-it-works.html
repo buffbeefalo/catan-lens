@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>How Catan Lens works</title>
+<meta name="color-scheme" content="only light">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="style.css">
+<style>
+  .doc{max-width:860px;margin:0 auto;padding:8px 24px 24px}
+  .doc h2{font-family:var(--disp);font-size:22px;margin:32px 0 8px}
+  .doc p,.doc li{font-size:15px;line-height:1.6}
+  .doc video{width:100%;border-radius:var(--r);border:1px solid var(--line);background:#000;display:block}
+  .doc details{margin:8px 0 0;font-size:14px;color:var(--mut)}
+  .doc table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0}
+  .doc th,.doc td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+  .doc td.n{font-family:var(--mono);text-align:right}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1 class="wordmark">How Catan Lens works</h1><a class="sub-link" href="./">← Back to the app</a></div>
+</header>
+<main class="doc">
+  <p>Catan Lens answers one question: <b>where should I put my first two settlements?</b> It scores every legal corner
+  with a small set of rules that strong players agree on and explains the result in plain sentences. Same board, same
+  answer: there is no machine learning and nothing leaves your browser.</p>
+
+  <h2>Catan Lens in one minute</h2>
+  <video controls preload="metadata" poster="media/overview.jpg">
+    <source src="media/overview.mp4" type="video/mp4">
+    <track kind="captions" src="media/overview.vtt" srclang="en" label="English" default>
+  </video>
+  <details><summary>Transcript</summary><p data-transcript="overview"></p></details>
+
+  <h2>The walkthrough: ranking, Drill and Your board</h2>
+  <video controls preload="metadata" poster="media/walkthrough.jpg">
+    <source src="media/walkthrough.mp4" type="video/mp4">
+    <track kind="captions" src="media/walkthrough.vtt" srclang="en" label="English" default>
+  </video>
+  <details><summary>Transcript</summary><p data-transcript="walkthrough"></p></details>
+
+  <h2>The rules in one table</h2>
+  <table>
+    <tr><th>Rule</th><th>What it means at the table</th></tr>
+    <tr><td>Production</td><td>Add the dots on the surrounding number tokens: a 6 or 8 has 5, a 2 or 12 has 1. They count the ways two dice roll that number, out of 36. Production dominates the score.</td></tr>
+    <tr><td>Resource value</td><td>Wheat and ore build cities and development cards, so they count a little more; sheep a little less. Later seats lean toward wood and brick.</td></tr>
+    <tr><td>Scarcity</td><td>A resource that is rare on this board is worth more.</td></tr>
+    <tr><td>Pairs</td><td>Wood with brick, or wheat with ore, from the same corner earns a small bonus.</td></tr>
+    <tr><td>Repeats</td><td>Two hexes with the same number is feast-or-famine: a small penalty.</td></tr>
+    <tr><td>Harbours</td><td>3:1 helps anyone; 2:1 only if you produce plenty of that resource.</td></tr>
+    <tr><td>Room to grow</td><td>A strong open corner two roads away is worth something; a dead end is not.</td></tr>
+    <tr><td>Second settlement</td><td>Credit for covering what the first one lacks, especially wheat and ore.</td></tr>
+    <tr><td>Starting road</td><td>Point it at the best corner two roads away that the other seats are not likely to take before your next turn.</td></tr>
+  </table>
+  <p>Every rule traces to a published source. The source table, the exact weights and what was left out are in
+  <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/RESEARCH.md">RESEARCH.md</a>; the full explanation is in
+  <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/HOW-IT-WORKS.md">HOW-IT-WORKS.md</a>.</p>
+
+  <h2>Does following it win games?</h2>
+  <p>In thousands of complete four-player games played by <a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s
+  strong bot, one seat had its opening chosen by different strategies and then played on like everyone else.
+  A fair seat wins 25%.</p>
+  <table id="results"></table>
+  <p>These are bot games, so they show the advice is sound, not how much it will raise your own win rate. Details and
+  the code to reproduce them are in the repository.</p>
+</main>
+<footer class="foot">Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio; CATAN is their trademark. <a href="https://github.com/buffbeefalo/catan-lens">Open source on GitHub</a>.</footer>
+<script type="module">
+  for (const p of document.querySelectorAll('[data-transcript]')) {
+    fetch(`media/${p.dataset.transcript}.txt`).then(r => (r.ok ? r.text() : '')).then(t => { p.textContent = t || 'Transcript unavailable.'; });
+  }
+  fetch('media/results.json').then(r => r.json()).then(res => {
+    document.getElementById('results').innerHTML = '<tr><th>Opening chosen by</th><th>Games</th><th>Win rate</th></tr>' +
+      res.arms.map(a => `<tr><td>${a.label}</td><td class="n">${res.games.toLocaleString('en-US')}</td><td class="n">${a.win.toFixed(1)}%</td></tr>`).join('');
+  }).catch(() => {});
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+The files in this directory (bench/catanatron/) import Catanatron
+(https://github.com/bcollazo/catanatron), which is licensed under the GNU General Public
+License v3.0 or later. This directory is therefore licensed under the GNU General Public
+License v3.0 or later (https://www.gnu.org/licenses/gpl-3.0.txt), not under the MIT license
+that covers the rest of Catan Lens.
+
+Copyright (c) 2026 buffbeefalo
