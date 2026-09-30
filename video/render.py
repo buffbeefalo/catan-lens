@@ -298,7 +298,7 @@ def worker(args):
     d, start, end, path, ffmpeg = args
     p = Painter(d)
     enc = subprocess.Popen([ffmpeg, "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
-                            "-vf", "scale=out_color_matrix=bt709:out_range=tv", "-c:v", "libx264", "-preset", "slow", "-crf", "15", "-tune", "animation",
+                            "-vf", "scale=out_color_matrix=bt709:out_range=tv", "-c:v", "libx264", "-preset", "slow", "-crf", "20", "-tune", "animation",
                             "-pix_fmt", "yuv420p", "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-g", "120", path],
                            stdin=subprocess.PIPE)
     for n in range(start, end):
