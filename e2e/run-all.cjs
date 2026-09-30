@@ -7,7 +7,7 @@ const { tmpdir } = require('node:os');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..');
-const WALKS = ['audit', 'drill', 'verdict', 'draft', 'focus', 'custom', 'fold'];
+const WALKS = ['audit', 'drill', 'verdict', 'draft', 'focus', 'custom', 'fold', 'theme'];
 
 (async () => {
   let server = null;

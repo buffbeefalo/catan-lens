@@ -15,7 +15,8 @@ public/
   score.js          the heuristic: scoreVertex (rules R1-R12), rankSpots, grade, compare,
                     simulateDraft (snake draft projection), suggestRoad (R13)
   drill.js          the 16-level ladder: stages, seat resolution, seed search, pass/fail
-  style.css         all styling (system fonts only)
+  style.css         all styling (system fonts only); every color is a token with a light and a dark value
+  theme.js          light/dark switch: follows the device until the viewer picks, remembers the pick
   how-it-works.html the explainer page with the videos
   media/            video posters, captions (WebVTT), transcripts, results.json
                     (the MP4s are attached to GitHub Releases, not stored in git)
@@ -49,5 +50,6 @@ serve.js            zero-dependency local server (npm start)
   board's best). Re-run `npm run report` and, if you can, the Catanatron benchmark.
 - **The board generator**: `board.js` (the drill's seed search depends on it; run `npm test`).
 - **A drill level**: the `STAGES` table in `drill.js`.
-- **The UI**: `app.js` and `style.css`; run `npm run e2e`.
+- **The UI**: `app.js` and `style.css`; run `npm run e2e`. A new color goes in as a token in both themes (the
+  `:root` block and the two dark blocks); `test/theme.test.js` rejects literal colors and checks contrast.
 - **The videos**: edit narration and actions in `video/scenes.mjs`, then run the pipeline in `video/README.md`.

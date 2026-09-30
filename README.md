@@ -57,7 +57,8 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 </tr>
 </table>
 
-No account, no tracking, no server: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
+Light and dark themes: it follows your device, or pick one with the switch in the header. No account, no tracking,
+no server: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
 
 <sub>Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio. CATAN is a trademark of Catan GmbH.</sub>
 

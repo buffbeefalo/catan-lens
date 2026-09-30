@@ -1,11 +1,18 @@
 :root{
-  color-scheme:only light; /* opt out of Android Chrome auto-dark and similar inversions: light SVG marks otherwise render black */
+  color-scheme:light; /* the page ships its own dark theme, so browsers never auto-darken (their inversions turn light SVG marks black) */
   --bg:#f4efe4; --card:#fbf8f1; --ink:#1d2b1f; --mut:#5b675c; --line:rgba(29,43,31,.14); --line2:rgba(29,43,31,.3);
-  --accent:#2f6b46; --accent2:#f1ce78; --red:#c53a20; --amber:#9a6218;
-  --wood:#7f9c6f; --brick:#c9896a; --wheat:#e4c96f; --sheep:#bdd7a3; --ore:#a6aab0; --desert:#e9dfc6; --sea:#dfe8e2;
+  --accent:#2f6b46; --accent2:#f1ce78; --red:#c53a20; --amber:#8e5914;
+  --on-ink:#ffffff; --on-accent:#ffffff; --on-accent2:#1d2b1f;
+  --hover:rgba(29,43,31,.04); --tint:rgba(29,43,31,.05); --chip:rgba(29,43,31,.06); --you:rgba(241,206,120,.18); --current:rgba(241,206,120,.35);
+  --wood:#7f9c6f; --brick:#c9896a; --wheat:#e4c96f; --sheep:#bdd7a3; --ore:#a6aab0; --desert:#e9dfc6; --sea:#dfe8e2; --blank:#f4f0e6; --coast:rgba(29,43,31,.18);
+  /* the board's physical pieces keep their colors in both themes: cream tokens with dark numbers, white and ink pieces */
+  --grout:#fbf8f1; --glow:#fff6d0; --hex-ink:#1d2b1f; --disc:#fffdf7; --disc-ink:#1d2b1f; --disc-red:#c53a20; --disc-line:rgba(29,43,31,.25);
+  --piece-ink:#1d2b1f; --piece-light:#ffffff; --board-hover:rgba(29,43,31,.18);
   --disp:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif; --ui:'Trebuchet MS','Segoe UI',sans-serif; --mono:ui-monospace,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace;   /* system fonts only: no third-party requests */
   --r:12px;
 }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#131b15;--card:#1b261e;--ink:#ebe6da;--mut:#a3afa2;--line:rgba(235,230,218,.14);--line2:rgba(235,230,218,.32);--accent:#72c08b;--accent2:#e9c46a;--red:#f08a70;--amber:#e3ad62;--on-ink:#131b15;--on-accent:#0e1510;--hover:rgba(235,230,218,.05);--tint:rgba(235,230,218,.06);--chip:rgba(235,230,218,.08);--you:rgba(233,196,106,.16);--current:rgba(233,196,106,.26);--blank:#26322a;--coast:rgba(235,230,218,.22);--grout:#131b15;--disc:#f7f2e6}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#131b15;--card:#1b261e;--ink:#ebe6da;--mut:#a3afa2;--line:rgba(235,230,218,.14);--line2:rgba(235,230,218,.32);--accent:#72c08b;--accent2:#e9c46a;--red:#f08a70;--amber:#e3ad62;--on-ink:#131b15;--on-accent:#0e1510;--hover:rgba(235,230,218,.05);--tint:rgba(235,230,218,.06);--chip:rgba(235,230,218,.08);--you:rgba(233,196,106,.16);--current:rgba(233,196,106,.26);--blank:#26322a;--coast:rgba(235,230,218,.22);--grout:#131b15;--disc:#f7f2e6}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--ui);font-size:14px;line-height:1.5}
 a{color:var(--accent)}
@@ -33,15 +40,15 @@ button{font:inherit;color:inherit}
 .ctl b{font-weight:600;color:var(--ink)}
 .seg{display:inline-flex;border-radius:8px;overflow:hidden;border:1px solid var(--line);max-width:100%}
 .seg button{border:0;background:transparent;padding:8px 12px;min-height:44px;min-width:40px;cursor:pointer;color:var(--mut);font-size:12px}
-.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
 .seg button:disabled{cursor:default;opacity:.55}
 .ctl.muted{opacity:.6}
 .toggle{border:1px solid var(--line);background:transparent;border-radius:8px;padding:8px 12px;min-height:44px;cursor:pointer;font-size:12px;color:var(--mut)}
-.toggle[aria-pressed="true"]{background:var(--accent2);border-color:transparent;color:var(--ink)}
+.toggle[aria-pressed="true"]{background:var(--accent2);border-color:transparent;color:var(--on-accent2)}
 .toggle:disabled{opacity:.45;cursor:default}
-.btn{border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:8px;padding:10px 16px;min-height:44px;cursor:pointer;font-size:12px;font-weight:600}
+.btn{border:1px solid var(--ink);background:var(--ink);color:var(--on-ink);border-radius:8px;padding:10px 16px;min-height:44px;cursor:pointer;font-size:12px;font-weight:600}
 .btn.ghost{background:transparent;color:var(--ink)}
-.btn:hover{filter:brightness(1.15)}.btn.ghost:hover,.toggle:hover{background:#1d2b1f09}
+.btn:hover{filter:brightness(1.15)}.btn.ghost:hover,.toggle:hover{background:var(--hover)}
 button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .seed{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);width:140px;min-height:44px;color:var(--ink)}
 .wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:0 24px 32px;align-items:start}
@@ -52,42 +59,42 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{o
 .board svg{width:100%;height:auto;display:block;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}   /* a mouse drag on the map must never start a text selection: Chrome paints the selection highlight of SVG text scaled by the viewBox into big flashing blocks */
 #svg text::selection{background:transparent}
 #svg *{-webkit-tap-highlight-color:transparent}
-.hex{stroke:var(--card);stroke-width:.06}
+.hex{stroke:var(--grout);stroke-width:.06}
 .hex.wood{fill:var(--wood)}.hex.brick{fill:var(--brick)}.hex.wheat{fill:var(--wheat)}.hex.sheep{fill:var(--sheep)}.hex.ore{fill:var(--ore)}.hex.desert{fill:var(--desert)}
-.hex.related{stroke:#fff6d0;stroke-width:.09}
-.terrain-label{pointer-events:none;font-size:.18px;font-weight:600;text-anchor:middle;fill:var(--ink)}
+.hex.related{stroke:var(--glow);stroke-width:.09}
+.terrain-label{pointer-events:none;font-size:.18px;font-weight:600;text-anchor:middle;fill:var(--hex-ink)}
 .legal-dot{fill:var(--card);stroke:var(--mut);stroke-width:.02;pointer-events:none}
-.best-ring{fill:var(--accent2);stroke:var(--ink);stroke-width:.045;pointer-events:none}   /* the Best card's corner */
-.tok{fill:#fffdf7;stroke:rgba(29,43,31,.25);stroke-width:.03}
-.tok-n{font-family:var(--disp);font-weight:600;font-size:.42px;text-anchor:middle;fill:var(--ink)}
-.tok-n.red{fill:var(--red)}
-.pip{fill:var(--ink)}.pip.red{fill:var(--red)}
+.best-ring{fill:var(--accent2);stroke:var(--piece-ink);stroke-width:.045;pointer-events:none}   /* the Best card's corner */
+.tok{fill:var(--disc);stroke:var(--disc-line);stroke-width:.03}
+.tok-n{font-family:var(--disp);font-weight:600;font-size:.42px;text-anchor:middle;fill:var(--disc-ink)}
+.tok-n.red{fill:var(--disc-red)}
+.pip{fill:var(--disc-ink)}.pip.red{fill:var(--disc-red)}
 .tok,.tok-n,.pip{pointer-events:none}
 .harbor{font-family:var(--ui);font-weight:600;font-size:.22px;text-anchor:middle;fill:var(--mut);letter-spacing:.02em}
 .harbor-line{stroke:var(--line2);stroke-width:.05;stroke-dasharray:.1 .08}
 .vx{fill:transparent;stroke:transparent;cursor:pointer}
-.vx.legal:hover{fill:rgba(29,43,31,.18)}
+.vx.legal:hover{fill:var(--board-hover)}
 .vx.dead{cursor:not-allowed}
 /* Chrome paints an SVG element's focus outline in user units, scaled by the viewBox transform: the default
    3px ring became a ~250px black blob around a focused corner. Draw the keyboard focus ring as a stroke instead. */
 #svg:focus,#svg *:focus{outline:none}   /* every element in the board, not just corners: any scaled outline is a black blob */
-.vx.legal:focus-visible{stroke:var(--ink);stroke-width:.06}
+.vx.legal:focus-visible{stroke:var(--piece-ink);stroke-width:.06}
 .badge{pointer-events:none}
-.road{stroke:var(--ink);stroke-width:.13;stroke-linecap:round;pointer-events:none}   /* R13 suggested starting road */
+.road{stroke:var(--piece-ink);stroke-width:.13;stroke-linecap:round;pointer-events:none}   /* R13 suggested starting road */
 .road.pick{stroke-dasharray:.16 .1;opacity:.75}
-.sub.road{margin-top:8px;padding:6px 10px;border-left:3px solid var(--ink);background:rgba(29,43,31,.05)}
-.badge circle{fill:#fffdf7;stroke:var(--ink);stroke-width:.045}
-.badge text{font-family:var(--mono);font-size:.3px;font-weight:600;text-anchor:middle;fill:var(--ink)}
+.sub.road{margin-top:8px;padding:6px 10px;border-left:3px solid var(--ink);background:var(--tint)}
+.badge circle{fill:var(--disc);stroke:var(--piece-ink);stroke-width:.045}
+.badge text{font-family:var(--mono);font-size:.3px;font-weight:600;text-anchor:middle;fill:var(--disc-ink)}
 .badge.you circle{fill:var(--accent2)}
 .badge.r2 circle{stroke-dasharray:.07 .05}
 .badge.placed text{font-size:.22px}
 .rank.draft li.fixed{cursor:default}
 .rank.draft li.fixed:hover{background:none}
-.rank.draft li.you{background:rgba(241,206,120,.18)}
+.rank.draft li.you{background:var(--you)}
 .piece{pointer-events:none}
-.piece.me{fill:var(--accent);stroke:#fff;stroke-width:.05}
-.piece.opp{fill:#fff;stroke:var(--ink);stroke-width:.06}
-.piece.pick{fill:var(--accent2);stroke:var(--ink);stroke-width:.05}
+.piece.me{fill:var(--accent);stroke:var(--piece-light);stroke-width:.05}
+.piece.opp{fill:var(--piece-light);stroke:var(--piece-ink);stroke-width:.06}
+.piece.pick{fill:var(--accent2);stroke:var(--piece-ink);stroke-width:.05}
 .panel{display:flex;flex-direction:column;gap:0}
 @media (max-width:1023px){.panel{display:contents}.card.lead{order:-1}}   /* single column: the panel's cards join the page grid so a lead card (drill setup, Your board tools) sits ABOVE the board instead of below the fold; must follow the .panel rule above */
 .card{border-bottom:1px solid var(--line);padding:16px 4px}.card:last-child{border-bottom:0}
@@ -111,13 +118,13 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{o
 .rank{list-style:none;margin:8px 0 0;padding:0}
 .rank li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line);cursor:pointer}
 .rank li:first-child{border-top:0}
-.rank li:hover{background:rgba(29,43,31,.04)}
+.rank li:hover{background:var(--hover)}
 .draft-choice{display:flex;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:6px 2px;border:0;background:transparent;text-align:left;cursor:pointer}
 .draft-choice .n{flex-shrink:0}.draft-choice .s{flex-shrink:0}
-.rank li[aria-current="true"]{background:rgba(241,206,120,.35)}
+.rank li[aria-current="true"]{background:var(--current)}
 .rank .n{font-family:var(--mono);font-size:12px;color:var(--mut);width:20px}
 .rank .s{font-family:var(--mono);font-size:12px;margin-left:auto}
-.chip{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;background:rgba(29,43,31,.06);margin-right:4px}
+.chip{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11px;background:var(--chip);margin-right:4px}
 details summary{cursor:pointer;font-weight:600;font-size:13px}
 details p{font-size:12px;color:var(--mut);margin:8px 0}
 .note{font-size:11px;color:var(--mut)}
@@ -134,15 +141,15 @@ details p{font-size:12px;color:var(--mut);margin:8px 0}
 .card.drill.fail .grade b{color:var(--red)}
 .track{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
 .track li{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;cursor:pointer;background:var(--card)}
-.track li.cleared{background:var(--accent);border-color:var(--accent);color:#fff}
+.track li.cleared{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .track li.current{box-shadow:0 0 0 3px var(--accent2)}
 .track li.locked{opacity:.35;cursor:default}
 .setup-table{margin:10px 0 0;font-size:14px}
-.hex.blank{fill:#f4f0e6;stroke:var(--line2);stroke-dasharray:.08 .06}
+.hex.blank{fill:var(--blank);stroke:var(--line2);stroke-dasharray:.08 .06}
 .hex.editable{cursor:pointer}
-.hex.sel{stroke:var(--ink);stroke-width:.09}
+.hex.sel{stroke:var(--piece-ink);stroke-width:.09}
 .coast-hit{stroke:transparent;stroke-width:.3;cursor:pointer}
-.coast-hit.empty{stroke:rgba(29,43,31,.18);stroke-width:.12;stroke-dasharray:.06 .06}
+.coast-hit.empty{stroke:var(--coast);stroke-width:.12;stroke-dasharray:.06 .06}
 .palette{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
 .picker{display:inline-flex;flex-wrap:wrap}
 .check.ok{color:var(--accent)}
@@ -173,3 +180,10 @@ details p{font-size:12px;color:var(--mut);margin:8px 0}
   .mode-nav .toggle{padding-inline:7px;font-size:11px}
   #table-summary{font-size:10px}.settings-grid .ctl{flex-wrap:wrap}
 }
+
+/* theme switch: a sun in dark mode (switch to light), a moon in light mode */
+.btn.icon{padding:0;width:44px;display:inline-grid;place-items:center}
+.btn.icon svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn.icon .sun{display:none}
+:root[data-theme="dark"] .btn.icon .sun{display:inline}:root[data-theme="dark"] .btn.icon .moon{display:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.icon .sun{display:inline}:root:not([data-theme="light"]) .btn.icon .moon{display:none}}

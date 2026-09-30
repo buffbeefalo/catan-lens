@@ -2,6 +2,7 @@ import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, de
 import { hexCorners, legalVertices } from './geometry.js';
 import { suggestRoad, rankSpots, compare, grade, simulateDraft, PLANS, planFor } from './score.js';
 import { STAGES, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel } from './drill.js';
+import { setupThemeSwitch } from './theme.js';
 
 const $ = s => document.querySelector(s);
 const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null };
@@ -536,6 +537,7 @@ $('#settings').addEventListener('toggle', fitBoard);
 $('#panel').addEventListener('keydown', e => { if (e.key === 'Escape' && state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); } });
 $('#new').onclick = () => { if (inLevel()) return newStageBoard(); if (state.custom) return fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true })); state.seed = randomSeed(); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
 $('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.test(t) && Number(t) < 4294967296) { state.seed = Number(t); state.answered = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); } else controls(); };
+setupThemeSwitch($('#theme'));
 $('#share').onclick = async () => { try { await navigator.clipboard.writeText(location.href); $('#share').textContent = 'Copied'; setTimeout(() => { $('#share').textContent = 'Copy link'; }, 1500); } catch { prompt('Copy this link', location.href); } };
 
 readUrl(); controls(); rebuild();
