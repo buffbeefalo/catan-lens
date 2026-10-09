@@ -80,11 +80,12 @@ const assert = require('node:assert/strict');
   // Your board off from free play → random board with a seed
   await page.click('#custom'); assert.equal(q().b, undefined); assert.ok(q().seed); assert.ok(!(await disabled('#seed')));
   console.log('mode switches: drill preserves Your board; explicitly leaving Your board returns to a random board');
-  // hostile link: bad board string is ignored, page stays up
+  // unreadable links retain their data and show an error without settlement advice
   await page.goto(BASE + '?players=4&b=zzz&h=1:q', { waitUntil: 'networkidle' });
-  assert.equal(q().b, undefined); assert.equal(await page.$eval('#custom', b => b.getAttribute('aria-pressed')), 'false');
+  assert.equal(q().b, 'zzz'); assert.equal(await page.$eval('#custom', b => b.getAttribute('aria-pressed')), 'true');
+  assert.ok(await page.$('.link-error')); assert.equal(await page.$('.best-ring'), null);
   await page.goto(BASE + '?players=4&b=' + 'w8'.repeat(19) + '&h=99999:3', { waitUntil: 'networkidle' });
-  assert.equal(q().b, undefined);
+  assert.equal(q().b, 'w8'.repeat(19)); assert.equal(q().h, '99999:3'); assert.ok(await page.$('.link-error'));
   await browser.close();
   assert.deepEqual(errors, [], 'page errors: ' + errors.join(' | '));
   console.log('CUSTOM E2E OK, zero page errors');

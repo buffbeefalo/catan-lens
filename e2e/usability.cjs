@@ -302,6 +302,95 @@ test('changing player count within a board shape keeps entered tiles, harbours a
   }
 });
 
+test('malformed board links keep their original data and show no advice until an explicit restart', async t => {
+  const board = await import('../public/board.js');
+  const encoded = board.encodeBoard(board.generateBoard({ seed: 42 }));
+  const duplicate = encoded.h + ',' + encoded.h.split(',')[0].replace(/:./, ':o');
+  const fixtures = [
+    { b: 'zzz', h: '1:q' },
+    { b: encoded.b.match(/[wbhsod-]\d{0,2}/g).slice(0, -1).join(''), h: encoded.h },
+    { b: encoded.b, h: '9999:w' },
+    { h: encoded.h },
+    { b: encoded.b.replace('d', 'd8'), h: encoded.h },
+    { b: encoded.b, h: duplicate },
+  ];
+  for (const fixture of fixtures) {
+    const query = '?' + new URLSearchParams({ players: 4, ...fixture });
+    const page = await open(t, { width: 1400, height: 900 }, query);
+    assert.equal(new URL(page.url()).search, query, 'the unreadable link must not be replaced with unrelated board data');
+    assert.equal(await page.locator('.link-error').count(), 1);
+    assert.match(await page.locator('.link-error').innerText(), /Board link could not be read/);
+    assert.equal(await page.locator('.best-ring, .best-card, .verdict, .road, .draft-details, .vx.legal').count(), 0);
+    assert.equal(await page.locator('#showbest').isDisabled(), true);
+    assert.equal(await page.locator('#players button:enabled').count(), 0, 'unreadable data cannot be reinterpreted by table controls');
+    await reloadInBrowser(page);
+    assert.equal(new URL(page.url()).search, query);
+    await page.locator('#blank-board').click();
+    assert.equal(await page.locator('.link-error').count(), 0);
+    assert.equal(await page.locator('.hex.blank').count(), 19);
+    assert.match(await page.locator('#restore-board').innerText(), /Restore original link/);
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    assert.equal(new URL(page.url()).search, query);
+    assert.equal(await page.locator('.link-error').count(), 1);
+    await page.locator('#rand-board').click();
+    assert.equal(await page.locator('.link-error').count(), 0);
+    assert.equal(await page.locator('.hex.blank').count(), 0);
+    assert.ok(await page.locator('.best-ring').count() > 0);
+    await page.close();
+  }
+});
+
+test('a board linked with the wrong size can be opened at its matching table without changing its tiles or pieces', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  for (const [setup, wrongPlayers, rightPlayers] of [['base', 6, 4], ['ext56', 4, 5]]) {
+    const encoded = encodeBoard(generateBoard({ setup, seed: 42 }));
+    const query = '?' + new URLSearchParams({ players: wrongPlayers, seat: 1, b: encoded.b, h: encoded.h, me: 0, seq: 'm0' });
+    const page = await open(t, { width: 390, height: 844 }, query);
+    assert.equal(await page.locator('.link-error').count(), 1);
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator(`[data-recover-players="${rightPlayers}"]`).click()]);
+    const after = new URL(page.url()).searchParams;
+    assert.equal(after.get('players'), String(rightPlayers));
+    assert.equal(after.get('b'), encoded.b);
+    assert.equal(after.get('h'), encoded.h);
+    assert.equal(after.get('me'), '0');
+    assert.equal(after.get('seq'), 'm0');
+    assert.equal(await page.locator('.link-error').count(), 0);
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    assert.equal(await page.locator('.hex').count(), setup === 'base' ? 19 : 30);
+    await page.close();
+  }
+});
+
+test('valid unfinished board links remain editable without a link error', async t => {
+  const query = '?' + new URLSearchParams({ players: 4, b: 'w' + '-'.repeat(18) });
+  const page = await open(t, { width: 390, height: 844 }, query);
+  assert.equal(await page.locator('.link-error').count(), 0);
+  assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('.best-ring, .verdict, .road').count(), 0);
+  await page.locator('#tool-number').click();
+  await page.locator('.hex').first().press('Enter');
+  await page.locator('.picker button[data-num="6"]').click();
+  assert.ok(new URL(page.url()).searchParams.get('b').startsWith('w6'));
+});
+
+test('leaving an unreadable link for Drill or Explore preserves the original error view and blind setting', async t => {
+  const query = '?players=4&b=unreadable&best=0';
+  const page = await open(t, { width: 1400, height: 900 }, query);
+  await page.locator('#drill').click();
+  await page.locator('#start-drill').click();
+  assert.equal(await page.locator('.link-error, .best-ring, .verdict, .road').count(), 0);
+  await page.locator('#practice').click();
+  assert.equal(new URL(page.url()).search, query);
+  assert.equal(await page.locator('.link-error').count(), 1);
+  await page.locator('#practice').click();
+  assert.equal(await page.locator('.link-error').count(), 0);
+  assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.locator('#showbest').getAttribute('aria-pressed'), 'false');
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+  assert.equal(new URL(page.url()).search, query);
+  assert.equal(await page.locator('.link-error').count(), 1);
+});
+
 test('removing and restoring a number invalidates and restores all advice without losing pieces', async t => {
   for (const players of [4, 6]) {
     const page = await open(t, { width: 1400, height: 900 }, `?seed=42&players=${players}`);

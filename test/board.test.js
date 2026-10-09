@@ -136,6 +136,16 @@ test('encodeBoard / decodeBoard: round-trips through the link; garbage decodes t
   assert.equal(decodeBoard('nope', 'w8'.repeat(19), ''), null, 'unknown setup');
 });
 
+test('decodeBoard rejects numbers on non-producing tiles and duplicate harbour edges without silently dropping data', () => {
+  const encoded = encodeBoard(generateBoard({ seed: 42 }));
+  assert.equal(decodeBoard('base', encoded.b.replace('d', 'd8'), encoded.h), null, 'deserts cannot carry number tokens');
+  assert.equal(decodeBoard('base', '-8' + '-'.repeat(18), ''), null, 'blank tiles cannot carry number tokens');
+  const edge = encoded.h.split(',')[0].split(':')[0];
+  assert.equal(decodeBoard('base', encoded.b, `${encoded.h},${edge}:o`), null, 'a second harbour must not overwrite the first');
+  assert.equal(decodeBoard('base', encoded.b, `${edge}:3,0${edge}:w`), null, 'numeric aliases still refer to the same edge');
+  assert.ok(decodeBoard('base', 'w' + '-'.repeat(18), ''), 'a valid unfinished board is still readable');
+});
+
 test('checkTiles: compares what was entered with the official box, and stays quiet when it matches', () => {
   const gen = generateBoard({ setup: 'base', seed: 42 });
   assert.deepEqual(checkTiles(gen), []);

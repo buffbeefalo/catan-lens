@@ -49,6 +49,10 @@ serve.js            zero-dependency local server (npm start)
    a `popstate` reload rebuilds the board from that history entry's URL, so recovery also survives refresh.
    Tiles and coastal edge ids are never carried between the 19- and 30-hex graphs. Same-shape player-count
    changes retain the board and placement order.
+5. `decodeBoard` returns `null` for unreadable tile or harbour data. The UI retains the original query in
+   an error state, suppresses advice and table editing, and offers explicit restart actions. A board that
+   decodes at the other geometry gets recovery choices for that geometry's player counts. The decoder
+   allows unfinished boards, but rejects numbers on non-producing tiles and duplicate harbour edges.
 
 ## Where to change things
 

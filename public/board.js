@@ -198,14 +198,14 @@ export function decodeBoard(setup, b, h) {
   for (const p of parts) {
     const resource = p[0] === '-' ? 'blank' : UNLETTER[p[0]];
     const number = p.length > 1 ? Number(p.slice(1)) : null;
-    if (number !== null && !PIPS[number]) return null;
+    if (number !== null && (!PIPS[number] || !PRODUCING.has(resource))) return null;
     hexes.push({ resource, number });
   }
   const coast = new Set(graph.perimeter);
   const harbors = {};
   for (const pair of String(h || '').split(',').filter(Boolean)) {
     const m = /^(\d+):([3wbhso])$/.exec(pair);
-    if (!m || !coast.has(Number(m[1]))) return null;
+    if (!m || !coast.has(Number(m[1])) || Object.hasOwn(harbors, Number(m[1]))) return null;
     harbors[Number(m[1])] = HARBOR_TYPE[m[2]];
   }
   return boardFrom({ setup, hexes, harbors });

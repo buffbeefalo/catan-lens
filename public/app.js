@@ -5,7 +5,7 @@ import { STAGES, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel } 
 import { setupThemeSwitch } from './theme.js';
 
 const $ = s => document.querySelector(s);
-const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null };
+const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null };
 let board = null, ranking = [], draft = [], entry = { ready: false };
 const HEUR = 'opening heuristic v1';
 const MAX_LEVEL = STAGES.length + 20;   // bonus levels beyond the ladder are capped so a hand-edited link cannot draw a giant track
@@ -29,17 +29,24 @@ function readUrl() {
     state.stage = Math.min(state.stage, maxCleared() + 1);   // a link cannot skip ahead of your progress
     if (!seedOk) state.seed = findSeed(stageFor(state.stage, table()), randomSeed).seed;   // the level picks its board
   }
-  if (!state.drill && q.has('b')) {
+  if (!state.drill && (q.has('b') || q.get('h'))) {
+    state.custom = true;
     const cb = decodeBoard(state.setup, q.get('b'), q.get('h') || '');
-    if (cb) { state.custom = true; state.customHexes = cb.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...cb.harbors }; }
+    if (cb) { state.customHexes = cb.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...cb.harbors }; }
+    else {
+      const other = state.setup === 'base' ? 'ext56' : 'base';
+      state.linkError = { query: location.search, players: decodeBoard(other, q.get('b'), q.get('h') || '') ? (other === 'base' ? [3, 4] : [5, 6]) : [] };
+    }
   }
   if (state.randomSeat && !q.has('seat')) rollSeat();
+  if (state.linkError) return;
   const ids = k => [...new Set((q.get(k) || '').split(',').filter(Boolean).map(Number).filter(x => Number.isInteger(x) && x >= 0))];
   state.me = ids('me'); state.opp = ids('opp');
   // Free play keeps the placement ORDER too (seq=o23,m13,…), so Undo and the verdicts survive a reload.
   state.seq = (q.get('seq') || '').split(',').filter(Boolean).map(t => ({ k: t[0] === 'o' ? 'opp' : 'me', id: Number(t.slice(1)), user: t[0] === 'm' })).filter(t => Number.isInteger(t.id) && t.id >= 0);
 }
 function writeUrl() {
+  if (state.linkError) { history.replaceState(history.state, '', state.linkError.query); return; }
   const q = new URLSearchParams({ players: state.players, seed: state.seed, seat: state.seat, cak: state.cak ? 1 : 0, bal: state.balanced ? 1 : 0, best: state.showBest ? 1 : 0, rseat: state.randomSeat ? 1 : 0 });
   if (state.drill && !state.drillSetup) { q.set('drill', 1); q.set('level', state.stage); }   // the level defines its pieces; none are written
   else {
@@ -50,7 +57,7 @@ function writeUrl() {
   }
   history.replaceState(history.state, '', '?' + q.toString());
 }
-function keepPreviousBoard() { history.pushState({ catanRecovery: true }, '', location.href); }
+function keepPreviousBoard() { history.pushState({ catanRecovery: state.linkError ? 'link' : 'board' }, '', location.href); }
 addEventListener('popstate', () => location.reload());
 
 // ---- Model -----------------------------------------------------------------
@@ -223,7 +230,7 @@ function drawMarks() {
 const roadHint = id => suggestRoad(board, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
 const roadLine = id => { const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No road makes progress from here: every corner two roads away is already taken.')}</p>`; };
 // Can a click on the board do anything right now?
-const canPlace = () => (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
+const canPlace = () => !state.linkError && (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
 const house = (x, y) => `M${x - 0.2},${y + 0.18} L${x - 0.2},${y - 0.05} L${x},${y - 0.24} L${x + 0.2},${y - 0.05} L${x + 0.2},${y + 0.18} Z`;
 
 const reveal = () => entry.ready && (state.drill ? state.answered !== null : state.showBest);
@@ -261,7 +268,7 @@ function newStageBoard() {
 // Drill on = set your table first (players + C&K stay live in the bar, everything else locks); Start begins
 // the ladder at the next open level for that table. A drill=1&level=N link skips the setup and uses its table.
 function setDrill(on) {
-  if (on) { freePlay = structuredClone(state); state.custom = false; state.tool = null; state.numHex = null; }
+  if (on) { freePlay = structuredClone(state); state.custom = false; state.linkError = null; state.tool = null; state.numHex = null; }
   state.drill = on; state.drillSetup = on; state.answered = null; state.attempts = 0; state.pick = null; state.mode = 'me';
   state.me = []; state.opp = []; state.history = [];
   if (!on) { if (freePlay) Object.assign(state, freePlay); else state.seed = randomSeed(); freePlay = null; }
@@ -274,7 +281,7 @@ function setCustom(on) {
   if (!on) keepPreviousBoard();
   state.custom = on; state.tool = null; state.numHex = null; state.pick = null;
   if (on) { state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
-  else { state.seed = randomSeed(); state.me = []; state.opp = []; state.history = []; }
+  else { state.seed = randomSeed(); state.linkError = null; state.me = []; state.opp = []; state.history = []; }
   controls(); rebuild();
 }
 function setTool(t) { state.tool = state.tool === t ? null : t; state.numHex = null; state.pick = null; controls(); rebuild(); }
@@ -287,7 +294,12 @@ function hexClick(i) {
 }
 function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); }
 function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; rebuild(); }
-function fillCustom(b) { keepPreviousBoard(); state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; rebuild(); }
+function fillCustom(b) { keepPreviousBoard(); state.linkError = null; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
+function bindBoardActions() {
+  const bb = $('#blank-board'); if (bb) bb.onclick = () => fillCustom(blankBoard(state.setup));
+  const rb = $('#rand-board'); if (rb) rb.onclick = () => fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true }));
+  const restore = $('#restore-board'); if (restore) restore.onclick = () => history.back();
+}
 
 function startDrill() { $('#settings').open = false; state.drillSetup = false; state.stage = Math.min(MAX_LEVEL, maxCleared() + 1); state.attempts = 0; newStageBoard(); }
 function nextStage() { state.stage = Math.min(MAX_LEVEL, state.stage + 1); state.attempts = 0; newStageBoard(); }
@@ -393,8 +405,21 @@ function render() {
   $('#showbest').setAttribute('aria-pressed', String(reveal()));
   $('#showbest').disabled = state.drill || !entry.ready;
   let out = '';
-  const restore = history.state?.catanRecovery ? '<button class="btn ghost" id="restore-board">Restore previous board</button>' : '';
-  if (restore && !state.custom) out += `<div class="card"><p class="sub">Your previous board is kept in this tab.</p>${restore}</div>`;
+  const restore = history.state?.catanRecovery ? `<button class="btn ghost" id="restore-board">${history.state.catanRecovery === 'link' ? 'Restore original link' : 'Restore previous board'}</button>` : '';
+  if (state.linkError) {
+    $('#plan-note').textContent = 'Board link needs attention · no settlement advice is shown';
+    panel.innerHTML = `<div class="card edit lead link-error" role="alert"><h2>Board link could not be read</h2>
+      <p>The saved tiles or harbours do not form a readable board for this table. Your original link is unchanged. Ask the sender for a fresh link, or start again below.</p>
+      ${state.linkError.players.length ? `<p>The saved board fits the other board size. Choose its player count to keep the tiles, harbours and settlement marks:</p><p>${state.linkError.players.map(n => `<button class="btn ghost" data-recover-players="${n}">Open as ${n} players</button>`).join(' ')}</p>` : ''}
+      <p><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
+    bindBoardActions();
+    for (const button of panel.querySelectorAll('[data-recover-players]')) button.onclick = () => {
+      const q = new URLSearchParams(state.linkError.query); q.set('players', button.dataset.recoverPlayers);
+      location.assign('?' + q.toString());
+    };
+    fitBoard(); return;
+  }
+  if (restore && !state.custom) out += `<div class="card"><p class="sub">${history.state.catanRecovery === 'link' ? 'Your original link' : 'Your previous board'} is kept in this tab.</p>${restore}</div>`;
 
   if (state.drillSetup) {
     const done = cleared().filter(x => x <= STAGES.length).length;
@@ -510,9 +535,7 @@ function render() {
   const sd = $('#start-drill'); if (sd) sd.onclick = startDrill;
   for (const b of panel.querySelectorAll('.palette button')) b.onclick = () => setTool(b.id.slice('tool-'.length));
   for (const b of panel.querySelectorAll('.picker button')) b.onclick = () => setNumber(Number(b.dataset.num) || null);
-  const bb = $('#blank-board'); if (bb) bb.onclick = () => fillCustom(blankBoard(state.setup));
-  const rb = $('#rand-board'); if (rb) rb.onclick = () => fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true }));
-  const restoreBoard = $('#restore-board'); if (restoreBoard) restoreBoard.onclick = () => history.back();
+  bindBoardActions();
   const keep = $('#keep'); if (keep) keep.onclick = keepPick;
   const previewBest = $('#preview-best'); if (previewBest) previewBest.onclick = () => previewPick(best.id);
   const cancel = $('#cancel-pick'); if (cancel) cancel.onclick = cancelPick;
@@ -553,10 +576,10 @@ function controls() {
   $('#drill').setAttribute('aria-pressed', String(state.drill));
   $('#practice').setAttribute('aria-pressed', String(!state.drill && !state.custom));
   $('#custom').setAttribute('aria-pressed', String(state.custom)); $('#custom').disabled = state.drill;
-  for (const b of $('#players').querySelectorAll('button')) b.disabled = inLevel();
-  for (const b of $('#seat').querySelectorAll('button')) b.disabled = state.drill || state.randomSeat;
-  $('#cak').disabled = inLevel();
-  for (const id of ['#balanced', '#showbest', '#randseat', '#seed']) $(id).disabled = state.drill;
+  for (const b of $('#players').querySelectorAll('button')) b.disabled = inLevel() || !!state.linkError;
+  for (const b of $('#seat').querySelectorAll('button')) b.disabled = state.drill || state.randomSeat || !!state.linkError;
+  $('#cak').disabled = inLevel() || !!state.linkError;
+  for (const id of ['#balanced', '#showbest', '#randseat', '#seed']) $(id).disabled = state.drill || !!state.linkError;
   $('#seed').disabled = state.drill || state.custom; $('#balanced').disabled = state.drill || state.custom;
   $('#new').textContent = inLevel() ? 'New board, same level' : state.custom ? 'Random board' : 'New board';
 }

@@ -29,6 +29,11 @@ recovers its tiles, harbours, table settings and placements, even after a refres
 Random board and leaving Your board for Explore provide the same recovery. A shared link contains
 only the current board; recovery history belongs to the original tab. Changing 3↔4 or 5↔6 players
 keeps the entered board and placements because its shape has not changed.
+If a board link cannot be read, the app shows an error and keeps the original link in the address bar.
+It gives no settlement advice until you open a readable board or explicitly start again. If the saved
+tiles and harbours match the other board size, choose one of the offered player counts to recover the
+board and its settlement marks. Valid unfinished boards still open for editing. Numbers on deserts or
+blank tiles and duplicate harbours on the same edge are rejected instead of silently discarded.
 
 ## 2. The score for one corner
 
