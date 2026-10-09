@@ -169,6 +169,17 @@ export function boardFrom({ setup, hexes, harbors = {} }) {
 
 export function blankBoard(setup) { return boardFrom({ setup, hexes: [], harbors: {} }); }
 
+export function landReadiness(board) {
+  let blankCount = 0, missingNumberCount = 0, producingCount = 0;
+  for (const hex of board.hexes) {
+    if (hex.resource === 'desert') continue;
+    if (!PRODUCING.has(hex.resource)) blankCount++;
+    else if (!Number.isInteger(hex.number) || !Object.hasOwn(PIPS, hex.number)) missingNumberCount++;
+    else producingCount++;
+  }
+  return { ready: blankCount === 0 && missingNumberCount === 0 && producingCount > 0, blankCount, missingNumberCount, producingCount };
+}
+
 // Link form: one letter per hex (blank = the '-' placeholder) followed by its number if any,
 // e.g. "w8b5d-o6…"; harbours as edgeId:code pairs, e.g. "12:3,40:w".
 export function encodeBoard(board) {

@@ -131,6 +131,18 @@ test('compare does not claim that an equally scored corner is better', () => {
   assert.deepEqual(compare(best, tied), []);
 });
 
+test('compare gives both repeat penalties when both corners repeat the same held number', () => {
+  const board = generateBoard({ seed: 276 });
+  const ranking = rankSpots(board, S(), { mine: [2], occupied: [2] });
+  const best = ranking.find(r => r.id === 20), pick = ranking.find(r => r.id === 18);
+  // Corner 2 holds 5, 6 and 4. These candidates add one 4 and two 4s, respectively.
+  assert.deepEqual(best.numbers, [4, 10, 8]);
+  assert.deepEqual(pick.numbers, [4, 4]);
+  const explanation = compare(best, pick).join(' ');
+  assert.match(explanation, /repeat.*1\.50.*0\.75/i);
+  assert.doesNotMatch(explanation, /the best spot does not/);
+});
+
 test('pip table is the two-dice distribution', () => {
   assert.equal(PIPS[6], 5); assert.equal(PIPS[2], 1); assert.equal(PIPS[9], 4);
 });

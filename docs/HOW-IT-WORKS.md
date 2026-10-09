@@ -14,7 +14,11 @@ harbours around the coast. With **Balanced setup** on, it keeps red numbers (6 a
 rulebook asks. Every board comes from a seed, so a link always reopens the exact same board.
 
 You can also enter the real board in front of you with **Your board**: paint the resources, set the
-number tokens, tap the coast to place harbours. Everything else in the app then works on your board.
+number tokens, tap the coast to place harbours. Settlement advice starts once all resources and number
+tokens are entered, with at least one producing hex. If a tile or token is removed later, rankings,
+grades, road suggestions, projections and the opening summary disappear until the input is repaired.
+Your placed pieces and their order are kept during these edits. Harbour inventory warnings remain
+separate from this land-entry check.
 For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
 number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
@@ -51,7 +55,8 @@ stays dominant.
   better. When the choice comes down to small differences between the same kinds of bonuses, it compares
   the actual score terms. A corner can produce more raw cards yet score lower because of its resources;
   the explanation acknowledges that tradeoff. Equal scores share the top rank without a claim that one
-  tied corner is better.
+  tied corner is better. When number repetition matters, the comparison gives each corner's actual
+  penalty; both corners can repeat the same number, but one may repeat it more often.
 - **Opponents.** Switch to "Mark opponent" and click where others placed; the ranking only counts what is
   still open.
 - **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app plays

@@ -40,7 +40,9 @@ serve.js            zero-dependency local server (npm start)
 2. `score.js` scores every legal corner. A score is the sum of named parts; each part carries the sentence the
    panel shows, so the UI never invents text. `rankSpots` sorts them; ties share rank 1.
 3. `app.js` keeps one `state` object, mirrors it into the URL on every change (so any view can be shared), and
-   re-renders the panel and the board marks. Hints (ring, scores, projections, road) are drawn only when the
+   re-renders the panel and the board marks. `landReadiness` in `board.js` gates ranking and draft computation;
+   incomplete land also hides placed verdicts and combined-opening totals without deleting placements.
+   Hints (ring, scores, projections, road) are drawn only when the
    current mode allows them (`reveal()`), so blind practice and unanswered drills leak nothing.
 
 ## Where to change things

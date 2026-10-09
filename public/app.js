@@ -1,4 +1,4 @@
-import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles } from './board.js';
+import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness } from './board.js';
 import { hexCorners, legalVertices } from './geometry.js';
 import { suggestRoad, rankSpots, compare, grade, simulateDraft, PLANS, planFor } from './score.js';
 import { STAGES, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel } from './drill.js';
@@ -6,7 +6,7 @@ import { setupThemeSwitch } from './theme.js';
 
 const $ = s => document.querySelector(s);
 const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null };
-let board = null, ranking = [], draft = [];
+let board = null, ranking = [], draft = [], entry = { ready: false };
 const HEUR = 'opening heuristic v1';
 const MAX_LEVEL = STAGES.length + 20;   // bonus levels beyond the ladder are capped so a hand-edited link cannot draw a giant track
 
@@ -82,9 +82,10 @@ function rebuild() {
   recompute();
 }
 function recompute() {
+  entry = landReadiness(board);
   // The second settlement is ranked against the first; once both are down the ranking is hidden.
-  ranking = rankSpots(board, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp] });
-  draft = simulateDraft(board, settings(), { me: state.me, opp: state.opp });
+  ranking = entry.ready ? rankSpots(board, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp] }) : [];
+  draft = entry.ready ? simulateDraft(board, settings(), { me: state.me, opp: state.opp }) : [];
   if (state.pick !== null && !ranking.some(r => r.id === state.pick)) state.pick = null;
   writeUrl(); render();
 }
@@ -220,10 +221,10 @@ function drawMarks() {
 const roadHint = id => suggestRoad(board, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
 const roadLine = id => { const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No road makes progress from here: every corner two roads away is already taken.')}</p>`; };
 // Can a click on the board do anything right now?
-const canPlace = () => (state.tool ? false : state.mode === 'opp' ? !state.drill : state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
+const canPlace = () => (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
 const house = (x, y) => `M${x - 0.2},${y + 0.18} L${x - 0.2},${y - 0.05} L${x},${y - 0.24} L${x + 0.2},${y - 0.05} L${x + 0.2},${y + 0.18} Z`;
 
-const reveal = () => (state.drill ? state.answered !== null : state.showBest);
+const reveal = () => entry.ready && (state.drill ? state.answered !== null : state.showBest);
 
 // Level progress lives in this browser only (no account, no server): which levels are cleared.
 // One track per table (players + Cities & Knights): { ladders: { '4-base': [1, 2, …], '6-cak': [1] } }.
@@ -337,6 +338,7 @@ function reset() { state.me = []; state.opp = []; state.history = []; state.pick
 // Grade each placed settlement against the corners that were open when it went down (replayed
 // from the action history), so the verdict survives later placements and reloads.
 function placedVerdicts() {
+  if (!entry.ready) return [];
   const out = [];
   const seen = [];
   for (const h of state.history) {
@@ -386,6 +388,7 @@ function render() {
   $('#table-summary').textContent = `${state.players} players · Seat ${state.seat} · ${state.cak ? 'C&K' : 'Base'}`;
   $('#showbest').textContent = state.drill ? (state.answered ? 'Answers shown' : 'Hints hidden') : 'Show best';
   $('#showbest').setAttribute('aria-pressed', String(reveal()));
+  $('#showbest').disabled = state.drill || !entry.ready;
   let out = '';
 
   if (state.drillSetup) {
@@ -412,7 +415,8 @@ function render() {
       const sel = state.numHex !== null ? board.hexes[state.numHex] : null;
       const tools = [['wood', 'Wood'], ['brick', 'Brick'], ['wheat', 'Wheat'], ['sheep', 'Sheep'], ['ore', 'Ore'], ['desert', 'Desert'], ['number', 'Numbers'], ['port', 'Ports']];
       out += html`<div class="card edit lead"><h2>Your board <span>enter the board in front of you</span></h2>
-        <p class="sub">Pick a paint, then tap hexes. <b>Numbers</b>: tap a hex, then its token. <b>Ports</b>: tap a coastal edge to cycle 3:1, wood, brick, wheat, sheep, ore, none. You can also Tab to a hex or coastal edge and press Enter or Space; Escape returns from the number picker to the hex. The ranking updates as you go and the link carries the board.</p>
+        ${!entry.ready ? `<p class="sub" role="status"><b>Finish entering your board.</b> ${entry.blankCount ? `${entry.blankCount} hex${entry.blankCount === 1 ? ' needs a resource' : 'es need resources'}. ` : ''}${entry.missingNumberCount ? `${entry.missingNumberCount} resource hex${entry.missingNumberCount === 1 ? ' needs a number token' : 'es need number tokens'}. ` : ''}${!entry.blankCount && !entry.missingNumberCount && !entry.producingCount ? 'Add producing resources and their number tokens. ' : ''}Settlement advice appears when the land entry is complete.</p>` : ''}
+        <p class="sub">Pick a paint, then tap hexes. <b>Numbers</b>: tap a hex, then its token. <b>Ports</b>: tap a coastal edge to cycle 3:1, wood, brick, wheat, sheep, ore, none. You can also Tab to a hex or coastal edge and press Enter or Space; Escape returns from the number picker to the hex. Settlement advice waits for complete resources and number tokens. The link carries your board as you edit.</p>
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
         ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         <p class="sub check ${notes.length ? '' : 'ok'}">${notes.length ? notes.map(esc).join(' ') : 'Matches the official box.'}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p>
@@ -423,7 +427,7 @@ function render() {
       <button id="mode-me" aria-pressed="${state.mode === 'me'}">Place mine</button>
       <button id="mode-opp" aria-pressed="${state.mode === 'opp'}">Mark opponent</button></span>
     <span><button class="btn ghost" id="undo">Undo</button> <button class="btn ghost" id="reset">Clear</button></span></div>
-    <p class="sub" style="margin:10px 0 0">${stage === 'first' ? 'Click any open corner to try it as your first settlement. Mark opponents’ pieces as they place so the ranking only counts what is still open.' : stage === 'second' ? 'Now the second settlement: the ranking rewards corners that patch what your first one lacks.' : 'Both settlements are down. Undo to try a different second corner.'}</p></div>`;
+    <p class="sub" style="margin:10px 0 0">${!entry.ready ? 'Complete the resources and number tokens before choosing settlements. Existing pieces are kept; you can still mark opponents and undo placements.' : stage === 'first' ? 'Click any open corner to try it as your first settlement. Mark opponents’ pieces as they place so the ranking only counts what is still open.' : stage === 'second' ? 'Now the second settlement: the ranking rewards corners that patch what your first one lacks.' : 'Both settlements are down. Undo to try a different second corner.'}</p></div>`;
   }
 
   if (stage !== 'done' && best && state.showBest && !state.drill) {
@@ -454,7 +458,7 @@ function render() {
 
   placedVerdicts().forEach(v => { out += verdictCard(v, `Your ${v.n === 1 ? 'first' : 'second'} settlement`); });
 
-  if (stage === 'done') {
+  if (stage === 'done' && entry.ready) {
     const prod = {};
     for (const id of state.me) for (const h of board.graph.vertices[id].hexes) { const x = board.hexes[h]; if (x.number) prod[x.resource] = (prod[x.resource] || 0) + PIPS[x.number]; }
     const missing = ['wood', 'brick', 'wheat', 'sheep', 'ore'].filter(r => !prod[r]);

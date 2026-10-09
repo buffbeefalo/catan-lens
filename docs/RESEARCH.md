@@ -102,7 +102,7 @@ hardest level repeats. Thresholds are the author's choice; nothing in the scorin
 **Audit 2026-09-15.** A systematic bug audit confirmed 54 defects (3 high, 14 medium, 37 low); all were fixed
 the same day. Scoring-visible ones: R6 no longer charges a duplicate inside your own first settlement to
 every second-settlement corner; R7 credits a port one road away only when its far end can still be settled;
-R8 lists every expansion value it scores (parts now add up to the score exactly); R9 starting cards count one
+R8 lists every expansion value it scores (parts and the total are rounded separately); R9 starting cards count one
 per hex; the scarcity cap moved 1.3 → 1.25 (see R3); the number spiral is now continuous like the official
 one; "the most on the board" is measured board-wide; ties share rank 1; the comparison never lists something
 the pick already has. The rest were page-state defects (drill re-answer through the projected list, score

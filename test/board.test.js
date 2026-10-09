@@ -78,7 +78,25 @@ test('the number spiral is continuous: every step in spiral order moves to an ad
 });
 
 // ---- Your board: a hand-entered board (2026-09-15) ----------------------------------------
-import { boardFrom, encodeBoard, decodeBoard, checkTiles, blankBoard } from '../public/board.js';
+import { boardFrom, encodeBoard, decodeBoard, checkTiles, blankBoard, landReadiness } from '../public/board.js';
+
+test('land readiness counts missing tiles and tokens separately from inventory warnings', () => {
+  assert.deepEqual(landReadiness(blankBoard('base')), { ready: false, blankCount: 19, missingNumberCount: 0, producingCount: 0 });
+  const partial = boardFrom({ setup: 'base', hexes: [{ resource: 'wheat', number: 6 }, { resource: 'ore' }, { resource: 'desert' }] });
+  assert.deepEqual(landReadiness(partial), { ready: false, blankCount: 16, missingNumberCount: 1, producingCount: 1 });
+  for (const [setup, producingCount] of [['base', 18], ['ext56', 28]]) {
+    const board = generateBoard({ setup, seed: 42 });
+    assert.deepEqual(landReadiness(board), { ready: true, blankCount: 0, missingNumberCount: 0, producingCount });
+    board.hexes[0].number = 7;
+    assert.equal(landReadiness(board).ready, false, 'an unsupported productive token also blocks analysis');
+    assert.equal(landReadiness(board).missingNumberCount, 1);
+  }
+});
+
+test('a board with no producing land cannot provide settlement advice', () => {
+  const desert = boardFrom({ setup: 'base', hexes: Array.from({ length: 19 }, () => ({ resource: 'desert' })) });
+  assert.deepEqual(landReadiness(desert), { ready: false, blankCount: 0, missingNumberCount: 0, producingCount: 0 });
+});
 
 test('boardFrom: builds a scoreable board from hand-entered hexes and harbours; balance is measured, not assumed', () => {
   const gen = generateBoard({ setup: 'base', seed: 42 });

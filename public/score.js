@@ -180,7 +180,7 @@ export function compare(best, pick) {
   }
   const bp = pick.parts.filter(p => p.k === 'repeat').reduce((s, p) => s + (p.v || 0), 0);
   const bb = best.parts.filter(p => p.k === 'repeat').reduce((s, p) => s + (p.v || 0), 0);
-  if (bp < bb) out.push('Your pick doubles up on a number the best spot does not.');
+  if (bp < bb) out.push(`Repeated-number penalty: your pick loses ${Math.abs(bp).toFixed(2)} points, versus ${Math.abs(bb).toFixed(2)} for #1.`);
   if (!out.length && best.score > pick.score) {
     const labels = {
       production: 'Weighted production after resource value and scarcity',

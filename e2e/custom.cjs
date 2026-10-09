@@ -41,6 +41,7 @@ const assert = require('node:assert/strict');
   // desert paint clears the number
   await page.click('#tool-desert'); await clickHex(H); assert.equal(part(H), 'd'); await page.click('#tool-ore'); await clickHex(H); await page.click('#tool-ore');
   console.log('number picker sets, clears, and desert wipes the token');
+  await page.click('#tool-number'); await clickHex(H); await page.click('.picker button[data-num="8"]'); await page.click('#tool-number');
   // ports: every coastal edge is a target; tapping cycles none → 3:1 → wood → … ; the link follows
   await page.click('#tool-port');
   const hits = await page.$$eval('#svg .coast-hit', a => a.length); assert.ok(hits >= 20, `coastal targets drawn (${hits})`);

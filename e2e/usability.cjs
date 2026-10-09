@@ -1,11 +1,14 @@
 const assert = require('node:assert/strict');
 const { test, before, after } = require('node:test');
-const { chromium } = require('playwright');
+const { chromium, firefox, webkit } = require('playwright');
 
 const base = require('./helpers.cjs').BASE;
 let browser;
 before(async () => {
-  browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
+  const name = process.env.CATAN_BROWSER || 'chromium';
+  const engine = { chromium, firefox, webkit }[name];
+  if (!engine) throw new Error('Unknown CATAN_BROWSER: ' + name);
+  browser = await engine.launch({ headless: true, executablePath: name === 'chromium' ? process.env.CHROMIUM_PATH || undefined : undefined });
 });
 after(async () => { await browser?.close(); });
 
@@ -173,6 +176,55 @@ test('a drill roundtrip restores the entered or generated board and its placemen
     await page.locator('#undo').click();
     assert.equal(await page.locator('.piece.me').count(), 1);
     assert.equal(await page.locator('.piece.opp').count(), 0);
+    await page.close();
+  }
+});
+
+test('blank and partially entered boards do not offer settlement advice', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.locator('#custom').click();
+  await page.locator('#blank-board').click();
+  const advice = '.best-card, .pick-card, .verdict, [data-disclosure="draft"], #svg .best-ring, #svg .road, #preview-best';
+  assert.equal(await page.locator(advice).count(), 0, 'a blank board has no invented best corners or projections');
+  assert.match(await page.locator('#panel').innerText(), /finish entering/i);
+  await page.locator('#tool-wheat').click();
+  await page.locator('.hex').first().press('Enter');
+  await page.locator('#tool-number').click();
+  await page.locator('.hex').first().press('Enter');
+  await page.locator('.picker button[data-num="6"]').click();
+  await page.locator('#tool-number').click();
+  assert.equal(await page.locator(advice).count(), 0, 'one producing tile is still an incomplete board');
+  assert.equal(await page.locator('.vx.legal').count(), 0, 'incomplete land cannot be committed as a graded settlement');
+});
+
+test('removing and restoring a number invalidates and restores all advice without losing pieces', async t => {
+  for (const players of [4, 6]) {
+    const page = await open(t, { width: 1400, height: 900 }, `?seed=42&players=${players}`);
+    await page.locator('#custom').click();
+    for (let i = 0; i < 2; i++) {
+      await page.locator('#preview-best').click();
+      await page.locator('#keep').click();
+    }
+    await page.locator('[data-disclosure="draft"] summary').click();
+    assert.equal(await page.locator('.verdict').count(), 2);
+    assert.equal(await page.getByRole('heading', { name: 'Your opening', exact: true }).count(), 1);
+    const before = new URL(page.url()).search;
+    await page.locator('#tool-number').click();
+    await page.locator('.hex').first().press('Enter');
+    assert.equal(await page.locator('.picker button[aria-pressed="true"]').getAttribute('data-num'), '8', 'seed 42 starts with token 8 for both layouts');
+    await page.locator('.picker button[data-num="0"]').click();
+    await page.locator('#tool-number').click();
+    assert.equal(await page.locator('.best-card, .pick-card, .verdict, [data-disclosure="draft"], #svg .best-ring, #svg .road, #svg .badge').count(), 0, 'previous recommendations cannot remain on an incomplete board');
+    assert.equal(await page.getByRole('heading', { name: 'Your opening', exact: true }).count(), 0);
+    assert.equal(await page.locator('.piece.me').count(), 2, 'known placements are kept');
+    assert.match(await page.locator('#panel').innerText(), /number token/i);
+    await page.locator('#tool-number').click();
+    await page.locator('.hex').first().press('Enter');
+    await page.locator('.picker button[data-num="8"]').click();
+    await page.locator('#tool-number').click();
+    assert.equal(new URL(page.url()).search, before, 'repair restores the same board and ordered placements');
+    assert.equal(await page.locator('.verdict').count(), 2);
+    assert.equal(await page.getByRole('heading', { name: 'Your opening', exact: true }).count(), 1);
     await page.close();
   }
 });
