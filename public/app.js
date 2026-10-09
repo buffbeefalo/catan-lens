@@ -67,7 +67,8 @@ function rebuild() {
   } else if (state.custom) board = boardFrom({ setup: state.setup, hexes: state.customHexes, harbors: state.customHarbors });
   else board = generateBoard({ setup: state.setup, seed: state.seed, balanced: state.balanced });
   const n = board.graph.vertices.length;
-  const hist = !state.drill && state.seq && state.seq.length ? state.seq : [...state.opp.map(id => ({ k: 'opp', id })), ...state.me.map(id => ({ k: 'me', id }))];
+  const savedOrder = !state.drill && (state.seq?.length ? state.seq : state.history);
+  const hist = savedOrder?.length ? savedOrder : [...state.opp.map(id => ({ k: 'opp', id })), ...state.me.map(id => ({ k: 'me', id }))];
   state.seq = null;
   // Replay in order; anything off the board, doubled, or illegal where it stands is dropped rather than crashing the page.
   state.me = []; state.opp = []; state.history = [];
@@ -91,7 +92,14 @@ function recompute() {
 // ---- Board drawing ---------------------------------------------------------
 const NAMES = { wood: 'Wood', brick: 'Brick', wheat: 'Wheat', sheep: 'Sheep', ore: 'Ore', desert: 'Desert', blank: 'Blank' };
 const el = (t, a = {}, ...kids) => { const e = document.createElementNS('http://www.w3.org/2000/svg', t); for (const k in a) e.setAttribute(k, a[k]); for (const c of kids) e.append(c); return e; };
+function svgButton(element, label, activate) {
+  element.setAttribute('role', 'button'); element.setAttribute('tabindex', '0'); element.setAttribute('aria-label', label);
+  element.addEventListener('click', activate);
+  element.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); } });
+}
 function drawBoard() {
+  const active = document.activeElement;
+  const focusTarget = active?.matches('.hex[data-hex]') ? `.hex[data-hex="${active.dataset.hex}"]` : active?.matches('.coast-hit[data-edge]') ? `.coast-hit[data-edge="${active.dataset.edge}"]` : null;
   const svg = $('#svg'); svg.innerHTML = '';
   const xs = board.graph.vertices.map(v => v.x), ys = board.graph.vertices.map(v => v.y);
   const padX = 0.6, padY = 0.6;   // base margin; the frame grows further to fit the harbour labels once they are measured
@@ -100,8 +108,8 @@ function drawBoard() {
   const g = el('g');
   for (const hx of board.hexes) {
     const pts = hexCorners(hx.x, hx.y).map(p => p.join(',')).join(' ');
-    const poly = el('polygon', { class: `hex ${hx.resource}${state.custom ? ' editable' : ''}${state.custom && state.numHex === hx.id ? ' sel' : ''}`, points: pts }, el('title', {}, `${NAMES[hx.resource]}${hx.number ? ' ' + hx.number : ''}`));
-    if (state.custom) poly.addEventListener('click', () => hexClick(hx.id));
+    const poly = el('polygon', { class: `hex ${hx.resource}${state.custom ? ' editable' : ''}${state.custom && state.numHex === hx.id ? ' sel' : ''}`, points: pts, 'data-hex': hx.id }, el('title', {}, `${NAMES[hx.resource]}${hx.number ? ' ' + hx.number : ''}`));
+    if (state.custom && state.tool && state.tool !== 'port') svgButton(poly, `Hex ${hx.id + 1}: ${NAMES[hx.resource]}${hx.number ? ' ' + hx.number : ', no number'}. ${state.tool === 'number' ? 'Set number' : 'Paint ' + NAMES[state.tool]}`, () => hexClick(hx.id));
     g.append(poly);
     if (hx.resource !== 'blank') g.append(el('text', { class: 'terrain-label', x: hx.x, y: hx.y + .65, 'aria-hidden': 'true' }, NAMES[hx.resource]));
     if (hx.number) {
@@ -145,7 +153,7 @@ function drawBoard() {
     const [a, b] = board.graph.edges[eid].v.map(i => board.graph.vertices[i]);
     const hit = el('line', { class: 'coast-hit' + (board.harbors[eid] ? '' : ' empty'), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'data-edge': eid });
     hit.append(el('title', {}, board.harbors[eid] ? `Harbour: ${board.harbors[eid]} — tap to change` : 'Tap to add a harbour'));
-    hit.addEventListener('click', () => cycleHarbor(eid));
+    svgButton(hit, `Coastal edge ${eid}: ${board.harbors[eid] || 'no harbour'}. Change harbour`, () => cycleHarbor(eid));
     g.append(hit);
   }
   // Grow the frame to fit the labels (they may sit further out than the fixed padding allows).
@@ -157,6 +165,7 @@ function drawBoard() {
   svg.append(el('g', { id: 'marks' }));
   svg.append(el('g', { id: 'hits' }));
   fitBoard();
+  if (focusTarget) svg.querySelector(focusTarget + '[tabindex="0"]')?.focus({ preventScroll: true });
 }
 // Two-column layout: cap the board so it fits the viewport height (the whole board and the panel
 // visible on load). Single-column: full width, the page scrolls.
@@ -238,7 +247,7 @@ const unlocked = n => n <= maxCleared() + 1;
 function gotoLevel(n) { state.stage = n; state.attempts = 0; newStageBoard(); }
 
 // ---- Drill (stages) -----------------------------------------------------------
-let freePlay = null;   // the settings you had before entering the drill
+let freePlay = null;   // the board, settings and action history before entering the drill
 function newStageBoard() {
   const st = stageFor(state.stage, table());
   const f = findSeed(st, randomSeed);
@@ -249,11 +258,11 @@ function newStageBoard() {
 // Drill on = set your table first (players + C&K stay live in the bar, everything else locks); Start begins
 // the ladder at the next open level for that table. A drill=1&level=N link skips the setup and uses its table.
 function setDrill(on) {
-  if (on && state.custom) { state.custom = false; state.tool = null; state.numHex = null; }
+  if (on) { freePlay = structuredClone(state); state.custom = false; state.tool = null; state.numHex = null; }
   state.drill = on; state.drillSetup = on; state.answered = null; state.attempts = 0; state.pick = null; state.mode = 'me';
   state.me = []; state.opp = []; state.history = [];
-  if (on) { freePlay = { players: state.players, seat: state.seat, cak: state.cak, balanced: state.balanced, setup: state.setup }; controls(); rebuild(); }
-  else { if (freePlay) Object.assign(state, freePlay); freePlay = null; state.seed = randomSeed(); controls(); rebuild(); }
+  if (!on) { if (freePlay) Object.assign(state, freePlay); else state.seed = randomSeed(); freePlay = null; }
+  controls(); rebuild();
 }
 // ---- Your board (enter the board in front of you) -----------------------------
 const HARBOR_CYCLE = [null, '3:1', 'wood', 'brick', 'wheat', 'sheep', 'ore'];
@@ -267,7 +276,7 @@ function setCustom(on) {
 function setTool(t) { state.tool = state.tool === t ? null : t; state.numHex = null; state.pick = null; controls(); rebuild(); }
 function hexClick(i) {
   if (!state.tool || state.tool === 'port') return;
-  if (state.tool === 'number') { state.numHex = state.numHex === i ? null : i; rebuild(); return; }
+  if (state.tool === 'number') { state.numHex = state.numHex === i ? null : i; rebuild(); $('.picker button[aria-pressed="true"]')?.focus(); return; }
   const h = state.customHexes[i] || (state.customHexes[i] = { resource: 'blank', number: null });
   h.resource = state.tool; if (state.tool === 'desert' || state.tool === 'blank') h.number = null;
   rebuild();
@@ -344,7 +353,7 @@ function placedVerdicts() {
 const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdict ${g.tier}"><h2>${heading} <span>#${g.rank} of ${g.total} · ${g.pct}% of best</span></h2>
       <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
-      ${diff.length ? `<p class="sub"><b>What the best corner had that this lacks:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
+      ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
       <div class="stat"><span>Score <b>${r.score.toFixed(1)}</b></span><span>Pips <b>${r.pips}</b></span></div></div>`;
 const list = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const describe = r => `${list(Object.entries(r.prod).map(([k, p]) => `${p} ${k}`))}${r.numbers.length ? ' · numbers ' + r.numbers.slice().sort((a, b) => a - b).join(', ') : ''}`;
@@ -369,6 +378,8 @@ function render() {
   $('#plan-note').textContent = `${plan.label}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${HEUR} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}`;
   drawMarks();
   const panel = $('#panel');
+  const active = panel.querySelector(':focus');
+  const focusTarget = active?.id ? `#${active.id}` : active?.matches('.picker button') ? `.picker button[data-num="${active.dataset.num}"]` : active?.matches('.track button') ? `.track button[data-level="${active.dataset.level}"]` : null;
   const best = ranking[0];
   const stage = state.me.length === 0 ? 'first' : state.me.length === 1 ? 'second' : 'done';
   const total = ranking.length;
@@ -393,7 +404,7 @@ function render() {
     const top = Math.min(MAX_LEVEL, Math.max(STAGES.length, state.stage, maxCleared()));
     const cl0 = cleared();
     out += html`<div class="card"><h2>Levels <span>${cl0.filter(x => x <= STAGES.length).length} of ${STAGES.length} cleared · ${esc(tableLabel(table()))}</span></h2>
-      <ol class="track">${Array.from({ length: top }, (_, i) => i + 1).map(n => { const cl = cl0.includes(n), cur = n === state.stage, open = unlocked(n) || cur; return `<li class="${cl ? 'cleared' : ''}${cur ? ' current' : ''}${open || cl ? '' : ' locked'}" data-level="${n}" title="${esc(stageFor(n, table()).title)}" aria-current="${cur}">${cl ? '⚑' : n}</li>`; }).join('')}</ol>
+      <ol class="track">${Array.from({ length: top }, (_, i) => i + 1).map(n => { const cl = cl0.includes(n), cur = n === state.stage, open = unlocked(n) || cur; const title = esc(stageFor(n, table()).title); return `<li class="${cl ? 'cleared' : ''}${cur ? ' current' : ''}${open || cl ? '' : ' locked'}" data-level="${n}"><button type="button" data-level="${n}" title="${title}" aria-label="Level ${n}: ${title}${cl ? ', cleared' : ''}"${cur ? ' aria-current="step"' : ''}${open || cl ? '' : ' disabled'}>${cl ? '⚑' : n}</button></li>`; }).join('')}</ol>
       <p class="sub" style="margin:8px 0 0">Easy on the left, hard on the right. A flag is a cleared level; you can replay any of them. Progress is kept per table. <a href="#" id="restart-levels">Start this table over</a></p></div>`;
   } else {
     if (state.custom) {
@@ -401,7 +412,7 @@ function render() {
       const sel = state.numHex !== null ? board.hexes[state.numHex] : null;
       const tools = [['wood', 'Wood'], ['brick', 'Brick'], ['wheat', 'Wheat'], ['sheep', 'Sheep'], ['ore', 'Ore'], ['desert', 'Desert'], ['number', 'Numbers'], ['port', 'Ports']];
       out += html`<div class="card edit lead"><h2>Your board <span>enter the board in front of you</span></h2>
-        <p class="sub">Pick a paint, then tap hexes. <b>Numbers</b>: tap a hex, then its token. <b>Ports</b>: tap a coastal edge to cycle 3:1, wood, brick, wheat, sheep, ore, none. The ranking updates as you go and the link carries the board.</p>
+        <p class="sub">Pick a paint, then tap hexes. <b>Numbers</b>: tap a hex, then its token. <b>Ports</b>: tap a coastal edge to cycle 3:1, wood, brick, wheat, sheep, ore, none. You can also Tab to a hex or coastal edge and press Enter or Space; Escape returns from the number picker to the hex. The ranking updates as you go and the link carries the board.</p>
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
         ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         <p class="sub check ${notes.length ? '' : 'ok'}">${notes.length ? notes.map(esc).join(' ') : 'Matches the official box.'}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p>
@@ -435,7 +446,7 @@ function render() {
       <p class="sub" id="pick-resources">${esc(describe(r))}</p>
       <div class="pick-actions"><button class="btn" id="keep" data-corner="${r.id}" aria-describedby="pick-resources">Keep as ${stage} settlement</button><button class="btn ghost" id="cancel-pick">Cancel</button></div>
       ${reveal() ? '<details class="analysis-details" data-disclosure="pick"><summary>Why this corner?</summary>' + reasons(r) : `<p class="sub">${state.drill ? 'Score and reasons appear once you commit.' : 'Turn on <b>Show best</b> for the score and reasons, or commit to see the verdict.'}</p>`}
-      ${!reveal() ? '' : g.rank === 1 ? `<p class="sub"><b>${idx === 1 ? 'That is the top corner.' : 'Tied with the top corner.'}</b></p>` : `<p class="sub"><b>What #1 has that this lacks</b> (${(best.score - r.score).toFixed(1)} points behind):</p><ul class="why">${(diff.length ? diff : ['Same production, but #1\u2019s resources weigh more on this board: scarcer, or more valuable under the current plan.']).map(d => `<li>${esc(d)}</li>`).join('')}</ul>`}
+      ${!reveal() ? '' : g.rank === 1 ? `<p class="sub"><b>${idx === 1 ? 'That is the top corner.' : 'Tied with the top corner.'}</b></p>` : `<p class="sub"><b>Why #1 scores higher</b> (${(best.score - r.score).toFixed(2)} points behind):</p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>`}
       ${reveal() ? roadLine(r.id) : ''}
       ${reveal() ? `<div class="stat"><span>Score <b>${r.score.toFixed(1)}</b></span><span>Pips <b>${r.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : ''}</div>` : ''}
       ${reveal() ? '</details>' : ''}</div>`;
@@ -485,7 +496,7 @@ function render() {
   }
   const nx = $('#next-stage'); if (nx) nx.onclick = nextStage;
   const sc = $('#scramble'); if (sc) sc.onclick = newStageBoard;
-  for (const li of panel.querySelectorAll('.track li')) if (!li.classList.contains('locked')) li.onclick = () => gotoLevel(Number(li.dataset.level));
+  for (const button of panel.querySelectorAll('.track button:not(:disabled)')) button.onclick = () => gotoLevel(Number(button.dataset.level));
   const rs = $('#restart-levels'); if (rs) rs.onclick = e => { e.preventDefault(); delete progress.ladders[ladderKey(table())]; saveProgress(progress); gotoLevel(1); };
   const sd = $('#start-drill'); if (sd) sd.onclick = startDrill;
   for (const b of panel.querySelectorAll('.palette button')) b.onclick = () => setTool(b.id.slice('tool-'.length));
@@ -499,6 +510,7 @@ function render() {
     li.onclick = () => { if (state.mode === 'me' && li.dataset.id !== '') previewPick(Number(li.dataset.id)); };
   }
   fitBoard();   // the header note may have wrapped and moved the board
+  if (focusTarget) panel.querySelector(focusTarget)?.focus({ preventScroll: true });
 }
 
 // ---- Controls ----------------------------------------------------------------
@@ -534,7 +546,11 @@ $('#drill').onclick = () => setDrill(!state.drill);
 $('#practice').onclick = () => { if (state.drill) setDrill(false); else if (state.custom) setCustom(false); };
 $('#custom').onclick = () => setCustom(!state.custom);
 $('#settings').addEventListener('toggle', fitBoard);
-$('#panel').addEventListener('keydown', e => { if (e.key === 'Escape' && state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); } });
+$('#panel').addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); }
+  else if (state.numHex !== null && e.target.closest('.picker')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); $(`.hex[data-hex="${id}"]`)?.focus(); }
+});
 $('#new').onclick = () => { if (inLevel()) return newStageBoard(); if (state.custom) return fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true })); state.seed = randomSeed(); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
 $('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.test(t) && Number(t) < 4294967296) { state.seed = Number(t); state.answered = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); } else controls(); };
 setupThemeSwitch($('#theme'));

@@ -17,7 +17,7 @@ export const SETUPS = {
     layout: 'ext56',
     tiles: { wood: 6, sheep: 6, wheat: 6, brick: 5, ore: 5, desert: 2 },
     tokens: [2, 5, 4, 6, 3, 9, 8, 11, 11, 10, 6, 3, 8, 4, 8, 10, 11, 12, 10, 5, 4, 9, 5, 9, 12, 3, 2, 6],
-    harbors: ['3:1', '3:1', '3:1', '3:1', '3:1', '3:1', 'wood', 'brick', 'wheat', 'sheep', 'ore'],
+    harbors: ['3:1', '3:1', '3:1', '3:1', '3:1', 'sheep', 'wood', 'brick', 'wheat', 'sheep', 'ore'],
   },
 };
 
@@ -214,5 +214,11 @@ export function checkTiles(board) {
   for (const t of Object.keys(want).map(Number).sort((a, b) => a - b)) if ((got[t] || 0) !== want[t]) notes.push(`number ${t}: ${got[t] || 0} placed, the box has ${want[t]}.`);
   const nh = Object.keys(board.harbors).length;
   if (nh !== spec.harbors.length) notes.push(`${nh} harbour${nh === 1 ? '' : 's'} placed, the box has ${spec.harbors.length}.`);
+  const harborTypes = Object.values(board.harbors);
+  for (const type of new Set(spec.harbors)) {
+    const expected = spec.harbors.filter(t => t === type).length;
+    const actual = harborTypes.filter(t => t === type).length;
+    if (actual !== expected) notes.push(`${type === '3:1' ? type : `2:1 ${type}`} harbours: ${actual} placed, the box has ${expected}.`);
+  }
   return notes;
 }

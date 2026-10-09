@@ -105,6 +105,32 @@ test('compare() names what the best corner has that the pick lacks', () => {
   assert.ok(diff.length >= 1 && /pips versus your/.test(diff[0]));
 });
 
+test('compare explains a weighted-production preference when the alternative has more raw pips', () => {
+  const ranking = rankSpots(generateBoard({ seed: 1 }), S({ players: 3 }));
+  const best = ranking[0], pick = ranking.find(r => r.id === 44);
+  assert.equal(best.pips, 11);
+  assert.equal(pick.pips, 12);
+  const explanation = compare(best, pick).join(' ');
+  assert.match(explanation, /11.*12.*pips/);
+  assert.match(explanation, /[Ww]eighted production.*12\.35.*12\.15/);
+});
+
+test('compare identifies a small expansion advantage when both corners already have expansion room', () => {
+  const best = { id: 1, score: 12.35, pips: 10, parts: [
+    { k: 'production', v: 10 }, { k: 'pair', v: .6 }, { k: 'port', v: 1 }, { k: 'expansion', v: .75 },
+  ] };
+  const pick = { id: 2, score: 12.1, pips: 10, parts: [
+    { k: 'production', v: 10 }, { k: 'pair', v: .6 }, { k: 'port', v: 1 }, { k: 'expansion', v: .5 },
+  ] };
+  assert.match(compare(best, pick).join(' '), /[Rr]oom to grow.*0\.75.*0\.50/);
+});
+
+test('compare does not claim that an equally scored corner is better', () => {
+  const best = { id: 1, score: 10, pips: 10, parts: [{ k: 'production', v: 10 }] };
+  const tied = { id: 2, score: 10, pips: 9, parts: [{ k: 'production', v: 9 }, { k: 'port', v: 1 }] };
+  assert.deepEqual(compare(best, tied), []);
+});
+
 test('pip table is the two-dice distribution', () => {
   assert.equal(PIPS[6], 5); assert.equal(PIPS[2], 1); assert.equal(PIPS[9], 4);
 });

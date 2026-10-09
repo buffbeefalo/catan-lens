@@ -52,8 +52,26 @@ how much competitive weight they carry.
     carry equal and opposite weight (1e8 / −1e8), a small bonus per distinct resource, and "reachable production"
     one road away (1e4) far above "buildable nodes" (1e3) — i.e. a strong bot also values where its roads can
     reach next. https://github.com/bcollazo/catanatron (catanatron/players/value.py)
+14. **Official CATAN 5–6 Player Extension rules**, 2022 revision, page 3 (published March 2024).
+    The extra frame pieces add one 2:1 wool (sheep) harbour and one 3:1 harbour to the base game.
+    The combined board therefore has five 3:1 harbours, two sheep harbours, and one each for wood,
+    brick, wheat and ore. https://www.catan.com/sites/default/files/2024-03/Catan%20Game%205-6%20Rules%202022%20240313.pdf
 
 ## What is source-backed and what is the author's choice
+
+**Harbour correction, 2026-10-09.** Generated 5–6-player boards previously had six 3:1 harbours and
+only one sheep harbour. The distribution now matches source 14. Tests check the complete type counts
+against literal rulebook expectations. Old 5–6-player seed links now use the corrected distribution;
+custom-board links carry their own harbours and remain unchanged. Base-game boards and scoring weights
+are unaffected. The custom-board box check now compares each harbour type as well as the total count,
+so a board with nine ore harbours can no longer claim to match the base-game box.
+
+**Comparison correction, 2026-10-09.** When two corners shared the same kinds of bonuses, the old
+comparison could fall back to a claim of “same production” even when their raw pips differed. The
+comparison now uses the existing numerical score terms to explain the advantage, acknowledges when
+the alternative has more raw production, and reports small score gaps to two decimal places. This changes
+the explanation, not the rankings or weights. The label describes why the top corner scores higher;
+it no longer implies that every difference is something the other corner entirely lacks.
 
 The sources give directions and a few thresholds (production first; wheat/ore over sheep; about 10 pips per
 spot; a 2:1 port needs plenty of that resource behind it — the sources say roughly 7+, the app credits a fed port from 5 pips (author's choice, so 4-player coastal corners are not written off); count marquee numbers; spread your numbers; ore first in C&K).

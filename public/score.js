@@ -168,10 +168,10 @@ export function rankSpots(board, settings, { mine = [], occupied = [] } = {}) {
   return legal.map(v => scoreVertex(board, settings, v, { mine, occupied, facts, maxPips })).sort((a, b) => b.score - a.score || b.pips - a.pips || a.id - b.id);
 }
 
-// Compare a chosen corner against the best one: which reasons the best has that the pick lacks.
+// Explain a higher-ranked corner using its existing score terms.
 export function compare(best, pick) {
   const out = [];
-  if (best.id === pick.id) return out;
+  if (best.id === pick.id || best.score <= pick.score) return out;
   if (best.pips > pick.pips) out.push(`${best.pips} pips versus your ${pick.pips}.`);
   for (const k of ['pair', 'port', 'expansion', 'complement', 'commodity']) {
     const b = best.parts.filter(p => p.k === k).reduce((s, p) => s + (p.v || 0), 0);
@@ -181,6 +181,21 @@ export function compare(best, pick) {
   const bp = pick.parts.filter(p => p.k === 'repeat').reduce((s, p) => s + (p.v || 0), 0);
   const bb = best.parts.filter(p => p.k === 'repeat').reduce((s, p) => s + (p.v || 0), 0);
   if (bp < bb) out.push('Your pick doubles up on a number the best spot does not.');
+  if (!out.length && best.score > pick.score) {
+    const labels = {
+      production: 'Weighted production after resource value and scarcity',
+      pair: 'Resource pairs', port: 'Harbour access', expansion: 'Room to grow',
+      complement: 'Covering missing resources', commodity: 'Commodity hexes', repeat: 'Number diversity',
+    };
+    const advantages = Object.entries(labels).map(([k, label]) => {
+      const value = r => r.parts.filter(p => p.k === k).reduce((sum, p) => sum + (p.v || 0), 0);
+      const b = value(best), p = value(pick);
+      return { label, b, p, delta: round(b - p) };
+    }).filter(x => x.delta > 0).sort((a, b) => b.delta - a.delta);
+    if (best.pips < pick.pips) out.push(`#1 has ${best.pips} raw pips and your pick has ${pick.pips} raw pips; your pick produces more cards on average before any robber effects.`);
+    for (const x of advantages) out.push(`${x.label}: ${x.b.toFixed(2)} score points for #1 versus ${x.p.toFixed(2)} for your pick.`);
+    if (!advantages.length) out.push(`A near tie: the total heuristic score is ${best.score.toFixed(2)} versus ${pick.score.toFixed(2)}. The individual terms round to the same values.`);
+  }
   return out;
 }
 

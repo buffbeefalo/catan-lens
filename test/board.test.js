@@ -11,8 +11,10 @@ for (const setup of ['base', 'ext56']) {
     const nums = b.hexes.filter(h => h.resource !== 'desert').map(h => h.number);
     assert.deepEqual(counts(nums), counts(SETUPS[setup].tokens));
     for (const h of b.hexes) assert.equal(h.number === null, h.resource === 'desert');
-    assert.deepEqual(counts(Object.values(b.harbors)).ore, 1);
-    assert.equal(Object.keys(b.harbors).length, SETUPS[setup].harbors.length);
+    const expectedHarbors = setup === 'base'
+      ? { '3:1': 4, wood: 1, brick: 1, wheat: 1, sheep: 1, ore: 1 }
+      : { '3:1': 5, wood: 1, brick: 1, wheat: 1, sheep: 2, ore: 1 };
+    assert.deepEqual(counts(Object.values(b.harbors)), expectedHarbors);
     const perim = new Set(b.graph.perimeter);
     for (const e of Object.keys(b.harbors)) assert.ok(perim.has(Number(e)), 'harbours sit on coastal edges');
   });
@@ -128,4 +130,16 @@ test('checkTiles: compares what was entered with the official box, and stays qui
   assert.ok(notes.some(n => /ore/i.test(n)), 'mentions the extra ore');
   assert.ok(notes.some(n => /\b8\b/.test(n)), 'mentions the token count');
   assert.ok(checkTiles(boardFrom({ setup: 'base', hexes: gen.hexes, harbors: {} })).some(n => /harbou?r/i.test(n)), 'mentions missing harbours');
+});
+
+test('checkTiles reports wrong harbour types even when the total number is right', () => {
+  for (const setup of ['base', 'ext56']) {
+    const gen = generateBoard({ setup, seed: 42 });
+    assert.deepEqual(checkTiles(gen), []);
+    const harbors = Object.fromEntries(Object.keys(gen.harbors).map(eid => [eid, 'ore']));
+    const notes = checkTiles(boardFrom({ setup, hexes: gen.hexes, harbors }));
+    assert.ok(notes.some(n => /ore.*the box has 1/.test(n)), 'reports the excess ore harbours');
+    assert.ok(notes.some(n => /sheep.*0.*the box has/.test(n)), 'reports the missing sheep harbours');
+    assert.ok(notes.some(n => /3:1.*0.*the box has/.test(n)), 'reports the missing general harbours');
+  }
 });

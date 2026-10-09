@@ -70,12 +70,13 @@ const assert = require('node:assert/strict');
   await showSettings(page); await page.click('#players button:nth-child(4)');
   assert.equal(await page.$$eval('#svg .hex', a => a.length), 30); assert.equal(q().players, '6'); assert.match(q().b, /h6/);
   await showSettings(page); await page.click('#players button:nth-child(2)');
-  // drill on leaves Your board; drill off returns to a random board, not the entered one
+  // drill temporarily leaves Your board; returning restores the entered board
+  const savedBoard = q().b;
   await page.click('#drill'); assert.equal(await page.$eval('#custom', b => b.getAttribute('aria-pressed')), 'false'); assert.ok(await disabled('#custom')); assert.match(await text(), /set your table/);
-  await page.click('#drill'); assert.equal(q().b, undefined); assert.ok(q().seed);
+  await page.click('#drill'); assert.equal(q().b, savedBoard); assert.equal(await page.$eval('#custom', b => b.getAttribute('aria-pressed')), 'true');
   // Your board off from free play → random board with a seed
-  await page.click('#custom'); assert.ok(q().b); await page.click('#custom'); assert.equal(q().b, undefined); assert.ok(q().seed); assert.ok(!(await disabled('#seed')));
-  console.log('mode switches: drill leaves Your board; off returns to random boards');
+  await page.click('#custom'); assert.equal(q().b, undefined); assert.ok(q().seed); assert.ok(!(await disabled('#seed')));
+  console.log('mode switches: drill preserves Your board; explicitly leaving Your board returns to a random board');
   // hostile link: bad board string is ignored, page stays up
   await page.goto(BASE + '?players=4&b=zzz&h=1:q', { waitUntil: 'networkidle' });
   assert.equal(q().b, undefined); assert.equal(await page.$eval('#custom', b => b.getAttribute('aria-pressed')), 'false');

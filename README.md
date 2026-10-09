@@ -44,7 +44,7 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 <td width="50%"><img src="docs/media/feature-draft.jpg" alt="Projected placements: numbered badges on the board for every seat's likely picks"></td>
 </tr>
 <tr>
-<td><b>The best corner, explained.</b> Random boards follow the official setup (3–4 players, or the 5–6 player board). A gold ring marks the best open corner; <i>Why this corner?</i> gives the reasons in plain sentences. Click any other corner for a grade and exactly what the best one has that yours lacks.</td>
+<td><b>The best corner, explained.</b> Random boards follow the official setup (3–4 players, or the 5–6 player board). A gold ring marks the best open corner; <i>Why this corner?</i> gives the reasons in plain sentences. Click any other corner for a grade and an explanation of the tradeoffs behind its score.</td>
 <td><b>Plays out the draft.</b> Mark opponents as they place and the ranking only counts what is still open. <i>Projected placements</i> plays the snake draft for every seat, and the suggested starting road avoids corners others are likely to take first.</td>
 </tr>
 <tr>

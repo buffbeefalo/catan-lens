@@ -15,6 +15,9 @@ rulebook asks. Every board comes from a seed, so a link always reopens the exact
 
 You can also enter the real board in front of you with **Your board**: paint the resources, set the
 number tokens, tap the coast to place harbours. Everything else in the app then works on your board.
+For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
+number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
+Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
 
 ## 2. The score for one corner
 
@@ -44,7 +47,11 @@ stays dominant.
 - **Ranking.** Every legal corner (the distance rule: no settlement next to another) is scored and
   sorted. The best one gets a gold ring on the map and a "Best settlement" card.
 - **Your pick.** Click any corner to preview it: the app grades it (Great / Good / Fair / Weak), shows
-  its rank and its score as a percentage of the best, and lists what the best corner has that yours lacks.
+  its rank and its score as a percentage of the best, and explains why a higher-ranked corner scores
+  better. When the choice comes down to small differences between the same kinds of bonuses, it compares
+  the actual score terms. A corner can produce more raw cards yet score lower because of its resources;
+  the explanation acknowledges that tradeoff. Equal scores share the top rank without a claim that one
+  tied corner is better.
 - **Opponents.** Switch to "Mark opponent" and click where others placed; the ranking only counts what is
   still open.
 - **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app plays
@@ -59,6 +66,11 @@ Sixteen levels, easy to hard, on a table you choose first (3–6 players, base g
 weighting). Hints stay hidden until you commit. Early levels accept any of the top three corners on boards
 with an obvious winner; later levels demand the exact best corner on near-ties, from any seat, for the
 first or the second settlement. Miss, and you get a new board at the same level.
+The level track uses keyboard buttons: cleared levels can be replayed with Enter or Space, while locked
+levels remain disabled until you clear the preceding level.
+Leaving Drill restores the board, table settings and settlement order you were exploring before entering
+it, including a hand-entered board. This return point lasts for the current page session; a drill link
+contains the drill itself, not the earlier exploration board.
 
 ## 5. Does following it actually win games?
 
