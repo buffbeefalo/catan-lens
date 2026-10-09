@@ -304,6 +304,23 @@ test('unreadable saved progress is left untouched until an explicit saving actio
   assert.equal(await page.locator('.progress-warning').count(), 0);
 });
 
+test('near-tie drill feedback shows the point gap and precise score only after committing', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '4-base': Array.from({ length: 14 }, (_, i) => i + 1) } })));
+  await page.goto(base + '?players=4&drill=1&level=15&seed=1', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Corner 31', exact: true }).press('Enter');
+  assert.doesNotMatch(await page.locator('.pick-card').innerText(), /99\.5%|11\.98|0\.06 points/);
+  await page.locator('#keep').click();
+  const result = await page.locator('.card.drill.fail .grade').innerText();
+  assert.match(result, /99\.5%/);
+  assert.match(result, /0\.06 points/);
+  assert.match(result, /close model score/i);
+  assert.doesNotMatch(result, /100%/);
+  assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score 11.98');
+  assert.match(await page.locator('.verdict .grade').innerText(), /Good pick/);
+  assert.equal(await page.locator('#next-stage').count(), 0);
+});
+
 test('editing a custom board preserves placement order for Undo', async t => {
   const page = await open(t, { width: 1400, height: 900 });
   await page.locator('#custom').click();
@@ -562,7 +579,7 @@ test('missing harbours require a choice and every advice surface respects their 
     assert.equal(await page.locator('.harbor').count(), Object.keys(harbors).length);
     assert.match(await page.locator('#harbor-status').innerText(), /excluded/);
     assert.equal(await page.locator('.best-ring').first().getAttribute('data-corner'), String(expected[0].id));
-    assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score ' + scoreVertex(withoutPorts, settings, 9).score.toFixed(1));
+    assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score ' + scoreVertex(withoutPorts, settings, 9).score.toFixed(2));
     const draft = simulateDraft(withoutPorts, settings, { me: [9], opp: [] }).filter(d => !d.actual).map(d => String(d.id));
     assert.deepEqual(await page.locator('.rank.draft li[data-id]:not([data-id=""])').evaluateAll(nodes => nodes.map(n => n.dataset.id)), draft);
     const road = suggestRoad(withoutPorts, settings, 9, { mine: [9], occupied: [9] });

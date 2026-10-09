@@ -110,8 +110,10 @@ export function judge(stage, g) {
   const top = stage.pass.top;
   const pass = g.rank <= top;
   const need = top === 1 ? 'the best corner' : `one of the top ${top} corners`;
+  const gap = Number.isFinite(g.gap) ? ` ${g.gap.toFixed(2)} points below the top score.` : '';
+  const close = g.gap > 0 && g.pct >= 99 ? ' This is a close model score; real-game outcomes can differ.' : '';
   const text = pass
     ? (g.rank === 1 ? 'You found the best corner.' : `Rank ${g.rank} — inside the top ${top}, that clears it.`)
-    : `Rank ${g.rank} of ${g.total} at ${g.pct}% of the best. This stage needs ${need}.`;
+    : `Rank ${g.rank} of ${g.total} at ${g.pct}% of the best.${gap} This stage needs ${need}.${close}`;
   return { pass, text, need };
 }

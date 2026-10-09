@@ -97,6 +97,14 @@ The N-per-player idea follows the seat-based advice in R10 (what is left when yo
 many players pick before you); the 90% line is the author's choice. The percentage is the pick's score as a
 share of the best open corner's score, not a win probability.
 
+**Grade-display correction, 2026-10-09.** Whole-percent rounding previously displayed some lower-ranked
+picks as 100% and promoted scores just below 90% into the Fair grade. Percentages now round down to
+hundredths using the scorer's existing hundredth-point units. Exact score ties still share rank 1 and
+100%; the grade boundary uses the actual score share. Cards show scores to two decimal places, and
+failed drills show their point gap. A miss within 1% of the top score is labelled a close model comparison
+(an author-chosen presentation threshold), without changing the drill target or implying a measured
+difference in winning chances. Rankings and scoring weights are unchanged.
+
 **Drill mode (added 2026-09-14 late) is a ladder over the same heuristic.** You set the TABLE before you start
 (2026-09-15: players 3–6 and the Cities & Knights weighting are chosen on a setup card; every level runs on that
 table and each table keeps its own progress track, so the ladder no longer switches tables on levels 1, 12–13 and

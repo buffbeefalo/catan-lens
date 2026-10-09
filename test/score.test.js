@@ -297,6 +297,21 @@ test('grade(): exact ties share rank 1 at 100%, and a pick outside the ranking i
   assert.equal(g.rank, r.length + 1); assert.equal(g.tier, 'weak'); assert.equal(g.pct, 0);
 });
 
+test('grade(): percentages preserve non-ties and do not round a pick across the 90 percent boundary', () => {
+  const near = [{ id: 0, score: 12.04 }, { id: 1, score: 11.98 }];
+  const g = grade(near[1], near, 4);
+  assert.equal(g.pct, 99.5);
+  assert.equal(g.gap, 0.06);
+  const veryClose = [{ id: 0, score: 30.89 }, { id: 1, score: 30.88 }];
+  assert.ok(grade(veryClose[1], veryClose, 4).pct < 100);
+  for (const [best, pick, tier] of [[10, 8.99, 'weak'], [10, 9, 'fair'], [9, 8.1, 'fair'], [30.89, 27.8, 'weak']]) {
+    const ranking = [best, best - 0.01, best - 0.02, best - 0.03, pick].map((score, id) => ({ id, score }));
+    const result = grade(ranking[4], ranking, 4);
+    assert.equal(result.tier, tier, `${pick} out of ${best}`);
+    assert.equal(result.pct >= 90, tier === 'fair');
+  }
+});
+
 test('R7: a nearby harbour explanation names the roads and settlement needed without changing its score', () => {
   const board = generateBoard({ seed: 129 });
   const result = scoreVertex(board, { players: 4, seat: 3, cak: false }, 43, { mine: [9], occupied: [9] });

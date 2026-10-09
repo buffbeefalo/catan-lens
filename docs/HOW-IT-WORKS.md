@@ -80,6 +80,8 @@ stays dominant.
   the explanation acknowledges that tradeoff. Equal scores share the top rank without a claim that one
   tied corner is better. When number repetition matters, the comparison gives each corner's actual
   penalty; both corners can repeat the same number, but one may repeat it more often.
+  Scores show hundredths. Percentages are rounded down to at most two decimal places, so a lower
+  score cannot look like a 100% tie or cross the 90% grade boundary through display rounding.
 - **Opponents.** Switch to "Mark opponent" and click where others placed; the ranking only counts what is
   still open.
 - **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app plays
@@ -94,6 +96,9 @@ Sixteen levels, easy to hard, on a table you choose first (3–6 players, base g
 weighting). Hints stay hidden until you commit. Early levels accept any of the top three corners on boards
 with an obvious winner; later levels demand the exact best corner on near-ties, from any seat, for the
 first or the second settlement. Miss, and you get a new board at the same level.
+After a miss, the result shows the point gap to the top score. A pick within 1% of the best score is
+identified as a close model comparison; it can remain a good real-game choice even though the exercise
+requires the app's exact top rank. Neither the score share nor a small gap measures winning chances.
 The level track uses keyboard buttons: cleared levels can be replayed with Enter or Space, while locked
 levels remain disabled until you clear the preceding level.
 Progress is saved in this browser, separately for each table. If reading or saving is blocked, a visible

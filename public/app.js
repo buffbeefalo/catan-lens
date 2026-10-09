@@ -410,7 +410,7 @@ const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdic
       <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
       ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
-      <div class="stat"><span>Score <b>${r.score.toFixed(1)}</b></span><span>Pips <b>${r.pips}</b></span></div></div>`;
+      <div class="stat"><span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span></div></div>`;
 const list = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const describe = r => `${list(Object.entries(r.prod).map(([k, p]) => `${p} ${k}`))}${r.numbers.length ? ' · numbers ' + r.numbers.slice().sort((a, b) => a - b).join(', ') : ''}`;
 function cornerDesc(id) {
@@ -526,7 +526,7 @@ function render() {
       ${state.mode === 'me' && !state.tool ? '<button class="btn ghost preview-best" id="preview-best">Try this corner</button>' : ''}
       <details class="analysis-details" data-disclosure="best"><summary>Why this corner?</summary>
       ${reasons(best)}${roadLine(best.id)}
-      <div class="stat"><span>Score <b>${best.score.toFixed(1)}</b></span><span>Pips <b>${best.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(best.startingCards) || 'none')}</b></span>` : ''}</div></details></div>`;
+      <div class="stat"><span>Score <b>${best.score.toFixed(2)}</b></span><span>Pips <b>${best.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(best.startingCards) || 'none')}</b></span>` : ''}</div></details></div>`;
   }
 
   if (state.pick !== null && stage !== 'done') {
@@ -541,7 +541,7 @@ function render() {
       ${reveal() ? '<details class="analysis-details" data-disclosure="pick"><summary>Why this corner?</summary>' + reasons(r) : `<p class="sub">${state.drill ? 'Score and reasons appear once you commit.' : 'Turn on <b>Show best</b> for the score and reasons, or commit to see the verdict.'}</p>`}
       ${!reveal() ? '' : g.rank === 1 ? `<p class="sub"><b>${idx === 1 ? 'That is the top corner.' : 'Tied with the top corner.'}</b></p>` : `<p class="sub"><b>Why #1 scores higher</b> (${(best.score - r.score).toFixed(2)} points behind):</p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>`}
       ${reveal() ? roadLine(r.id) : ''}
-      ${reveal() ? `<div class="stat"><span>Score <b>${r.score.toFixed(1)}</b></span><span>Pips <b>${r.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : ''}</div>` : ''}
+      ${reveal() ? `<div class="stat"><span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : ''}</div>` : ''}
       ${reveal() ? '</details>' : ''}</div>`;
   }
 
@@ -562,7 +562,7 @@ function render() {
     const canPick = d => !d.actual && state.mode === 'me' && stage !== 'done' && !(state.drill && state.answered !== null);
     out += html`<div class="card"><details class="draft-details" data-disclosure="draft"><summary>Projected placements</summary>
       <p class="sub">Seats pick 1 to ${state.players}, then back from ${state.players} to 1. Solid badges are first settlements, dashed are second. Your settlements and any opponent marks are counted in turn order; the rest is projected.</p>
-      <ol class="rank draft">${draft.map(d => `<li data-id="${canPick(d) ? d.id : ''}" class="${d.you ? 'you' : ''}${canPick(d) ? '' : ' fixed'}" aria-current="${state.pick === d.id}" >${canPick(d) ? '<button class="draft-choice">' : ''}<span class="n">${d.seat}${d.round === 2 ? '′' : ''}</span><span>${d.you ? '<b>You</b> · ' : ''}${esc(cornerDesc(d.id))}</span><span class="s">${d.actual ? 'placed' : d.score.toFixed(1)}</span>${canPick(d) ? '</button>' : ''}</li>`).join('')}</ol></details></div>`;
+      <ol class="rank draft">${draft.map(d => `<li data-id="${canPick(d) ? d.id : ''}" class="${d.you ? 'you' : ''}${canPick(d) ? '' : ' fixed'}" aria-current="${state.pick === d.id}" >${canPick(d) ? '<button class="draft-choice">' : ''}<span class="n">${d.seat}${d.round === 2 ? '′' : ''}</span><span>${d.you ? '<b>You</b> · ' : ''}${esc(cornerDesc(d.id))}</span><span class="s">${d.actual ? 'placed' : d.score.toFixed(2)}</span>${canPick(d) ? '</button>' : ''}</li>`).join('')}</ol></details></div>`;
   }
 
   out += html`<div class="card"><details data-disclosure="method"><summary>How the ranking works</summary>

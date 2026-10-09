@@ -208,7 +208,9 @@ export function grade(pick, ranking, players) {
   const found = ranking.some(r => r.id === pick.id);
   const rank = found ? 1 + ranking.filter(r => r.score > pick.score).length : total + 1;   // ties share the higher rank
   const best = ranking.length ? ranking[0].score : 0;
-  const pct = found && best > 0 ? Math.round(pick.score / best * 100) : found ? 100 : 0;
+  const bestUnits = Math.round(best * 100), pickUnits = Math.round(pick.score * 100);
+  const pct = found && bestUnits > 0 ? Math.floor(pickUnits * 10000 / bestUnits) / 100 : found ? 100 : 0;
+  const gap = found ? (bestUnits - pickUnits) / 100 : null;
   const tier = rank === 1 ? 'great' : rank <= players ? 'good' : pct >= 90 ? 'fair' : 'weak';
   const label = { great: 'Great pick', good: 'Good pick', fair: 'Fair pick', weak: 'Weak pick' }[tier];
   const why = {
@@ -217,7 +219,7 @@ export function grade(pick, ranking, players) {
     fair: `not in the top ${players}, but it still scores ${pct}% of the best corner.`,
     weak: `outside the top ${players} and only ${pct}% of the best corner.`,
   }[tier];
-  return { rank, total, pct, tier, label, why };
+  return { rank, total, pct, gap, tier, label, why };
 }
 
 // Project the whole opening draft: seats 1..N pick in order, then N..1 (the snake), each taking the

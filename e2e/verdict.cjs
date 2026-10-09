@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
   assert.equal(await page.$$eval('#svg line.road.me', a => a.length), 1, 'one suggested road drawn for the kept settlement');
   console.log('great first pick, verdict persists, starting road suggested');
   await page.$$eval('#svg .vx.legal', a => a[a.length - 1].dispatchEvent(new MouseEvent('click', { bubbles: true })));
-  const m = (await text()).match(/Your pick\s+#(\d+) of (\d+) · (\d+)% of best\s+(\w+) pick/); assert.ok(m);
+  const m = (await text()).match(/Your pick\s+#(\d+) of (\d+) · (\d+(?:\.\d+)?)% of best\s+(\w+) pick/); assert.ok(m);
   await page.click('#keep');
   t = await text(); assert.match(t, /Your second settlement[\s\S]*% of best[\s\S]*(Great|Good|Fair|Weak) pick/); assert.match(t, /Your opening/);
   if (m[1] !== '1') assert.match(t, /Why the top corner scores higher/);

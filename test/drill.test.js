@@ -113,3 +113,16 @@ test('judge: pass when the pick ranks within the stage rule, fail otherwise, and
   assert.equal(judge(hard, g1).pass, true); assert.equal(judge(hard, g3).pass, false);
   assert.match(judge(hard, g3).text, /best corner/);
 });
+
+test('near-tie drill feedback reports the real gap and distinguishes the model target from playing strength', () => {
+  const stage = stageFor(15, { players: 4, cak: false });
+  const { ranking } = setupStage(stage, 1);
+  const pick = ranking.find(r => r.id === 31);
+  assert.equal(ranking[0].score, 12.04);
+  assert.equal(pick.score, 11.98);
+  const result = judge(stage, grade(pick, ranking, 4));
+  assert.equal(result.pass, false, 'the exact-best exercise keeps its stated target');
+  assert.match(result.text, /0\.06 points/);
+  assert.match(result.text, /close model score/i);
+  assert.doesNotMatch(result.text, /100%/);
+});
