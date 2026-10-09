@@ -70,8 +70,8 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{o
 .tok-n.red{fill:var(--disc-red)}
 .pip{fill:var(--disc-ink)}.pip.red{fill:var(--disc-red)}
 .tok,.tok-n,.pip{pointer-events:none}
-.harbor{font-family:var(--ui);font-weight:600;font-size:.22px;text-anchor:middle;fill:var(--mut);letter-spacing:.02em}
-.harbor-line{stroke:var(--line2);stroke-width:.05;stroke-dasharray:.1 .08}
+.harbor{pointer-events:none;font-family:var(--ui);font-weight:600;font-size:.22px;text-anchor:middle;fill:var(--mut);letter-spacing:.02em}
+.harbor-line{pointer-events:none;stroke:var(--line2);stroke-width:.05;stroke-dasharray:.1 .08}
 .vx{fill:transparent;stroke:transparent;cursor:pointer}
 .vx.legal:hover{fill:var(--board-hover)}
 .vx.dead{cursor:not-allowed}

@@ -44,6 +44,11 @@ serve.js            zero-dependency local server (npm start)
    incomplete land also hides placed verdicts and combined-opening totals without deleting placements.
    Hints (ring, scores, projections, road) are drawn only when the
    current mode allows them (`reveal()`), so blind practice and unanswered drills leak nothing.
+4. Replacing a custom board or changing its layout checkpoints the existing URL with `pushState`.
+   Ordinary edits still use `replaceState`, preserving the recovery marker. Restore uses browser Back;
+   a `popstate` reload rebuilds the board from that history entry's URL, so recovery also survives refresh.
+   Tiles and coastal edge ids are never carried between the 19- and 30-hex graphs. Same-shape player-count
+   changes retain the board and placement order.
 
 ## Where to change things
 

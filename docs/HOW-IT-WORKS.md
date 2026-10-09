@@ -23,6 +23,12 @@ land readiness so the editor remains compact on a phone.
 For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
 number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
+Changing between the 19-hex and 30-hex layouts starts a blank board of the new shape. The app keeps
+the previous board in this tab's history: **Restore previous board** or the browser's Back button
+recovers its tiles, harbours, table settings and placements, even after a refresh. Start blank,
+Random board and leaving Your board for Explore provide the same recovery. A shared link contains
+only the current board; recovery history belongs to the original tab. Changing 3↔4 or 5↔6 players
+keeps the entered board and placements because its shape has not changed.
 
 ## 2. The score for one corner
 

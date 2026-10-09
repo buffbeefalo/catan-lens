@@ -68,10 +68,11 @@ const assert = require('node:assert/strict');
   await page.click('#tool-wheat'); await clickHex(9); await page.click('#tool-number'); await clickHex(9); await page.click('.picker button[data-num="6"]');
   assert.equal(await page.$$eval('#svg .tok', a => a.length), 1);
   console.log('blank board, one wheat 6 painted, no errors');
-  // players 6 → bigger board keeps the entered hexes and adds blanks
+  // players 6 → a fresh board of the new shape; the old layout stays recoverable
   await showSettings(page); await page.click('#players button:nth-child(4)');
-  assert.equal(await page.$$eval('#svg .hex', a => a.length), 30); assert.equal(q().players, '6'); assert.match(q().b, /h6/);
-  await showSettings(page); await page.click('#players button:nth-child(2)');
+  assert.equal(await page.$$eval('#svg .hex', a => a.length), 30); assert.equal(q().players, '6'); assert.equal(q().b, '-'.repeat(30));
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.click('#restore-board')]);
+  assert.equal(q().players, '4'); assert.match(q().b, /h6/);
   // drill temporarily leaves Your board; returning restores the entered board
   const savedBoard = q().b;
   await page.click('#drill'); assert.equal(await page.$eval('#custom', b => b.getAttribute('aria-pressed')), 'false'); assert.ok(await disabled('#custom')); assert.match(await text(), /set your table/);

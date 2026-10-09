@@ -48,8 +48,10 @@ function writeUrl() {
     if (state.opp.length) q.set('opp', state.opp.join(','));
     if (state.history.length) q.set('seq', state.history.map(h => (h.k === 'opp' ? 'o' : 'm') + h.id).join(','));
   }
-  history.replaceState(null, '', '?' + q.toString());
+  history.replaceState(history.state, '', '?' + q.toString());
 }
+function keepPreviousBoard() { history.pushState({ catanRecovery: true }, '', location.href); }
+addEventListener('popstate', () => location.reload());
 
 // ---- Model -----------------------------------------------------------------
 function settings() { return { players: state.players, seat: state.seat, cak: state.cak }; }
@@ -269,9 +271,10 @@ function setDrill(on) {
 const HARBOR_CYCLE = [null, '3:1', 'wood', 'brick', 'wheat', 'sheep', 'ore'];
 function setCustom(on) {
   if (on && state.drill) setDrill(false);
+  if (!on) keepPreviousBoard();
   state.custom = on; state.tool = null; state.numHex = null; state.pick = null;
   if (on) { state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
-  else state.seed = randomSeed();
+  else { state.seed = randomSeed(); state.me = []; state.opp = []; state.history = []; }
   controls(); rebuild();
 }
 function setTool(t) { state.tool = state.tool === t ? null : t; state.numHex = null; state.pick = null; controls(); rebuild(); }
@@ -284,7 +287,7 @@ function hexClick(i) {
 }
 function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); }
 function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; rebuild(); }
-function fillCustom(b) { state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; rebuild(); }
+function fillCustom(b) { keepPreviousBoard(); state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; rebuild(); }
 
 function startDrill() { $('#settings').open = false; state.drillSetup = false; state.stage = Math.min(MAX_LEVEL, maxCleared() + 1); state.attempts = 0; newStageBoard(); }
 function nextStage() { state.stage = Math.min(MAX_LEVEL, state.stage + 1); state.attempts = 0; newStageBoard(); }
@@ -390,6 +393,8 @@ function render() {
   $('#showbest').setAttribute('aria-pressed', String(reveal()));
   $('#showbest').disabled = state.drill || !entry.ready;
   let out = '';
+  const restore = history.state?.catanRecovery ? '<button class="btn ghost" id="restore-board">Restore previous board</button>' : '';
+  if (restore && !state.custom) out += `<div class="card"><p class="sub">Your previous board is kept in this tab.</p>${restore}</div>`;
 
   if (state.drillSetup) {
     const done = cleared().filter(x => x <= STAGES.length).length;
@@ -420,7 +425,7 @@ function render() {
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
         ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         ${notes.length || !board.balanced ? `<details data-disclosure="inventory"><summary>Check board inventory</summary><p class="sub check">${notes.map(esc).join(' ')}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p></details>` : '<p class="sub check ok">Matches the official box.</p>'}
-        <p style="margin:8px 0 0"><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button></p></div>`;
+        <p style="margin:8px 0 0"><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
     }
     out += html`<div class="card"><div class="modes">
     <span class="seg" role="group" aria-label="Who are you placing?">
@@ -507,6 +512,7 @@ function render() {
   for (const b of panel.querySelectorAll('.picker button')) b.onclick = () => setNumber(Number(b.dataset.num) || null);
   const bb = $('#blank-board'); if (bb) bb.onclick = () => fillCustom(blankBoard(state.setup));
   const rb = $('#rand-board'); if (rb) rb.onclick = () => fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true }));
+  const restoreBoard = $('#restore-board'); if (restoreBoard) restoreBoard.onclick = () => history.back();
   const keep = $('#keep'); if (keep) keep.onclick = keepPick;
   const previewBest = $('#preview-best'); if (previewBest) previewBest.onclick = () => previewPick(best.id);
   const cancel = $('#cancel-pick'); if (cancel) cancel.onclick = cancelPick;
@@ -522,8 +528,20 @@ function seg(id, values, current, onpick) {
   const s = $(id); s.innerHTML = '';
   for (const v of values) { const b = document.createElement('button'); b.textContent = v; b.setAttribute('aria-pressed', String(v === current)); b.onclick = () => onpick(v); s.append(b); }
 }
+function setPlayers(players) {
+  if (players === state.players) return;
+  const setup = players >= 5 ? 'ext56' : 'base';
+  if (setup !== state.setup) {
+    if (!state.drill) keepPreviousBoard();
+    if (state.custom) { state.customHexes = []; state.customHarbors = {}; state.numHex = null; }
+    state.me = []; state.opp = []; state.history = []; state.seq = null; state.pick = null;
+  }
+  state.players = players; state.setup = setup; state.seat = Math.min(state.seat, players);
+  if (state.randomSeat) rollSeat();
+  controls(); rebuild();
+}
 function controls() {
-  seg('#players', [3, 4, 5, 6], state.players, v => { state.players = v; state.setup = v >= 5 ? 'ext56' : 'base'; state.seat = Math.min(state.seat, v); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); });
+  seg('#players', [3, 4, 5, 6], state.players, setPlayers);
   seg('#seat', Array.from({ length: state.players }, (_, i) => i + 1), state.seat, v => { state.seat = v; controls(); recompute(); });
   for (const b of $('#seat').querySelectorAll('button')) b.disabled = state.randomSeat;
   $('#seat').closest('.ctl').classList.toggle('muted', state.randomSeat);

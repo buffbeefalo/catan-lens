@@ -21,6 +21,14 @@ async function open(t, viewport, query = '?seed=42&players=4&seat=1') {
   return page;
 }
 
+async function reloadInBrowser(page) {
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.evaluate(() => location.reload())]);
+}
+
+async function moveInBrowserHistory(page, delta) {
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.evaluate(n => history.go(n), delta)]);
+}
+
 test('a phone placement can be confirmed without searching below the board', async t => {
   const page = await open(t, { width: 390, height: 844 });
   await page.locator('#svg .vx.legal').first().tap();
@@ -90,6 +98,18 @@ test('keyboard users can paint and number a hex without losing their place', asy
     assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '1', 'Escape returns from the picker to its tile');
     await page.close();
   }
+});
+
+test('harbour labels do not intercept mouse clicks when painting a coastal hex', async t => {
+  const page = await open(t, { width: 1400, height: 900 });
+  await page.locator('.vx.legal').first().click();
+  await page.locator('#keep').click();
+  await page.locator('#custom').click();
+  await page.locator('#tool-wheat').click();
+  const tile = page.locator('.hex').first();
+  const bounds = await tile.boundingBox();
+  await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+  assert.match(await tile.getAttribute('class'), /\bwheat\b/, 'a decorative harbour label must not capture the tile click');
 });
 
 test('keyboard users can cycle coastal harbours through redraws', async t => {
@@ -207,6 +227,79 @@ test('phone blank-board entry keeps its first tile visible alongside the tools',
   await page.locator('[data-disclosure="inventory"] summary').tap();
   assert.equal(await page.locator('.check').isVisible(), true);
   assert.match(await page.locator('.check').innerText(), /wood: 0 hexes entered, the box has 4/);
+});
+
+test('changing board size starts the correct blank layout and preserves the old board across reload and navigation', async t => {
+  for (const [from, to, count] of [[4, 6, 30], [6, 4, 19]]) {
+    const page = await open(t, { width: 1400, height: 900 }, `?seed=42&players=${from}`);
+    await page.locator('.vx.legal').first().click();
+    await page.locator('#keep').click();
+    await page.locator('#mode-opp').click();
+    await page.locator('.vx.legal').first().click();
+    await page.locator('#custom').click();
+    const original = page.url();
+    await page.locator('#settings summary').click();
+    await page.locator('#players button').filter({ hasText: String(to) }).click();
+    assert.equal(await page.locator('.hex.blank').count(), count, 'tile and edge IDs from another shape must never be reused');
+    assert.equal(await page.locator('.harbor').count(), 0);
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 0);
+    assert.equal(await page.locator('#restore-board').count(), 1, 'the previous board has a visible recovery action');
+    const changed = page.url();
+    await reloadInBrowser(page);
+    assert.equal(await page.locator('.hex.blank').count(), count);
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.hex').count(), from === 4 ? 19 : 30);
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    assert.equal(await page.locator('.piece.opp').count(), 1);
+    assert.equal(await page.locator('.harbor').count(), from === 4 ? 9 : 11);
+    await moveInBrowserHistory(page, 1);
+    assert.equal(page.url(), changed, 'browser Forward restores the new board');
+    assert.equal(await page.locator('.hex.blank').count(), count);
+    await moveInBrowserHistory(page, -1);
+    assert.equal(page.url(), original, 'browser Back restores the original board');
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+    await page.close();
+  }
+});
+
+test('replacing an entered board or leaving its editor can be undone after a refresh', async t => {
+  for (const action of ['#blank-board', '#rand-board', '#new', '#practice']) {
+    const page = await open(t, { width: 1400, height: 900 });
+    await page.locator('.vx.legal').first().click();
+    await page.locator('#keep').click();
+    await page.locator('#custom').click();
+    await page.locator('#tool-wheat').click();
+    await page.locator('.hex').first().click();
+    const original = page.url();
+    await page.locator(action).click();
+    assert.equal(await page.locator('#restore-board').count(), 1, `${action} keeps a recovery action`);
+    assert.equal(await page.locator('.piece.me').count(), 0, 'settlements on the previous board must not move onto its replacement');
+    await reloadInBrowser(page);
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
+    assert.match(await page.locator('.hex').first().getAttribute('class'), /wheat/);
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    await page.close();
+  }
+});
+
+test('changing player count within a board shape keeps entered tiles, harbours and pieces', async t => {
+  for (const [from, to] of [[4, 3], [6, 5]]) {
+    const page = await open(t, { width: 1400, height: 900 }, `?seed=42&players=${from}`);
+    await page.locator('.vx.legal').first().click();
+    await page.locator('#keep').click();
+    await page.locator('#custom').click();
+    const original = new URL(page.url()).searchParams;
+    await page.locator('#settings summary').click();
+    await page.locator('#players button').filter({ hasText: String(to) }).click();
+    const after = new URL(page.url()).searchParams;
+    for (const key of ['b', 'h', 'me', 'seq']) assert.equal(after.get(key), original.get(key), `${key} survives a same-shape table change`);
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    await page.close();
+  }
 });
 
 test('removing and restoring a number invalidates and restores all advice without losing pieces', async t => {
