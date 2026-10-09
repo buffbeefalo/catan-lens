@@ -23,6 +23,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   Opening checks compare preview and committed income, starting cards and build shortfalls, cover
   harbour exclusions and incomplete input, retain the C&K model boundary, and verify result focus
   and phone visibility without leaking hints into unanswered drills.
+  Help navigation checks an edited board, harbour choice and Undo order across a help-page reload,
+  plus unreadable queries and the fixed same-app return destination.
   Set `CATAN_BROWSER=firefox` or `CATAN_BROWSER=webkit` to run this suite in another engine.
   Recovery checks use in-page reload and history navigation to exercise the browser's native behavior.
 

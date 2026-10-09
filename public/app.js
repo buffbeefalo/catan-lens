@@ -476,6 +476,7 @@ function harborControls() {
 
 const disclosures = new Map();
 function render() {
+  $('.brand .sub-link').search = location.search;
   for (const details of $('#panel').querySelectorAll('details[data-disclosure]')) disclosures.set(details.dataset.disclosure, details.open);
   const plan = PLANS[planFor(settings())];
   const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';

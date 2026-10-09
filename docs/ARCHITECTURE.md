@@ -77,6 +77,10 @@ serve.js            zero-dependency local server (npm start)
    facts do not change scores or rankings. The UI hides previews before blind/drill answers and labels
    C&K as a two-settlement comparison without base-game income or build projections. Confirmation moves
    focus to the result (or a saving warning), and the single-column layout scrolls the result into view.
+10. The app's help link and the explainer's return link copy `location.search` onto fixed relative
+    destinations. They preserve the current shareable state, including unreadable queries, without a
+    second storage record or a user-controlled return destination. The links work under both the local
+    dashboard prefix and GitHub Pages, and the help page can be refreshed before returning.
 
 ## Where to change things
 

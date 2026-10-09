@@ -45,6 +45,9 @@ It gives no settlement advice until you open a readable board or explicitly star
 tiles and harbours match the other board size, choose one of the offered player counts to recover the
 board and its settlement marks. Valid unfinished boards still open for editing. Numbers on deserts or
 blank tiles and duplicate harbours on the same edge are rejected instead of silently discarded.
+**How it works** carries your current board link into the help page. **Back to the app** reopens that
+board, table settings, harbour choice and placement order, including after refreshing the help page.
+Unreadable board data is also preserved so visiting help does not discard the link you need to repair.
 
 ## 2. The score for one corner
 

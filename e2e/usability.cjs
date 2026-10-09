@@ -388,6 +388,46 @@ test('Cities and Knights opening figures clearly retain the two-settlement model
   assert.equal(await card.locator('.opening-income, .opening-builds').count(), 0, 'base-game projections must not claim to model the C&K starting city');
 });
 
+test('the help return link preserves the latest edited board, harbour choice and placement order after reload', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  const query = new URLSearchParams({ players: 4, seat: 2, ...encodeBoard(generateBoard({ seed: 42 })), ports: 'ignore', me: 41, opp: 0, seq: 'm41,o0' });
+  const page = await open(t, { width: 390, height: 844 }, '?' + query);
+  await page.locator('#tool-wheat').click();
+  await page.locator('.hex[data-hex="0"]').press('Enter');
+  const before = new URL(page.url());
+  await page.getByRole('link', { name: 'How it works', exact: true }).click();
+  await page.waitForLoadState('domcontentloaded');
+  assert.equal(new URL(page.url()).search, before.search, 'the help link carries the latest board state');
+  await reloadInBrowser(page);
+  await page.getByRole('link', { name: /Back to the app/ }).click();
+  await page.waitForLoadState('networkidle');
+  assert.equal(new URL(page.url()).search, before.search);
+  assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('.piece.me').count(), 1);
+  assert.equal(await page.locator('.piece.opp').count(), 1);
+  await page.locator('#undo').click();
+  assert.equal(await page.locator('.piece.me').count(), 1);
+  assert.equal(await page.locator('.piece.opp').count(), 0, 'Undo still reverses the last placement');
+});
+
+test('help preserves an unreadable link verbatim and its return stays within this app', async t => {
+  const query = '?players=4&b=%ZZ%3Cscript%3E&h=5%3A3%2C5%3Aw&me=41&return=https%3A%2F%2Fexample.invalid%2F';
+  const page = await open(t, { width: 1400, height: 900 }, query);
+  assert.equal(await page.locator('.link-error').count(), 1);
+  const before = new URL(page.url());
+  await page.getByRole('link', { name: 'How it works', exact: true }).click();
+  await page.waitForLoadState('domcontentloaded');
+  assert.equal(new URL(page.url()).search, query);
+  const back = new URL(await page.getByRole('link', { name: /Back to the app/ }).getAttribute('href'), page.url());
+  assert.equal(back.origin, before.origin);
+  assert.equal(back.pathname, before.pathname);
+  await page.getByRole('link', { name: /Back to the app/ }).click();
+  await page.waitForLoadState('networkidle');
+  assert.equal(new URL(page.url()).search, query);
+  assert.equal(await page.locator('.link-error').count(), 1);
+  assert.equal(await page.locator('.best-ring').count(), 0);
+});
+
 test('editing a custom board preserves placement order for Undo', async t => {
   const page = await open(t, { width: 1400, height: 900 });
   await page.locator('#custom').click();
