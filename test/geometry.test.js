@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildGraph, legalVertices, hexCenters } from '../public/geometry.js';
+import { buildGraph, legalVertices, hexCenters, nearestVertex } from '../public/geometry.js';
 
 test('base board has 19 hexes, 54 vertices, 72 edges and a 30-edge coast', () => {
   const g = buildGraph('base');
@@ -42,4 +42,13 @@ test('rows are centred so the widest row sets the left margin', () => {
   const c = hexCenters([3, 4, 5, 4, 3]);
   const minX = Math.min(...c.map(h => h.x));
   assert.ok(Math.abs(minX - Math.sqrt(3) / 2) < 1e-9);
+});
+
+test('point selection uses the closest corner, independent of paint order, within a bounded reach', () => {
+  const graph = { vertices: [{ id: 0, x: 0, y: 0 }, { id: 1, x: 1, y: 0 }] };
+  assert.equal(nearestVertex(graph, { x: 0.2, y: 0 }, 0.8), 0);
+  assert.equal(nearestVertex({ vertices: [...graph.vertices].reverse() }, { x: 0.2, y: 0 }, 0.8), 0);
+  assert.equal(nearestVertex(graph, { x: 0.5, y: 1 }, 0.8), null);
+  assert.equal(nearestVertex(graph, { x: 0, y: 0.8 }, 0.8), 0);
+  assert.equal(nearestVertex(graph, { x: 0, y: 0.801 }, 0.8), null);
 });

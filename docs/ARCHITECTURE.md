@@ -59,6 +59,10 @@ serve.js            zero-dependency local server (npm start)
    keeps the physical board intact but creates an `analysisBoard` with no harbours. Rankings, verdicts,
    projections and road hints all use that same analysis board. Replacing a board or changing geometry
    resets the choice; ordinary edits, same-shape table changes, share links and drill snapshots retain it.
+7. Pointer placement converts the click into board coordinates and uses `nearestVertex` across all corners,
+   then checks legality. Its reach is bounded in both screen pixels and board units, so overlapping hit
+   areas cannot select a farther corner or redirect an occupied corner to a legal one. Keyboard and
+   coordinate-free button clicks still activate the named corner; editor tools keep their own handlers.
 
 ## Where to change things
 

@@ -29,6 +29,46 @@ async function moveInBrowserHistory(page, delta) {
   await Promise.all([page.waitForEvent('domcontentloaded'), page.evaluate(n => history.go(n), delta)]);
 }
 
+async function cornerPoint(page, id, dx = 0, dy = 0) {
+  return page.locator(`.vx[aria-label="Corner ${id}"]`).evaluate((el, offset) => {
+    const p = new DOMPoint(Number(el.getAttribute('cx')), Number(el.getAttribute('cy'))).matrixTransform(el.getScreenCTM());
+    return { x: p.x + offset.dx, y: p.y + offset.dy };
+  }, { dx, dy });
+}
+
+test('nearby phone taps and desktop clicks preview the closest corner across both board sizes', async t => {
+  for (const width of [320, 390, 1400]) for (const players of [4, 6]) {
+    const page = await open(t, { width, height: 1000 }, `?players=${players}&seed=42`);
+    for (const id of [0, 5, 40]) for (const [dx, dy] of [[8, 0], [-8, 0], [0, 8], [0, -8]]) {
+      await page.locator('#svg').scrollIntoViewIfNeeded();
+      const p = await cornerPoint(page, id, dx, dy);
+      if (width < 1000) await page.touchscreen.tap(p.x, p.y);
+      else await page.mouse.click(p.x, p.y);
+      assert.equal(await page.locator('#keep').getAttribute('data-corner'), String(id), `${width}px / ${players} players / corner ${id} / offset ${dx},${dy}`);
+      await page.locator('#cancel-pick').click();
+    }
+    await page.close();
+  }
+});
+
+test('taps nearest blocked corners or far from any corner do not redirect to another settlement', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?players=6&seed=42&opp=0&seq=o0');
+  for (const id of [0, 1, 5]) {
+    assert.equal(await page.locator(`.vx[aria-label="Corner ${id}"]`).getAttribute('aria-disabled'), 'true');
+    const p = await cornerPoint(page, id, 8, 0);
+    await page.touchscreen.tap(p.x, p.y);
+    assert.equal(await page.locator('#keep').count(), 0, 'the closest blocked corner cannot redirect to a farther legal one');
+    assert.equal(await page.locator('.piece.opp').count(), 1);
+  }
+  const middle = await page.locator('.hex').nth(10).boundingBox();
+  await page.touchscreen.tap(middle.x + middle.width / 2, middle.y + middle.height / 2);
+  assert.equal(await page.locator('#keep').count(), 0, 'a hex-centre tap is outside the corner reach');
+  await page.locator('#mode-opp').click();
+  const p = await cornerPoint(page, 40, -8, 0);
+  await page.touchscreen.tap(p.x, p.y);
+  assert.equal(new URL(page.url()).searchParams.get('opp'), '0,40', 'opponent marks use the same nearest-corner selection');
+});
+
 test('a phone placement can be confirmed without searching below the board', async t => {
   const page = await open(t, { width: 390, height: 844 });
   await page.locator('#svg .vx.legal').first().tap();

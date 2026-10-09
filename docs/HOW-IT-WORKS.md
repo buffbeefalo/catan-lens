@@ -31,6 +31,9 @@ without crowding the phone editor.
 For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
 number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
+Settlement taps and mouse clicks choose the closest corner within a limited reach. Tapping near a
+blocked corner does not redirect to another corner; your own settlement still needs **Keep** to confirm.
+Keyboard and assistive-button activation select the focused corner directly.
 Changing between the 19-hex and 30-hex layouts starts a blank board of the new shape. The app keeps
 the previous board in this tab's history: **Restore previous board** or the browser's Back button
 recovers its tiles, harbours, table settings and placements, even after a refresh. Start blank,

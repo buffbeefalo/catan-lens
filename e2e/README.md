@@ -15,7 +15,9 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
 - `usability.cjs` (`node --test`): confirmation visibility after taps and keys at seven widths, cancellation, taps
   on number tokens, blind-drill hint secrecy, keyboard draft choices, projection visibility, and the best-corner
   ring (ties, opponents, undo, restored links, phone width); keyboard board entry, incomplete-board gating,
-  compact phone entry, and board recovery across layout changes, refresh and browser Back/Forward.
+  compact phone entry, explicit harbour assumptions, and board recovery across layout changes, refresh
+  and browser Back/Forward. Offset taps and mouse clicks cover nearest-corner selection at phone and
+  desktop widths, blocked corners, opponent marks and clicks beyond the corner reach.
   Set `CATAN_BROWSER=firefox` or `CATAN_BROWSER=webkit` to run this suite in another engine.
   Recovery checks use in-page reload and history navigation to exercise the browser's native behavior.
 

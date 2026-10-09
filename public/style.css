@@ -72,9 +72,9 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{o
 .tok,.tok-n,.pip{pointer-events:none}
 .harbor{pointer-events:none;font-family:var(--ui);font-weight:600;font-size:.22px;text-anchor:middle;fill:var(--mut);letter-spacing:.02em}
 .harbor-line{pointer-events:none;stroke:var(--line2);stroke-width:.05;stroke-dasharray:.1 .08}
-.vx{fill:transparent;stroke:transparent;cursor:pointer}
+.vx{fill:transparent;stroke:transparent;stroke-width:0;pointer-events:fill;cursor:pointer}
 .vx.legal:hover{fill:var(--board-hover)}
-.vx.dead{cursor:not-allowed}
+.vx.dead{pointer-events:none}
 /* Chrome paints an SVG element's focus outline in user units, scaled by the viewBox transform: the default
    3px ring became a ~250px black blob around a focused corner. Draw the keyboard focus ring as a stroke instead. */
 #svg:focus,#svg *:focus{outline:none}   /* every element in the board, not just corners: any scaled outline is a black blob */

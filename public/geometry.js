@@ -98,3 +98,12 @@ export function legalVertices(graph, occupied) {
   const occ = new Set(occupied);
   return graph.vertices.filter(v => !occ.has(v.id) && !v.neighbors.some(n => occ.has(n))).map(v => v.id);
 }
+
+export function nearestVertex(graph, point, reach) {
+  let nearest = null, distance = Infinity;
+  for (const v of graph.vertices) {
+    const d = Math.hypot(v.x - point.x, v.y - point.y);
+    if (d < distance) { nearest = v.id; distance = d; }
+  }
+  return distance <= reach ? nearest : null;
+}

@@ -1,5 +1,5 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
-import { hexCorners, legalVertices } from './geometry.js';
+import { hexCorners, legalVertices, nearestVertex } from './geometry.js';
 import { suggestRoad, rankSpots, compare, grade, simulateDraft, PLANS, planFor } from './score.js';
 import { STAGES, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
@@ -180,6 +180,7 @@ function drawBoard() {
   }
   svg.append(el('g', { id: 'marks' }));
   svg.append(el('g', { id: 'hits' }));
+  svg.onclick = pickNearestCorner;
   fitBoard();
   if (focusTarget) svg.querySelector(focusTarget + '[tabindex="0"]')?.focus({ preventScroll: true });
 }
@@ -227,7 +228,10 @@ function drawMarks() {
   for (const p of v) {
     const ok = legal.has(p.id) && can;
     const c = el('circle', { class: 'vx ' + (ok ? 'legal' : 'dead'), cx: p.x, cy: p.y, r: 0.3, tabindex: ok ? 0 : -1, role: 'button', 'aria-label': `Corner ${p.id}`, 'aria-description': cornerDesc(p.id), 'aria-disabled': String(!ok) });
-    if (ok) { c.addEventListener('click', () => place(p.id)); c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); place(p.id); } }); }
+    if (ok) {
+      c.addEventListener('click', e => { if (e.detail === 0) { e.stopPropagation(); place(p.id); } });
+      c.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); place(p.id); } });
+    }
     hits.append(c);
     if (focused && ok && focused === `Corner ${p.id}`) queueMicrotask(() => c.focus({ preventScroll: true }));
   }
@@ -311,6 +315,16 @@ function startDrill() { $('#settings').open = false; state.drillSetup = false; s
 function nextStage() { state.stage = Math.min(MAX_LEVEL, state.stage + 1); state.attempts = 0; newStageBoard(); }
 
 // ---- Interaction -----------------------------------------------------------
+function pickNearestCorner(event) {
+  if (!event.detail || !canPlace()) return;
+  const matrix = $('#svg').getScreenCTM();
+  if (!matrix) return;
+  const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+  const scale = Math.hypot(matrix.a, matrix.b);
+  const reach = Math.min(0.9, Math.max(0.3, 22 / scale));
+  const id = nearestVertex(board.graph, point, reach);
+  if (id !== null && legalVertices(board.graph, [...state.me, ...state.opp]).includes(id)) place(id);
+}
 function place(id) {
   if (state.drill && state.answered !== null) return;   // one placement per level; scramble or advance to continue
   if (state.mode === 'opp') { state.opp.push(id); state.history.push({ k: 'opp', id }); state.pick = null; recompute(); return; }
