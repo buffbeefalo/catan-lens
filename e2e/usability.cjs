@@ -13,10 +13,11 @@ before(async () => {
 after(async () => { await browser?.close(); });
 
 async function open(t, viewport, query = '?seed=42&players=4&seat=1') {
-  const page = await browser.newPage({ viewport, hasTouch: true });
+  const context = await browser.newContext({ viewport, hasTouch: true });
+  const page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  t.after(async () => { await page.close(); assert.deepEqual(errors, []); });
+  t.after(async () => { await context.close(); assert.deepEqual(errors, []); });
   await page.goto(base + query, { waitUntil: 'networkidle' });
   return page;
 }
@@ -190,6 +191,117 @@ test('drill levels are keyboard buttons with locked levels disabled', async t =>
   assert.equal(new URL(page.url()).searchParams.get('level'), '2');
   assert.equal(await level(2).getAttribute('aria-current'), 'step');
   assert.equal(await page.locator('#svg .best-ring, #preview-best, [data-disclosure="draft"]').count(), 0, 'keyboard replay keeps the drill blind');
+});
+
+test('failed progress saves stay visible and can be retried without losing another table or the unsaved result', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&drill=1&level=1');
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    window.allowProgressWrites = false;
+    Storage.prototype.setItem = function(key, value) {
+      if (key === 'catan-lens.levels' && !window.allowProgressWrites) throw new DOMException('Blocked for test', 'QuotaExceededError');
+      return set.call(this, key, value);
+    };
+  });
+  await reloadInBrowser(page);
+  await page.getByRole('button', { name: 'Corner 43', exact: true }).press('Enter');
+  await page.locator('#keep').click();
+  assert.equal(await page.locator('.progress-warning').count(), 1, 'a failed save must be visible');
+  assert.match(await page.locator('.progress-warning').innerText(), /could not save|couldn't save/i);
+  assert.match(await page.locator('.progress-warning').innerText(), /reload|close/i);
+  assert.equal(await page.locator('.track li.cleared').count(), 1, 'the answer remains cleared in this tab');
+  assert.equal(await page.evaluate(() => localStorage.getItem('catan-lens.levels')), null);
+  const other = await page.context().newPage();
+  await other.goto(base);
+  await other.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '6-cak': [1, 2] } })));
+  await page.evaluate(() => { window.allowProgressWrites = true; });
+  await page.locator('#retry-progress').press('Enter');
+  assert.equal(await page.locator('.progress-warning').count(), 0);
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('catan-lens.levels'))), { ladders: { '4-base': [1], '6-cak': [1, 2] } });
+  await page.locator('#next-stage').click();
+  await reloadInBrowser(page);
+  assert.equal(new URL(page.url()).searchParams.get('level'), '2');
+  await other.close();
+});
+
+test('clearing browser storage in another tab refreshes the visible drill progress', async t => {
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&drill=1&level=1');
+  const other = await page.context().newPage();
+  await other.goto(base);
+  await other.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '4-base': [1, 2] } })));
+  await page.waitForFunction(() => document.querySelectorAll('.track li.cleared').length === 2, null, { timeout: 2500 });
+  await other.evaluate(() => localStorage.clear());
+  await page.waitForFunction(() => document.querySelectorAll('.track li.cleared').length === 0, null, { timeout: 2500 });
+  assert.equal(await page.locator('.track button[data-level="2"]').isDisabled(), true);
+  await other.close();
+});
+
+test('malformed saved level values cannot inflate cleared counts or unlock the bonus ladder', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '4-base': [1, 1, -2, 0, 999999] } })));
+  await reloadInBrowser(page);
+  await page.locator('#drill').click();
+  assert.match(await page.locator('.setup-table').innerText(), /1 of 16 cleared, you resume at level 2/);
+  await page.locator('#start-drill').click();
+  assert.equal(new URL(page.url()).searchParams.get('level'), '2');
+  assert.equal(await page.locator('.track li.cleared').count(), 1);
+  assert.equal(await page.locator('.track button').count(), 16);
+});
+
+test('unreadable browser storage is reported and a later retry preserves the other saved tables', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&drill=1&level=1');
+  await page.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '6-cak': [1] } })));
+  await page.addInitScript(() => {
+    const get = Storage.prototype.getItem;
+    window.allowProgressReads = false;
+    Storage.prototype.getItem = function(key) {
+      if (key === 'catan-lens.levels' && !window.allowProgressReads) throw new DOMException('Blocked for test', 'SecurityError');
+      return get.call(this, key);
+    };
+  });
+  await reloadInBrowser(page);
+  assert.equal(await page.locator('.progress-warning').count(), 1, 'a blocked read must be visible');
+  assert.match(await page.locator('.progress-warning').innerText(), /could not read|couldn't read/i);
+  await page.getByRole('button', { name: 'Corner 43', exact: true }).press('Enter');
+  await page.locator('#keep').click();
+  assert.equal(await page.locator('.track li.cleared').count(), 1);
+  await page.evaluate(() => { window.allowProgressReads = true; });
+  await page.locator('#retry-progress').click();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('catan-lens.levels'))), { ladders: { '4-base': [1], '6-cak': [1] } });
+});
+
+test('a failed table reset can be saved later without restoring old levels or deleting another table', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&drill=1&level=1');
+  await page.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '4-base': [1, 2], '6-cak': [1] } })));
+  await page.addInitScript(() => {
+    const set = Storage.prototype.setItem;
+    window.allowProgressWrites = false;
+    Storage.prototype.setItem = function(key, value) {
+      if (key === 'catan-lens.levels' && !window.allowProgressWrites) throw new DOMException('Blocked for test', 'QuotaExceededError');
+      return set.call(this, key, value);
+    };
+  });
+  await reloadInBrowser(page);
+  await page.locator('#restart-levels').click();
+  assert.equal(await page.locator('.track li.cleared').count(), 0);
+  assert.equal(await page.locator('.progress-warning').count(), 1);
+  await page.evaluate(() => { window.allowProgressWrites = true; });
+  await page.locator('#retry-progress').click();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('catan-lens.levels'))), { ladders: { '6-cak': [1] } });
+  await reloadInBrowser(page);
+  assert.equal(await page.locator('.track li.cleared').count(), 0);
+});
+
+test('unreadable saved progress is left untouched until an explicit saving action', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&drill=1&level=1');
+  await page.evaluate(() => localStorage.setItem('catan-lens.levels', '{broken'));
+  await reloadInBrowser(page);
+  assert.equal(await page.locator('.progress-warning').count(), 1);
+  assert.match(await page.locator('.progress-warning').innerText(), /replaces the unreadable record/);
+  assert.equal(await page.evaluate(() => localStorage.getItem('catan-lens.levels')), '{broken');
+  await page.locator('#retry-progress').click();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('catan-lens.levels'))), { ladders: {} });
+  assert.equal(await page.locator('.progress-warning').count(), 0);
 });
 
 test('editing a custom board preserves placement order for Undo', async t => {

@@ -18,6 +18,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   compact phone entry, explicit harbour assumptions, and board recovery across layout changes, refresh
   and browser Back/Forward. Offset taps and mouse clicks cover nearest-corner selection at phone and
   desktop widths, blocked corners, opponent marks and clicks beyond the corner reach.
+  Storage checks deny reads and writes, retry failed saves and resets, validate malformed progress,
+  and exercise real storage events between two tabs sharing one browser context.
   Set `CATAN_BROWSER=firefox` or `CATAN_BROWSER=webkit` to run this suite in another engine.
   Recovery checks use in-page reload and history navigation to exercise the browser's native behavior.
 

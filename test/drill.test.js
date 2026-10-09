@@ -1,11 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STAGES, TABLES, ladderKey, stageFor, findSeed, setupStage, judge } from '../public/drill.js';
+import { STAGES, TABLES, MAX_LEVEL, ladderKey, stageFor, findSeed, setupStage, judge, normalizeProgress, applyProgressActions } from '../public/drill.js';
 import { grade } from '../public/score.js';
 import { legalVertices } from '../public/geometry.js';
 
 const CONFIGS = [];
 for (const players of [3, 4, 5, 6]) for (const cak of [false, true]) CONFIGS.push({ players, cak });
+
+test('saved progress accepts unique bounded levels on known tables only', () => {
+  const input = { ladders: { '4-base': [1, 1, -2, 0, 999999, '2', 2.5, 3, 2], '6-cak': [MAX_LEVEL], unknown: [1], '3-base': null } };
+  assert.deepEqual(normalizeProgress(input), { ladders: { '4-base': [1, 2, 3], '6-cak': [MAX_LEVEL] } });
+  assert.equal(input.ladders['4-base'].length, 9, 'normalization does not mutate saved input');
+  for (const value of [null, [], 'bad', { cleared: [1, 2] }, { ladders: null }]) assert.deepEqual(normalizeProgress(value), { ladders: {} });
+});
+
+test('pending progress changes merge with the latest saved tables and replay resets in order', () => {
+  const saved = { ladders: { '4-base': [1, 2], '6-cak': [1, 2, 3] } };
+  const changes = [{ table: '4-base', level: 3 }, { table: '4-base', level: 3 }, { table: '4-base', reset: true }, { table: '4-base', level: 1 }];
+  assert.deepEqual(applyProgressActions(saved, changes), { ladders: { '4-base': [1], '6-cak': [1, 2, 3] } });
+  assert.deepEqual(saved.ladders['4-base'], [1, 2], 'the persisted snapshot stays untouched');
+  assert.deepEqual(applyProgressActions(saved, [{ table: '4-base', level: -1 }, { table: 'unknown', level: 1 }]), saved);
+});
 
 test('stage ladder ramps: pass rule never loosens, last stage demands the #1 corner, beyond the ladder stays hardest', () => {
   assert.equal(STAGES.length, 16);

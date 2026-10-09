@@ -31,8 +31,30 @@ export const STAGES = [
 
 // Every table the drill can be set to; each keeps its own progress track.
 export const TABLES = [3, 4, 5, 6].flatMap(players => [false, true].map(cak => ({ players, cak })));
+export const MAX_LEVEL = STAGES.length + 20;
 export const ladderKey = t => `${t.players}-${t.cak ? 'cak' : 'base'}`;
 export const tableLabel = t => `${t.players} players, ${t.cak ? 'Cities & Knights' : 'base game'}`;
+const PROGRESS_TABLES = new Set(TABLES.map(ladderKey));
+const validLevel = n => Number.isInteger(n) && n >= 1 && n <= MAX_LEVEL;
+
+export function normalizeProgress(value) {
+  const ladders = {};
+  for (const key of PROGRESS_TABLES) {
+    const levels = value?.ladders?.[key];
+    if (Array.isArray(levels)) ladders[key] = [...new Set(levels.filter(validLevel))].sort((a, b) => a - b);
+  }
+  return { ladders };
+}
+
+export function applyProgressActions(value, actions) {
+  const progress = normalizeProgress(value);
+  for (const action of actions) {
+    if (!PROGRESS_TABLES.has(action.table)) continue;
+    if (action.reset) delete progress.ladders[action.table];
+    else if (validLevel(action.level)) progress.ladders[action.table] = [...new Set([...(progress.ladders[action.table] || []), action.level])].sort((a, b) => a - b);
+  }
+  return progress;
+}
 
 export function resolveSeat(position, players) {
   switch (position) {

@@ -1,14 +1,13 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
 import { hexCorners, legalVertices, nearestVertex } from './geometry.js';
 import { suggestRoad, rankSpots, compare, grade, simulateDraft, PLANS, planFor } from './score.js';
-import { STAGES, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel } from './drill.js';
+import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel, normalizeProgress, applyProgressActions } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
 
 const $ = s => document.querySelector(s);
 const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check' };
 let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
 const HEUR = 'opening heuristic v1';
-const MAX_LEVEL = STAGES.length + 20;   // bonus levels beyond the ladder are capped so a hand-edited link cannot draw a giant track
 
 // ---- URL state -------------------------------------------------------------
 function readUrl() {
@@ -249,19 +248,39 @@ const reveal = () => entry.ready && (state.drill ? state.answered !== null : sta
 // One track per table (players + Cities & Knights): { ladders: { '4-base': [1, 2, …], '6-cak': [1] } }.
 // The pre-2026-09-15 shape ({ cleared: [...] }) belonged to a ladder that mixed tables and is not carried over.
 const PROG_KEY = 'catan-lens.levels';
-function loadProgress() {
-  try {
-    const p = JSON.parse(localStorage.getItem(PROG_KEY) || '{}');
-    const ladders = {};
-    if (p && p.ladders && typeof p.ladders === 'object') for (const [k, v] of Object.entries(p.ladders)) if (Array.isArray(v)) ladders[k] = v.filter(Number.isInteger);
-    return { ladders };
-  } catch { return { ladders: {} }; }
+const UNSAVED_PROGRESS = 'Your browser could not save progress. It is kept in this tab, but may be lost if you reload or close it. You can keep practising and retry saving.';
+let progressIssue = '', pendingProgress = [];
+function readSavedProgress() {
+  const raw = localStorage.getItem(PROG_KEY);
+  try { return { value: normalizeProgress(JSON.parse(raw || '{}')), damaged: false }; }
+  catch { return { value: { ladders: {} }, damaged: true }; }
 }
-function saveProgress(p) { try { localStorage.setItem(PROG_KEY, JSON.stringify(p)); } catch { /* private mode etc. — progress just does not persist */ } }
+function loadProgress(fallback = { ladders: {} }) {
+  try {
+    const saved = readSavedProgress();
+    progressIssue = pendingProgress.length ? UNSAVED_PROGRESS : saved.damaged ? 'Saved progress could not be read. This tab starts fresh; Retry saving replaces the unreadable record.' : '';
+    return applyProgressActions(saved.value, pendingProgress);
+  } catch {
+    progressIssue = pendingProgress.length ? UNSAVED_PROGRESS : 'Your browser could not read saved progress. You can practise in this tab and retry saving when storage is available.';
+    return applyProgressActions(fallback, pendingProgress);
+  }
+}
+function saveProgress() {
+  try {
+    const next = applyProgressActions(readSavedProgress().value, pendingProgress);
+    localStorage.setItem(PROG_KEY, JSON.stringify(next));
+    progress = next; pendingProgress = []; progressIssue = '';
+  } catch { progressIssue = UNSAVED_PROGRESS; }
+}
+function changeProgress(action) {
+  pendingProgress.push(action);
+  progress = applyProgressActions(progress, [action]);
+  saveProgress();
+}
 let progress = loadProgress();
-addEventListener('storage', e => { if (e.key === PROG_KEY) { progress = loadProgress(); if (state.drill) render(); } });
+addEventListener('storage', e => { if (e.key === PROG_KEY || e.key === null) { progress = loadProgress(progress); if (state.drill) render(); } });
 const cleared = () => progress.ladders[ladderKey(table())] || [];
-function markCleared(n) { const k = ladderKey(table()); progress.ladders[k] = [...cleared(), n]; saveProgress(progress); }
+function markCleared(n) { changeProgress({ table: ladderKey(table()), level: n }); }
 const maxCleared = () => cleared().reduce((m, x) => Math.max(m, x), 0);
 const unlocked = n => n <= maxCleared() + 1;
 function gotoLevel(n) { state.stage = n; state.attempts = 0; newStageBoard(); }
@@ -455,6 +474,7 @@ function render() {
     fitBoard(); return;
   }
   if (restore && !state.custom) out += `<div class="card"><p class="sub">${history.state.catanRecovery === 'link' ? 'Your original link' : 'Your previous board'} is kept in this tab.</p>${restore}</div>`;
+  if (state.drill && progressIssue) out += `<div class="card progress-warning lead" role="status"><h2>Progress needs attention</h2><p class="sub">${esc(progressIssue)}</p><button class="btn ghost" id="retry-progress">Retry saving</button></div>`;
 
   if (state.drillSetup) {
     const done = cleared().filter(x => x <= STAGES.length).length;
@@ -570,7 +590,11 @@ function render() {
   const nx = $('#next-stage'); if (nx) nx.onclick = nextStage;
   const sc = $('#scramble'); if (sc) sc.onclick = newStageBoard;
   for (const button of panel.querySelectorAll('.track button:not(:disabled)')) button.onclick = () => gotoLevel(Number(button.dataset.level));
-  const rs = $('#restart-levels'); if (rs) rs.onclick = e => { e.preventDefault(); delete progress.ladders[ladderKey(table())]; saveProgress(progress); gotoLevel(1); };
+  const rs = $('#restart-levels'); if (rs) rs.onclick = e => { e.preventDefault(); changeProgress({ table: ladderKey(table()), reset: true }); gotoLevel(1); };
+  const retry = $('#retry-progress'); if (retry) retry.onclick = () => {
+    saveProgress(); render();
+    if (!progressIssue) ($('#next-stage') || $('#start-drill') || $('.track button[aria-current="step"]'))?.focus({ preventScroll: true });
+  };
   const sd = $('#start-drill'); if (sd) sd.onclick = startDrill;
   for (const b of panel.querySelectorAll('.palette button')) b.onclick = () => setTool(b.id.slice('tool-'.length));
   for (const b of panel.querySelectorAll('.picker button')) b.onclick = () => setNumber(Number(b.dataset.num) || null);

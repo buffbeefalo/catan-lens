@@ -96,6 +96,11 @@ with an obvious winner; later levels demand the exact best corner on near-ties, 
 first or the second settlement. Miss, and you get a new board at the same level.
 The level track uses keyboard buttons: cleared levels can be replayed with Enter or Space, while locked
 levels remain disabled until you clear the preceding level.
+Progress is saved in this browser, separately for each table. If reading or saving is blocked, a visible
+warning offers **Retry saving**. You can keep practising in the current tab, but unsaved progress may be
+lost on reload or closing. A retry preserves the latest saved progress for other tables; a failed reset
+is also retried as a reset. Clearing browser storage in another tab updates the displayed flags. Saved
+levels are checked for valid table names, duplicates and the supported level range before being used.
 Leaving Drill restores the board, table settings and settlement order you were exploring before entering
 it, including a hand-entered board. This return point lasts for the current page session; a drill link
 contains the drill itself, not the earlier exploration board.

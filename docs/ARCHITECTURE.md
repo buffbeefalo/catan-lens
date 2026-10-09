@@ -14,7 +14,8 @@ public/
                     official-box checks
   score.js          the heuristic: scoreVertex (rules R1-R12), rankSpots, grade, compare,
                     simulateDraft (snake draft projection), suggestRoad (R13)
-  drill.js          the 16-level ladder: stages, seat resolution, seed search, pass/fail
+  drill.js          the 16-level ladder: stages, seat resolution, seed search, pass/fail,
+                    saved-progress validation and pending-action replay
   style.css         all styling (system fonts only); every color is a token with a light and a dark value
   theme.js          light/dark switch: follows the device until the viewer picks, remembers the pick
   how-it-works.html the explainer page with the videos
@@ -63,6 +64,11 @@ serve.js            zero-dependency local server (npm start)
    then checks legality. Its reach is bounded in both screen pixels and board units, so overlapping hit
    areas cannot select a farther corner or redirect an occupied corner to a legal one. Keyboard and
    coordinate-free button clicks still activate the named corner; editor tools keep their own handlers.
+8. Drill progress validates known table keys and unique integer levels from 1 through `MAX_LEVEL`.
+   Unsaved clear/reset actions stay in memory. Each save reads the latest local record and replays only
+   these actions, preserving other tables; failed reads or writes show a retry warning. Storage events,
+   including `clear()` with a null key, refresh saved flags while retaining pending local actions.
+   Unreadable JSON is reported and left untouched until a saving action. No remote storage is used.
 
 ## Where to change things
 
