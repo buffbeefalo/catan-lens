@@ -180,6 +180,26 @@ export function landReadiness(board) {
   return { ready: blankCount === 0 && missingNumberCount === 0 && producingCount > 0, blankCount, missingNumberCount, producingCount };
 }
 
+export function harborStatus(board) {
+  const coast = new Set(board.graph.perimeter);
+  const types = new Set(Object.values(HARBOR_TYPE));
+  const corners = new Map(), conflicts = new Set(), invalidEdges = [];
+  const entries = Object.entries(board.harbors);
+  for (const [eid, type] of entries) {
+    const edge = board.graph.edges[eid];
+    if (!edge || !coast.has(edge.id) || !types.has(type)) { invalidEdges.push(eid); continue; }
+    for (const vertex of edge.v) {
+      if (corners.has(vertex)) { conflicts.add(corners.get(vertex)); conflicts.add(edge.id); }
+      else corners.set(vertex, edge.id);
+    }
+  }
+  const expected = SETUPS[board.setup].harbors;
+  const valid = invalidEdges.length === 0 && conflicts.size === 0;
+  const standard = valid && entries.length === expected.length && [...new Set(expected)].every(type =>
+    entries.filter(([, t]) => t === type).length === expected.filter(t => t === type).length);
+  return { valid, standard, count: entries.length, expected: expected.length, invalidEdges, conflictEdges: [...conflicts].sort((a, b) => a - b) };
+}
+
 // Link form: one letter per hex (blank = the '-' placeholder) followed by its number if any,
 // e.g. "w8b5d-o6…"; harbours as edgeId:code pairs, e.g. "12:3,40:w".
 export function encodeBoard(board) {
@@ -212,7 +232,7 @@ export function decodeBoard(setup, b, h) {
 }
 
 // Plain-English differences between what was entered and the official box. Advice, never a block.
-export function checkTiles(board) {
+export function checkTiles(board, { harbors: includeHarbors = true } = {}) {
   const spec = SETUPS[board.setup];
   const notes = [];
   const blank = board.hexes.filter(h => h.resource === 'blank').length;
@@ -223,6 +243,7 @@ export function checkTiles(board) {
   const want = {}; for (const t of spec.tokens) want[t] = (want[t] || 0) + 1;
   const got = {}; for (const h of board.hexes) if (h.number) got[h.number] = (got[h.number] || 0) + 1;
   for (const t of Object.keys(want).map(Number).sort((a, b) => a - b)) if ((got[t] || 0) !== want[t]) notes.push(`number ${t}: ${got[t] || 0} placed, the box has ${want[t]}.`);
+  if (!includeHarbors) return notes;
   const nh = Object.keys(board.harbors).length;
   if (nh !== spec.harbors.length) notes.push(`${nh} harbour${nh === 1 ? '' : 's'} placed, the box has ${spec.harbors.length}.`);
   const harborTypes = Object.values(board.harbors);

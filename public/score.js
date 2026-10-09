@@ -100,7 +100,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   const repeatPen = repeats * REPEAT_PENALTY;
   if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: `Repeats ${list([...new Set(repeated)].map(String))} — doubling up means feast-or-famine rolls and more 7-discards. A nudge, not a veto.` });
 
-  // R7 ports (on the corner, or one road away at half value)
+  // R7 ports (on the corner, or a potential settlement two roads away at half value)
   const minePips = mine.reduce((acc, m) => { const p = vertexProduction(board, m).prod; for (const r in p) acc[r] = (acc[r] || 0) + p[r]; return acc; }, {});
   const portValue = (type, mul, where) => {
     if (type === '3:1') return { v: PORT.generic * mul, text: `${where} the 3:1 port — the flexible port top players value most.` };
@@ -116,7 +116,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     const t = board.harbors[e]; if (t === undefined) continue;
     const far = board.graph.edges[e].v.find(x => x !== n);   // the port edge's other end: the only corner you could still settle on
     if (far === undefined || far === vid || !after.has(far)) continue;
-    const c = portValue(t, plan.portMul * PORT.farMul, 'One road from'); if (!port || c.v > port.v) port = c;
+    const c = portValue(t, plan.portMul * PORT.farMul, 'Two roads and a new settlement would reach'); if (!port || c.v > port.v) port = c;
   }
   if (port) parts.push({ k: 'port', v: round(port.v), text: port.text });
 

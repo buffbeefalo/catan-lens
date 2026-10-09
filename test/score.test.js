@@ -84,7 +84,7 @@ test('ports: 3:1 on the corner beats the same corner without it; far port is hal
   const far = b.graph.vertices[va].neighbors.find(n => !b.graph.vertices[n].edges.some(e => b.harbors[e] !== undefined));
   if (far !== undefined) {
     const fp = scoreVertex(b, S(), far).parts.find(x => x.k === 'port');
-    assert.ok(fp && fp.v <= 0.75 && /One road from/.test(fp.text));
+    assert.ok(fp && fp.v <= 0.75 && /Two roads and a new settlement would reach/.test(fp.text));
   }
 });
 
@@ -297,7 +297,16 @@ test('grade(): exact ties share rank 1 at 100%, and a pick outside the ranking i
   assert.equal(g.rank, r.length + 1); assert.equal(g.tier, 'weak'); assert.equal(g.pct, 0);
 });
 
-test('R7: a port one road away is credited only if its far end can still be settled (sweep finding)', () => {
+test('R7: a nearby harbour explanation names the roads and settlement needed without changing its score', () => {
+  const board = generateBoard({ seed: 129 });
+  const result = scoreVertex(board, { players: 4, seat: 3, cak: false }, 43, { mine: [9], occupied: [9] });
+  const port = result.parts.find(p => p.k === 'port');
+  assert.match(port.text, /^Two roads and a new settlement would reach/);
+  assert.equal(port.v, 1.13);
+  assert.equal(result.score, 15.28);
+});
+
+test('R7: a nearby port is credited only if its far end can still be settled (sweep finding)', () => {
   let credited = 0, blocked = 0;
   for (let seed = 1; seed <= 40; seed++) {
     const b = generateBoard({ seed });
@@ -313,7 +322,7 @@ test('R7: a port one road away is credited only if its far end can still be sett
         const blocker = b.graph.vertices[far].neighbors.find(n => n !== near && n !== vid && !b.graph.vertices[vid].neighbors.includes(n));
         if (blocker === undefined) continue;
         const withBlock = scoreVertex(b, S(), vid, { occupied: [blocker] });
-        const hasFar = x => x.parts.some(p => p.k === 'port' && /One road from/.test(p.text));
+        const hasFar = x => x.parts.some(p => p.k === 'port');
         if (hasFar(free)) { credited++; assert.ok(!hasFar(withBlock), `seed ${seed} corner ${vid}: far end ${far} blocked by ${blocker} but port still credited`); blocked++; }
       }
     }

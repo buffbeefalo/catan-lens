@@ -40,8 +40,9 @@ serve.js            zero-dependency local server (npm start)
 2. `score.js` scores every legal corner. A score is the sum of named parts; each part carries the sentence the
    panel shows, so the UI never invents text. `rankSpots` sorts them; ties share rank 1.
 3. `app.js` keeps one `state` object, mirrors it into the URL on every change (so any view can be shared), and
-   re-renders the panel and the board marks. `landReadiness` in `board.js` gates ranking and draft computation;
-   incomplete land also hides placed verdicts and combined-opening totals without deleting placements.
+   re-renders the panel and the board marks. `landReadiness` and `harborStatus` in `board.js` gate ranking and
+   draft computation; incomplete land or an unresolved harbour choice also hides placed verdicts and
+   combined-opening totals without deleting placements.
    Hints (ring, scores, projections, road) are drawn only when the
    current mode allows them (`reveal()`), so blind practice and unanswered drills leak nothing.
 4. Replacing a custom board or changing its layout checkpoints the existing URL with `pushState`.
@@ -53,6 +54,11 @@ serve.js            zero-dependency local server (npm start)
    an error state, suppresses advice and table editing, and offers explicit restart actions. A board that
    decodes at the other geometry gets recovery choices for that geometry's player counts. The decoder
    allows unfinished boards, but rejects numbers on non-producing tiles and duplicate harbour edges.
+6. Custom-board harbour mode is `check` by default: a valid standard inventory is included automatically.
+   `ports=entered` confirms a valid custom inventory; a port edit clears that confirmation. `ports=ignore`
+   keeps the physical board intact but creates an `analysisBoard` with no harbours. Rankings, verdicts,
+   projections and road hints all use that same analysis board. Replacing a board or changing geometry
+   resets the choice; ordinary edits, same-shape table changes, share links and drill snapshots retain it.
 
 ## Where to change things
 

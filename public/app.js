@@ -1,12 +1,12 @@
-import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness } from './board.js';
+import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
 import { hexCorners, legalVertices } from './geometry.js';
 import { suggestRoad, rankSpots, compare, grade, simulateDraft, PLANS, planFor } from './score.js';
 import { STAGES, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
 
 const $ = s => document.querySelector(s);
-const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null };
-let board = null, ranking = [], draft = [], entry = { ready: false };
+const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check' };
+let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
 const HEUR = 'opening heuristic v1';
 const MAX_LEVEL = STAGES.length + 20;   // bonus levels beyond the ladder are capped so a hand-edited link cannot draw a giant track
 
@@ -22,6 +22,7 @@ function readUrl() {
   state.cak = q.get('cak') === '1';
   state.balanced = q.get('bal') !== '0';
   state.showBest = q.get('best') !== '0';
+  state.portMode = ['ignore', 'entered'].includes(q.get('ports')) ? q.get('ports') : 'check';
   state.randomSeat = q.get('rseat') === '1';
   state.drill = q.get('drill') === '1';
   state.stage = Math.min(MAX_LEVEL, Math.max(1, Math.floor(n('level', 1))));
@@ -50,7 +51,7 @@ function writeUrl() {
   const q = new URLSearchParams({ players: state.players, seed: state.seed, seat: state.seat, cak: state.cak ? 1 : 0, bal: state.balanced ? 1 : 0, best: state.showBest ? 1 : 0, rseat: state.randomSeat ? 1 : 0 });
   if (state.drill && !state.drillSetup) { q.set('drill', 1); q.set('level', state.stage); }   // the level defines its pieces; none are written
   else {
-    if (state.custom) { const enc = encodeBoard(board); q.delete('seed'); q.set('b', enc.b); if (enc.h) q.set('h', enc.h); }
+    if (state.custom) { const enc = encodeBoard(board); q.delete('seed'); q.set('b', enc.b); if (enc.h) q.set('h', enc.h); if (state.portMode !== 'check') q.set('ports', state.portMode); }
     if (state.me.length) q.set('me', state.me.join(','));
     if (state.opp.length) q.set('opp', state.opp.join(','));
     if (state.history.length) q.set('seq', state.history.map(h => (h.k === 'opp' ? 'o' : 'm') + h.id).join(','));
@@ -91,10 +92,14 @@ function rebuild() {
   recompute();
 }
 function recompute() {
-  entry = landReadiness(board);
+  const land = landReadiness(board), ports = harborStatus(board);
+  const excludePorts = state.custom && state.portMode === 'ignore';
+  const portsReady = excludePorts || (ports.valid && (ports.standard || (state.custom && state.portMode === 'entered')));
+  entry = { ...land, landReady: land.ready, ports, portsReady, excludePorts, ready: land.ready && portsReady };
+  analysisBoard = excludePorts ? { ...board, harbors: {} } : board;
   // The second settlement is ranked against the first; once both are down the ranking is hidden.
-  ranking = entry.ready ? rankSpots(board, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp] }) : [];
-  draft = entry.ready ? simulateDraft(board, settings(), { me: state.me, opp: state.opp }) : [];
+  ranking = entry.ready ? rankSpots(analysisBoard, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp] }) : [];
+  draft = entry.ready ? simulateDraft(analysisBoard, settings(), { me: state.me, opp: state.opp }) : [];
   if (state.pick !== null && !ranking.some(r => r.id === state.pick)) state.pick = null;
   writeUrl(); render();
 }
@@ -159,11 +164,12 @@ function drawBoard() {
     t.setAttribute('x', cx); t.setAttribute('y', cy + 0.08);
     lminX = Math.min(lminX, cx - w / 2); lmaxX = Math.max(lmaxX, cx + w / 2); lminY = Math.min(lminY, cy - h / 2); lmaxY = Math.max(lmaxY, cy + h / 2);
   }
+  const conflicts = state.custom && state.tool === 'port' ? new Set(harborStatus(board).conflictEdges) : new Set();
   if (state.custom && state.tool === 'port') for (const eid of board.graph.perimeter) {   // every coastal edge is a tap target for a harbour
     const [a, b] = board.graph.edges[eid].v.map(i => board.graph.vertices[i]);
-    const hit = el('line', { class: 'coast-hit' + (board.harbors[eid] ? '' : ' empty'), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'data-edge': eid });
+    const hit = el('line', { class: 'coast-hit' + (board.harbors[eid] ? '' : ' empty') + (conflicts.has(eid) ? ' conflict' : ''), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'data-edge': eid });
     hit.append(el('title', {}, board.harbors[eid] ? `Harbour: ${board.harbors[eid]} — tap to change` : 'Tap to add a harbour'));
-    svgButton(hit, `Coastal edge ${eid}: ${board.harbors[eid] || 'no harbour'}. Change harbour`, () => cycleHarbor(eid));
+    svgButton(hit, `Coastal edge ${eid}: ${board.harbors[eid] || 'no harbour'}. ${conflicts.has(eid) ? 'Shares a corner with another harbour. ' : ''}Change harbour`, () => cycleHarbor(eid));
     g.append(hit);
   }
   // Grow the frame to fit the labels (they may sit further out than the fixed padding allows).
@@ -227,7 +233,7 @@ function drawMarks() {
   }
 }
 // R13 starting road for a settlement, against the pieces on the board right now.
-const roadHint = id => suggestRoad(board, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
+const roadHint = id => suggestRoad(analysisBoard, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
 const roadLine = id => { const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No road makes progress from here: every corner two roads away is already taken.')}</p>`; };
 // Can a click on the board do anything right now?
 const canPlace = () => !state.linkError && (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
@@ -280,7 +286,7 @@ function setCustom(on) {
   if (on && state.drill) setDrill(false);
   if (!on) keepPreviousBoard();
   state.custom = on; state.tool = null; state.numHex = null; state.pick = null;
-  if (on) { state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
+  if (on) { state.portMode = 'check'; state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
   else { state.seed = randomSeed(); state.linkError = null; state.me = []; state.opp = []; state.history = []; }
   controls(); rebuild();
 }
@@ -293,8 +299,8 @@ function hexClick(i) {
   rebuild();
 }
 function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); }
-function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; rebuild(); }
-function fillCustom(b) { keepPreviousBoard(); state.linkError = null; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
+function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; if (state.portMode === 'entered') state.portMode = 'check'; rebuild(); }
+function fillCustom(b) { keepPreviousBoard(); state.linkError = null; state.portMode = 'check'; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
 function bindBoardActions() {
   const bb = $('#blank-board'); if (bb) bb.onclick = () => fillCustom(blankBoard(state.setup));
   const rb = $('#rand-board'); if (rb) rb.onclick = () => fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true }));
@@ -359,7 +365,7 @@ function placedVerdicts() {
   for (const h of state.history) {
     if (h.k === 'me' && (!state.drill || h.user)) {
       const mine = seen.filter(x => x.k === 'me').map(x => x.id);
-      const rk = rankSpots(board, settings(), { mine, occupied: seen.map(x => x.id) });
+      const rk = rankSpots(analysisBoard, settings(), { mine, occupied: seen.map(x => x.id) });
       const r = rk.find(x => x.id === h.id);
       if (r) out.push({ r, g: grade(r, rk, state.players), diff: compare(rk[0], r), n: mine.length + 1 });
     }
@@ -388,11 +394,26 @@ function html(strings, ...vals) { return strings.reduce((s, x, i) => s + x + (va
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function reasons(r) { return `<ul class="why">${r.parts.map(p => `<li class="${p.v !== null && p.v < 0 ? 'neg' : ''}">${esc(p.text)}</li>`).join('')}</ul>`; }
 
+function harborControls() {
+  if (!entry.landReady) return '';
+  const ports = entry.ports;
+  const message = entry.excludePorts ? 'Harbour effects are excluded from all advice. Entered ports stay on your board.'
+    : !ports.valid ? (ports.conflictEdges.length ? 'Some harbours share a corner. Repair their positions or exclude harbour effects.' : 'A harbour has an unusable edge or type. Repair it or exclude harbour effects.')
+    : ports.standard ? `${ports.count} harbours included in advice.`
+    : state.portMode === 'entered' ? `Using a custom layout with ${ports.count} entered harbour${ports.count === 1 ? '' : 's'}. Unmarked coast counts as having no harbour.`
+    : `${ports.count} harbours entered; ${ports.count === ports.expected ? 'the types differ from the standard set' : `the standard set has ${ports.expected}`}. Finish the Ports entry or exclude harbour effects${ports.count > 0 ? ', or confirm your custom layout below' : ''}.`;
+  return `<div class="harbor-analysis"><p class="sub" id="harbor-status" role="status">${message}</p>
+    <button class="toggle" id="port-mode" data-port-mode="${entry.excludePorts ? 'check' : 'ignore'}" aria-pressed="${entry.excludePorts}">Ignore harbour effects</button>
+    ${ports.valid && !ports.standard && ports.count > 0 ? `<button class="toggle" id="confirm-harbors" data-port-mode="${state.portMode === 'entered' ? 'check' : 'entered'}" aria-pressed="${state.portMode === 'entered'}">Use these ${ports.count} harbour${ports.count === 1 ? '' : 's'}</button>` : ''}
+    ${ports.conflictEdges.length ? '<button class="btn ghost" id="review-ports">Show conflicting harbours</button>' : ''}</div>`;
+}
+
 const disclosures = new Map();
 function render() {
   for (const details of $('#panel').querySelectorAll('details[data-disclosure]')) disclosures.set(details.dataset.disclosure, details.open);
   const plan = PLANS[planFor(settings())];
-  $('#plan-note').textContent = `${plan.label}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${HEUR} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}`;
+  const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';
+  $('#plan-note').textContent = `${plan.label}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${HEUR} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}`;
   drawMarks();
   const panel = $('#panel');
   const active = panel.querySelector(':focus');
@@ -442,14 +463,18 @@ function render() {
   } else {
     if (state.custom) {
       const notes = checkTiles(board);
+      const nonstandardLand = entry.landReady && (checkTiles(board, { harbors: false }).length > 0 || !board.balanced);
       const sel = state.numHex !== null ? board.hexes[state.numHex] : null;
       const tools = [['wood', 'Wood'], ['brick', 'Brick'], ['wheat', 'Wheat'], ['sheep', 'Sheep'], ['ore', 'Ore'], ['desert', 'Desert'], ['number', 'Numbers'], ['port', 'Ports']];
       out += html`<div class="card edit lead"><h2>Your board <span>enter the board in front of you</span></h2>
-        ${!entry.ready ? `<p class="sub" role="status"><b>Finish entering your board.</b> ${entry.blankCount ? `${entry.blankCount} hex${entry.blankCount === 1 ? ' needs a resource' : 'es need resources'}. ` : ''}${entry.missingNumberCount ? `${entry.missingNumberCount} resource hex${entry.missingNumberCount === 1 ? ' needs a number token' : 'es need number tokens'}. ` : ''}${!entry.blankCount && !entry.missingNumberCount && !entry.producingCount ? 'Add producing resources and their number tokens. ' : ''}Settlement advice appears when the land entry is complete.</p>` : ''}
-        <p class="sub">Pick a paint, then tap hexes. <b>Numbers</b>: tap a hex, then its token. <b>Ports</b>: tap a coastal edge to cycle 3:1, wood, brick, wheat, sheep, ore, none. You can also Tab to a hex or coastal edge and press Enter or Space; Escape returns from the number picker to the hex. Settlement advice waits for complete resources and number tokens. The link carries your board as you edit.</p>
+        ${!entry.landReady ? `<p class="sub" role="status"><b>Finish entering your board.</b> ${entry.blankCount ? `${entry.blankCount} hex${entry.blankCount === 1 ? ' needs a resource' : 'es need resources'}. ` : ''}${entry.missingNumberCount ? `${entry.missingNumberCount} resource hex${entry.missingNumberCount === 1 ? ' needs a number token' : 'es need number tokens'}. ` : ''}${!entry.blankCount && !entry.missingNumberCount && !entry.producingCount ? 'Add producing resources and their number tokens. ' : ''}Finish the land, then check the harbours before analysing.</p>` : ''}
+        ${nonstandardLand ? '<p class="sub inventory-note">Nonstandard land setup: advice uses your entered tiles and tokens.</p>' : ''}
+        ${harborControls()}
+        <p class="sub">Choose a resource and paint its hexes. <b>Numbers</b> sets tokens; <b>Ports</b> edits the coast. The link updates as you work.</p>
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
         ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         ${notes.length || !board.balanced ? `<details data-disclosure="inventory"><summary>Check board inventory</summary><p class="sub check">${notes.map(esc).join(' ')}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p></details>` : '<p class="sub check ok">Matches the official box.</p>'}
+        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. You can also Tab to a hex or coastal edge and press Enter or Space. Escape returns from the number picker to its hex.</p></details>
         <p style="margin:8px 0 0"><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
     }
     out += html`<div class="card"><div class="modes">
@@ -457,7 +482,7 @@ function render() {
       <button id="mode-me" aria-pressed="${state.mode === 'me'}">Place mine</button>
       <button id="mode-opp" aria-pressed="${state.mode === 'opp'}">Mark opponent</button></span>
     <span><button class="btn ghost" id="undo">Undo</button> <button class="btn ghost" id="reset">Clear</button></span></div>
-    <p class="sub" style="margin:10px 0 0">${!entry.ready ? 'Complete the resources and number tokens before choosing settlements. Existing pieces are kept; you can still mark opponents and undo placements.' : stage === 'first' ? 'Click any open corner to try it as your first settlement. Mark opponents’ pieces as they place so the ranking only counts what is still open.' : stage === 'second' ? 'Now the second settlement: the ranking rewards corners that patch what your first one lacks.' : 'Both settlements are down. Undo to try a different second corner.'}</p></div>`;
+    <p class="sub" style="margin:10px 0 0">${!entry.ready ? `${entry.landReady ? 'Choose how to handle harbours' : 'Complete the resources and number tokens'} before choosing settlements. Existing pieces are kept; you can still mark opponents and undo placements.` : stage === 'first' ? 'Click any open corner to try it as your first settlement. Mark opponents’ pieces as they place so the ranking only counts what is still open.' : stage === 'second' ? 'Now the second settlement: the ranking rewards corners that patch what your first one lacks.' : 'Both settlements are down. Undo to try a different second corner.'}</p></div>`;
   }
 
   if (stage !== 'done' && best && state.showBest && !state.drill) {
@@ -536,6 +561,11 @@ function render() {
   for (const b of panel.querySelectorAll('.palette button')) b.onclick = () => setTool(b.id.slice('tool-'.length));
   for (const b of panel.querySelectorAll('.picker button')) b.onclick = () => setNumber(Number(b.dataset.num) || null);
   bindBoardActions();
+  for (const button of panel.querySelectorAll('[data-port-mode]')) button.onclick = () => { state.portMode = button.dataset.portMode; recompute(); };
+  const reviewPorts = $('#review-ports'); if (reviewPorts) reviewPorts.onclick = () => {
+    state.tool = 'port'; state.numHex = null; state.pick = null; controls(); rebuild();
+    $(`.coast-hit[data-edge="${entry.ports.conflictEdges[0]}"]`)?.focus();
+  };
   const keep = $('#keep'); if (keep) keep.onclick = keepPick;
   const previewBest = $('#preview-best'); if (previewBest) previewBest.onclick = () => previewPick(best.id);
   const cancel = $('#cancel-pick'); if (cancel) cancel.onclick = cancelPick;
@@ -556,7 +586,7 @@ function setPlayers(players) {
   const setup = players >= 5 ? 'ext56' : 'base';
   if (setup !== state.setup) {
     if (!state.drill) keepPreviousBoard();
-    if (state.custom) { state.customHexes = []; state.customHarbors = {}; state.numHex = null; }
+    if (state.custom) { state.customHexes = []; state.customHarbors = {}; state.numHex = null; state.portMode = 'check'; }
     state.me = []; state.opp = []; state.history = []; state.seq = null; state.pick = null;
   }
   state.players = players; state.setup = setup; state.seat = Math.min(state.seat, players);

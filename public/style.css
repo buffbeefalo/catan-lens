@@ -152,6 +152,7 @@ details p{font-size:12px;color:var(--mut);margin:8px 0}
 .hex.sel{stroke:var(--piece-ink);stroke-width:.09}
 .coast-hit{stroke:transparent;stroke-width:.3;cursor:pointer}
 .coast-hit.empty{stroke:var(--coast);stroke-width:.12;stroke-dasharray:.06 .06}
+.coast-hit.conflict{stroke:var(--red);stroke-width:.12;stroke-dasharray:.12 .06}
 .hex.editable:focus-visible{stroke:var(--piece-ink);stroke-width:.09;stroke-dasharray:.12 .08}
 .coast-hit:focus-visible{stroke:var(--piece-ink);stroke-width:.12;stroke-dasharray:none}
 .palette{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}

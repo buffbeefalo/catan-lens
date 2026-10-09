@@ -391,6 +391,94 @@ test('leaving an unreadable link for Drill or Explore preserves the original err
   assert.equal(await page.locator('.link-error').count(), 1);
 });
 
+test('missing harbours require a choice and every advice surface respects their exclusion without deleting entered ports', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  const { rankSpots, scoreVertex, simulateDraft, suggestRoad } = await import('../public/score.js');
+  const board = generateBoard({ seed: 129 });
+  const withoutPorts = { ...board, harbors: {} };
+  const settings = { players: 4, seat: 3, cak: false };
+  const expected = rankSpots(withoutPorts, settings, { mine: [9], occupied: [9] });
+  for (const harbors of [{}, Object.fromEntries(Object.entries(board.harbors).filter((_, i) => i % 2 === 0))]) {
+    const encoded = encodeBoard({ ...board, harbors });
+    const query = '?' + new URLSearchParams({ players: 4, seat: 3, ...encoded, me: 9, seq: 'm9' });
+    const page = await open(t, { width: 1400, height: 900 }, query);
+    assert.equal(await page.locator('.best-ring, .best-card, .verdict, .road, .draft-details').count(), 0, 'unknown harbours cannot silently count as absent');
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    await page.locator('#port-mode').click();
+    assert.equal(new URL(page.url()).searchParams.get('ports'), 'ignore');
+    assert.equal(new URL(page.url()).searchParams.get('h') || '', encoded.h);
+    assert.equal(await page.locator('.harbor').count(), Object.keys(harbors).length);
+    assert.match(await page.locator('#harbor-status').innerText(), /excluded/);
+    assert.equal(await page.locator('.best-ring').first().getAttribute('data-corner'), String(expected[0].id));
+    assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score ' + scoreVertex(withoutPorts, settings, 9).score.toFixed(1));
+    const draft = simulateDraft(withoutPorts, settings, { me: [9], opp: [] }).filter(d => !d.actual).map(d => String(d.id));
+    assert.deepEqual(await page.locator('.rank.draft li[data-id]:not([data-id=""])').evaluateAll(nodes => nodes.map(n => n.dataset.id)), draft);
+    const road = suggestRoad(withoutPorts, settings, 9, { mine: [9], occupied: [9] });
+    const edge = board.graph.edges[road.edge].v.map(id => board.graph.vertices[id]);
+    for (const [key, value] of Object.entries({ x1: edge[0].x, y1: edge[0].y, x2: edge[1].x, y2: edge[1].y })) assert.equal(Number(await page.locator('#svg .road.me').getAttribute(key)), value);
+    await reloadInBrowser(page);
+    assert.equal(await page.locator('#port-mode').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.best-ring').first().getAttribute('data-corner'), String(expected[0].id));
+    await page.locator('#port-mode').click();
+    assert.equal(await page.locator('.best-ring, .verdict, .road, .draft-details').count(), 0, 'including unchecked partial harbours reopens the readiness decision');
+    await page.close();
+  }
+});
+
+test('a custom harbour inventory needs explicit confirmation, survives reload, and is checked again after a port edit', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  const board = generateBoard({ seed: 42 });
+  const [edge, type] = Object.entries(board.harbors)[0];
+  const encoded = encodeBoard({ ...board, harbors: { [edge]: type } });
+  const page = await open(t, { width: 390, height: 844 }, '?' + new URLSearchParams({ players: 4, ...encoded, me: 0, seq: 'm0' }));
+  assert.equal(await page.locator('#confirm-harbors').count(), 1);
+  await page.locator('#confirm-harbors').click();
+  assert.equal(new URL(page.url()).searchParams.get('ports'), 'entered');
+  assert.match(await page.locator('#harbor-status').innerText(), /custom|unmarked coast/i);
+  assert.ok(await page.locator('.best-ring').count() > 0);
+  await reloadInBrowser(page);
+  assert.equal(await page.locator('#confirm-harbors').getAttribute('aria-pressed'), 'true');
+  await page.locator('#tool-port').click();
+  await page.locator(`.coast-hit[data-edge="${edge}"]`).press('Enter');
+  assert.equal(new URL(page.url()).searchParams.has('ports'), false);
+  assert.equal(await page.locator('.best-ring, .verdict, .road, .draft-details').count(), 0);
+  assert.equal(await page.locator('.piece.me').count(), 1);
+});
+
+test('harbours sharing a corner must be repaired or excluded, with an accessible route to the conflicting edges', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  const board = generateBoard({ seed: 42 });
+  const first = Number(Object.keys(board.harbors)[0]);
+  const shared = board.graph.perimeter.find(id => !board.harbors[id] && board.graph.edges[id].v.some(v => board.graph.edges[first].v.includes(v)));
+  const encoded = encodeBoard({ ...board, harbors: { ...board.harbors, [shared]: 'ore' } });
+  const page = await open(t, { width: 1400, height: 900 }, '?' + new URLSearchParams({ players: 4, ...encoded, ports: 'entered' }));
+  assert.equal(await page.locator('.best-ring, .best-card').count(), 0, 'confirmation cannot override an unusable port layout');
+  assert.equal(await page.locator('#confirm-harbors').count(), 0);
+  assert.match(await page.locator('#harbor-status').innerText(), /share a corner/);
+  await page.locator('#port-mode').click();
+  assert.ok(await page.locator('.best-ring').count() > 0, 'land can be analysed with every harbour effect excluded');
+  await page.locator('#port-mode').click();
+  await page.locator('#review-ports').press('Enter');
+  assert.equal(await page.locator('.coast-hit.conflict').count(), 2);
+  assert.match(await page.evaluate(() => document.activeElement.getAttribute('aria-label')), /share.*corner/i);
+  await page.locator(`.coast-hit[data-edge="${shared}"]`).press('Enter');
+  assert.equal(await page.locator('.coast-hit.conflict').count(), 0);
+  assert.ok(await page.locator('.best-ring').count() > 0, 'repairing the standard set restores advice');
+});
+
+test('excluding harbours respects blind practice and a new board resets the assumption', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  const encoded = encodeBoard(generateBoard({ seed: 42 }));
+  const page = await open(t, { width: 1400, height: 900 }, '?' + new URLSearchParams({ players: 4, ...encoded, ports: 'ignore', best: 0 }));
+  assert.equal(new URL(page.url()).searchParams.get('ports'), 'ignore');
+  assert.equal(await page.locator('.best-ring, .best-card, .verdict, .road, .draft-details').count(), 0);
+  assert.equal(await page.locator('#port-mode').getAttribute('aria-pressed'), 'true');
+  await page.locator('#rand-board').click();
+  assert.equal(new URL(page.url()).searchParams.has('ports'), false);
+  assert.equal(await page.locator('#port-mode').getAttribute('aria-pressed'), 'false');
+  assert.equal(await page.locator('.best-ring, .best-card, .verdict, .road, .draft-details').count(), 0);
+});
+
 test('removing and restoring a number invalidates and restores all advice without losing pieces', async t => {
   for (const players of [4, 6]) {
     const page = await open(t, { width: 1400, height: 900 }, `?seed=42&players=${players}`);

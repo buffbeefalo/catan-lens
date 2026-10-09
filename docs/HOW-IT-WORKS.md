@@ -15,11 +15,19 @@ rulebook asks. Every board comes from a seed, so a link always reopens the exact
 
 You can also enter the real board in front of you with **Your board**: paint the resources, set the
 number tokens, tap the coast to place harbours. Settlement advice starts once all resources and number
-tokens are entered, with at least one producing hex. If a tile or token is removed later, rankings,
+tokens are entered, with at least one producing hex, and the harbour choice is settled. A complete standard
+harbour set is included automatically. Otherwise finish entering it, choose **Ignore harbour effects**, or
+confirm **Use these … harbours** for a custom layout. The last choice treats unmarked coast as having no
+harbour. Shared links remember the choice; changing a confirmed custom port asks you to check it again.
+Overlapping harbours must be repaired or excluded from analysis. **Show conflicting harbours** selects the
+Ports tool, marks the affected coast and focuses its first conflict for keyboard repair. Excluding harbour
+effects keeps the entered ports on the board while leaving them out of rankings, grades, projections and
+road suggestions. If a tile or token is removed later, rankings,
 grades, road suggestions, projections and the opening summary disappear until the input is repaired.
 Your placed pieces and their order are kept during these edits. **Check board inventory** expands the
-detailed tile, token and harbour differences from the standard box; these checks stay separate from
-land readiness so the editor remains compact on a phone.
+detailed tile, token and harbour differences from the standard box. Nonstandard land counts remain a
+visible caveat, so house-rule boards can still be analysed. **Editing help** expands the full controls
+without crowding the phone editor.
 For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
 number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
@@ -48,7 +56,7 @@ is always within 4 pips of the board's best-producing corner (this is a test in 
 | Scarcity | A resource that is rare on *this* board is worth more: it trades at a premium and is hard to get elsewhere. |
 | Pairs | Wood with brick (roads) or wheat with ore (cities) from the same corner earns a small bonus. |
 | Repeated numbers | Two hexes with the same number means feast-or-famine rolls; a small penalty. |
-| Harbours | A 3:1 harbour helps anyone; a 2:1 harbour only helps if you produce plenty of that resource. |
+| Harbours | When included, a 3:1 harbour helps anyone; a 2:1 harbour helps most when you produce plenty of that resource. A nearby harbour needs two roads and a new settlement before you can use it. |
 | Room to grow | A strong open corner two roads away is worth something; a dead end is not. |
 | Second settlement | Your second pick gets credit for covering resources your first one lacks, especially wheat and ore. |
 

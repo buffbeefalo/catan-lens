@@ -73,6 +73,15 @@ the alternative has more raw production, and reports small score gaps to two dec
 the explanation, not the rankings or weights. The label describes why the top corner scores higher;
 it no longer implies that every difference is something the other corner entirely lacks.
 
+**Entered-board assumptions, 2026-10-09.** Settlement advice waits for complete land resources and
+number tokens. Harbour entry must match the standard inventory, be explicitly confirmed as a valid
+custom layout, or be explicitly excluded from the analysis. Harbours that share a corner cannot be
+confirmed; the editor identifies them for repair. Excluding harbours preserves the entered board and
+its share link while removing harbour effects from rankings, verdicts, projected placements and road
+advice. The choice is saved in the link and shown alongside the advice. Nonstandard land inventories
+remain supported with a visible caveat. These controls change which board is analysed, not the scoring
+weights, and do not establish a new win-rate claim.
+
 The sources give directions and a few thresholds (production first; wheat/ore over sheep; about 10 pips per
 spot; a 2:1 port needs plenty of that resource behind it — the sources say roughly 7+, the app credits a fed port from 5 pips (author's choice, so 4-player coastal corners are not written off); count marquee numbers; spread your numbers; ore first in C&K).
 The **numeric coefficients** in the right-hand column below are the author's choices that encode those
@@ -101,7 +110,7 @@ hardest level repeats. Thresholds are the author's choice; nothing in the scorin
 
 **Audit 2026-09-15.** A systematic bug audit confirmed 54 defects (3 high, 14 medium, 37 low); all were fixed
 the same day. Scoring-visible ones: R6 no longer charges a duplicate inside your own first settlement to
-every second-settlement corner; R7 credits a port one road away only when its far end can still be settled;
+every second-settlement corner; R7 credits a nearby port only when its far end, two roads away, can still be settled;
 R8 lists every expansion value it scores (parts and the total are rounded separately); R9 starting cards count one
 per hex; the scarcity cap moved 1.3 → 1.25 (see R3); the number spiral is now continuous like the official
 one; "the most on the board" is measured board-wide; ties share rank 1; the comparison never lists something
@@ -113,7 +122,7 @@ scores corners by roll probability and a fixed resource weight, showed the value
 you; that idea was borrowed. "Your board" starts from the board
 on screen; paint resources, tap a hex then its token, tap coastal edges to cycle harbours. A blank or desert hex
 never carries a number and produces nothing. The link carries the board (`b=` one letter per hex plus its number,
-`h=` edge:harbour pairs); a check lists differences from the official box (advice, never a block); balance is
+`h=` edge:harbour pairs); a check lists differences from the official box; balance is
 measured from the entered numbers. Every existing rule then applies unchanged — nothing in the scoring moved.
 
 ## Rules the experts agree on → how the app scores them
@@ -126,7 +135,7 @@ measured from the entered numbers. Every existing rule then applies unchanged �
 | R4 | **Complementary pairs.** Wood+brick are always spent together (roads); wheat+ore build cities. Getting both halves of a pair from one spot is worth more than the sum. | 2 | Up to +0.6 for wood+brick and +0.9 for wheat+ore, scaled by the weaker half (full value once the weaker resource has 3+ pips, so 1 pip of ore next to 5 wheat earns a third). |
 | R5 | **Don't fear the robber on 6/8.** Data from ~400 online games: realized production matches theoretical pips; do not discount red numbers for fear of being robbed. | 3 | No robber penalty. (An earlier draft had one; removed on this evidence.) |
 | R6 | **Spread your numbers.** Duplicated numbers mean feast-or-famine and more 7-roll discards. But doubling up is fine when the spot is clearly the strongest, so this is a nudge, not a veto. | 2, 4, 5 | −0.75 per number repeated within a spot or between your first and second settlement. |
-| R7 | **3:1 ports are the ones top players value most; 2:1 ports only pay when you already overproduce that resource.** Ports on a coastal corner cost production (two hexes instead of three), so a port must earn its keep. | 1, 2, 6, 7 | Port on the corner: 3:1 +1.0; 2:1 +1.5 when you hold ≥5 pips of that resource (this corner plus your other settlement), else +0.25. Only the single best port counts (never stacked). A port one road away scores half. |
+| R7 | **3:1 ports are the ones top players value most; 2:1 ports only pay when you already overproduce that resource.** Ports on a coastal corner cost production (two hexes instead of three), so a port must earn its keep. | 1, 2, 6, 7 | Port on the corner: 3:1 +1.0; 2:1 +1.5 when you hold ≥5 pips of that resource (this corner plus your other settlement), else +0.25. Only the single best port counts (never stacked). A potential harbour settlement two roads away scores half, only while that destination remains legal. Its explanation names the two roads and new settlement needed; the port is not usable merely because a road reaches it. |
 | R8 | **Leave yourself room to grow.** A strong open corner two roads away is worth more than a slightly better isolated spot; avoid dead ends and single-hex corners; don't rely on the crowded middle. | 5, 7, 6 | +10% of the pips of the best legal corner exactly two roads away (still legal after you settle, i.e. not blocked by the distance rule). |
 | R9 | **The second settlement patches the first.** Cover the resources you are missing (especially wheat and ore), keep pips high, avoid repeating numbers, and remember it hands you one card per adjacent hex. | 1, 5, 6 | In "second settlement" mode: +1.0 per resource the first settlement lacks (+1.5 if it is wheat or ore); number-repeat penalty applies across both; the panel lists the starting cards. |
 | R10 | **Turn order shapes the plan.** The first half of the seats (1–2 at a 4-player table, 1–3 with 5 or 6 players) take the best wheat/ore production (Ore-Wheat-Sheep plan). The later seats usually cannot, so they lean on wood/brick for Longest Road, ports, or cornering a scarce resource. | 1, 6, 7 | Seat setting picks a plan: seats 1–2 use the weights in R2; later seats use wood 1.15, brick 1.15, wheat 1.0, ore 0.95, sheep 0.9 and a 1.5× port bonus. |
