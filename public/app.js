@@ -1,6 +1,6 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
 import { hexCorners, legalVertices, nearestVertex } from './geometry.js';
-import { suggestRoad, rankSpots, compare, grade, simulateDraft, PLANS, planFor } from './score.js';
+import { suggestRoad, rankSpots, compare, grade, simulateDraft, openingFacts, PLANS, planFor } from './score.js';
 import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel, normalizeProgress, applyProgressActions } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
 
@@ -376,6 +376,13 @@ function keepPick() {
     if (state.answered.pass && !cleared().includes(state.stage)) markCleared(state.stage);
   }
   state.me.push(state.pick); state.history.push({ k: 'me', id: state.pick, user: true }); state.pick = null; recompute();
+  const result = $('.progress-warning h2') || (state.drill ? $('#drill-result') : state.me.length === 2 ? $('#opening-heading') : $('.verdict h2'));
+  if (result) {
+    result.tabIndex = -1; result.focus({ preventScroll: true });
+    const rect = result.getBoundingClientRect();
+    if (matchMedia('(max-width:1023px)').matches) result.scrollIntoView({ block: 'start', behavior: 'instant' });
+    else if (rect.top < 12 || rect.bottom > innerHeight - 12) result.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+  }
 }
 // Undo reverses the LAST action, whichever kind it was (a pending preview first).
 function undo() {
@@ -406,7 +413,7 @@ function placedVerdicts() {
   }
   return out;
 }
-const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdict ${g.tier}"><h2>${heading} <span>#${g.rank} of ${g.total} · ${g.pct}% of best</span></h2>
+const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>#${g.rank} of ${g.total} · ${g.pct}% of best</span></h2>
       <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
       ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
@@ -418,14 +425,40 @@ function cornerDesc(id) {
   for (const h of board.graph.vertices[id].hexes) { const x = board.hexes[h]; if (x.number) { prod[x.resource] = (prod[x.resource] || 0) + PIPS[x.number]; numbers.push(x.number); } }
   return numbers.length ? describe({ prod, numbers }) : 'no production';
 }
-function payout(ids) {
-  const nums = new Set();
-  for (const id of ids) for (const h of board.graph.vertices[id].hexes) if (board.hexes[h].number) nums.add(board.hexes[h].number);
-  return [...nums].reduce((s, n) => s + PIPS[n], 0);
-}
 function html(strings, ...vals) { return strings.reduce((s, x, i) => s + x + (vals[i] ?? ''), ''); }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 function reasons(r) { return `<ul class="why">${r.parts.map(p => `<li class="${p.v !== null && p.v < 0 ? 'neg' : ''}">${esc(p.text)}</li>`).join('')}</ul>`; }
+
+const cardList = cards => list(Object.entries(cards).filter(([, n]) => n > 0).map(([r, n]) => `${n} ${r}`)) || 'none';
+function openingDetails(facts) {
+  if (state.cak) return `<div class="opening-facts"><p class="sub opening-model">Cities &amp; Knights weighting is enabled. These figures compare two settlements; the starting city and commodities are not modelled.</p>
+    <div class="stat"><span>Two-settlement resource pips <b>${facts.totalPips}</b></span><span>Numbers cover <b>${facts.incomeWays} of 36</b> dice outcomes</span></div>
+    <p class="sub">Detailed income and build planning here covers base-game settlements.</p></div>`;
+  const max = Math.max(1, ...Object.values(facts.pips));
+  const buildNames = { road: 'roads', settlement: 'settlements', city: 'cities', development: 'development cards' };
+  const gaps = facts.missingResources.map(r => `<p class="sub opening-gap"><b>No ${r} income.</b> ${capFirst(list(facts.builds.filter(b => b.cost[r]).map(b => buildNames[b.key])))} need ${r}; plan a trade or another source.</p>`).join('');
+  const lowest = Math.min(...Object.values(facts.pips));
+  const covered = `<p class="sub">All five resources are covered. Lowest income: ${list(Object.keys(facts.pips).filter(r => facts.pips[r] === lowest))} (${lowest} each per 36 rolls).</p>`;
+  const rates = [2, 3, 4].map(rate => {
+    const resources = Object.keys(facts.tradeRates).filter(r => facts.tradeRates[r] === rate);
+    return resources.length ? `${resources.length === 5 ? 'all resources' : list(resources)} ${rate}:1` : '';
+  }).filter(Boolean).join('; ');
+  return `<div class="opening-facts">
+    <p class="opening-income"><b>${facts.totalPips} expected cards</b> per 36 rolls.</p>
+    <p class="sub">Income on <b>${facts.incomeWays} of 36</b> dice outcomes (${Math.round(facts.incomeWays / 36 * 1000) / 10}%). Before the robber or trades; actual rolls vary.</p>
+    <table class="opening-resources"><caption>Average cards per 36 rolls, by resource</caption><tbody>${Object.entries(facts.pips).map(([r, pips]) => `<tr data-resource="${r}"><th scope="row">${NAMES[r]}</th><td class="income-bar"><span aria-hidden="true" style="width:${pips / max * 100}%;background:var(--${r})"></span></td><td class="income-value">${pips}</td></tr>`).join('')}</tbody></table>
+    ${facts.totalPips === 0 ? '<p class="sub opening-gap">These settlements produce no resources. Revisit a placement before planning builds.</p>' : facts.missingResources.length ? gaps : covered}
+    <p class="sub"><b>Starting hand:</b> ${cardList(facts.startingCards)}.</p>
+    <p class="sub opening-rates"><b>Bank trade rates:</b> ${rates}.</p>
+    ${entry.excludePorts ? '<p class="sub">Harbour effects excluded: entered ports are not used in these rates.</p>' : ''}
+    <details class="opening-builds" data-disclosure="opening-builds"><summary>Plan your first builds</summary>
+      <p>Starting from this hand, before trades or new rolls. Each row is a separate option; a build still needs a legal place or purchase on your turn.</p>
+      <table><thead><tr><th scope="col">Build</th><th scope="col">Cards still needed</th></tr></thead><tbody>${facts.builds.map(b => `<tr data-build="${b.key}"><th scope="row">${b.label}<small>Cost: ${cardList(b.cost)}</small></th><td>${b.handCoversCost ? 'Hand covers cost' : cardList(b.needs)}${b.missingProduction.length ? `<small>No own production: ${list(b.missingProduction)}</small>` : ''}</td></tr>`).join('')}</tbody></table></details>
+    <details class="opening-rolls" data-disclosure="opening-rolls"><summary>Which rolls pay?</summary>
+      <table><thead><tr><th scope="col">Roll / chance</th><th scope="col">Cards received</th></tr></thead><tbody>${facts.rolls.map(r => `<tr><th scope="row">${r.number} <small>${r.ways} of 36</small></th><td>${cardList(r.cards)}</td></tr>`).join('')}</tbody></table></details>
+  </div>`;
+}
+const capFirst = text => text.charAt(0).toUpperCase() + text.slice(1);
 
 function harborControls() {
   if (!entry.landReady) return '';
@@ -488,7 +521,7 @@ function render() {
     const a = state.answered;
     out += html`<div class="card drill ${a ? (a.pass ? 'pass' : 'fail') : ''}"><h2>Level ${state.stage}${state.stage <= STAGES.length ? ` of ${STAGES.length}` : ' · bonus'} <span>${esc(st.title)}${state.stage > STAGES.length ? ' · the hardest level repeats with new boards' : ''}</span></h2>
       <p class="sub">${st.players} players · you are seat ${st.seat}${st.cak ? ' · Cities &amp; Knights weighting' : ''}. ${before} Place your <b>${st.task}</b> settlement. To clear it: land on ${st.pass.top === 1 ? '<b>the best corner</b>' : `<b>one of the top ${st.pass.top} corners</b>`}.${state.attempts ? ` Attempt ${state.attempts + (a ? 0 : 1)}.` : ''}${state.seedFallback ? ' (No board in this level\u2019s usual difficulty band was found; this one is close.)' : ''}</p>
-      ${a ? `<p class="grade"><b>${a.pass ? 'Level cleared' : 'Not this time'}</b> — ${esc(a.text)}</p><p style="margin:10px 0 0">${a.pass ? `<button class="btn" id="next-stage">${state.stage === STAGES.length ? 'All 16 cleared — bonus level' : state.stage >= MAX_LEVEL ? 'Another board at the top' : 'Next level'}</button>` : '<button class="btn" id="scramble">New board, same level</button>'}</p>` : '<p class="sub" style="margin:0">Hints are hidden until you commit. Click a corner, then Keep.</p>'}</div>`;
+      ${a ? `<p class="grade" id="drill-result" tabindex="-1"><b>${a.pass ? 'Level cleared' : 'Not this time'}</b> — ${esc(a.text)}</p><p style="margin:10px 0 0">${a.pass ? `<button class="btn" id="next-stage">${state.stage === STAGES.length ? 'All 16 cleared — bonus level' : state.stage >= MAX_LEVEL ? 'Another board at the top' : 'Next level'}</button>` : '<button class="btn" id="scramble">New board, same level</button>'}</p>` : '<p class="sub" style="margin:0">Hints are hidden until you commit. Click a corner, then Keep.</p>'}</div>`;
     const top = Math.min(MAX_LEVEL, Math.max(STAGES.length, state.stage, maxCleared()));
     const cl0 = cleared();
     out += html`<div class="card"><h2>Levels <span>${cl0.filter(x => x <= STAGES.length).length} of ${STAGES.length} cleared · ${esc(tableLabel(table()))}</span></h2>
@@ -542,21 +575,16 @@ function render() {
       ${!reveal() ? '' : g.rank === 1 ? `<p class="sub"><b>${idx === 1 ? 'That is the top corner.' : 'Tied with the top corner.'}</b></p>` : `<p class="sub"><b>Why #1 scores higher</b> (${(best.score - r.score).toFixed(2)} points behind):</p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>`}
       ${reveal() ? roadLine(r.id) : ''}
       ${reveal() ? `<div class="stat"><span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : ''}</div>` : ''}
-      ${reveal() ? '</details>' : ''}</div>`;
+      ${reveal() ? '</details>' : ''}
+      ${reveal() && stage === 'second' ? `<details class="opening-preview" data-disclosure="opening-preview"><summary>What this opening gives you</summary>${openingDetails(openingFacts(analysisBoard, [state.me[0], r.id]))}</details>` : ''}</div>`;
+  }
+
+  if (stage === 'done' && entry.ready) {
+    const facts = openingFacts(analysisBoard, state.me);
+    if (facts) out += `<div class="card opening-card"><h2 id="opening-heading" tabindex="-1">Your opening</h2>${openingDetails(facts)}</div>`;
   }
 
   placedVerdicts().forEach(v => { out += verdictCard(v, `Your ${v.n === 1 ? 'first' : 'second'} settlement`); });
-
-  if (stage === 'done' && entry.ready) {
-    const prod = {};
-    for (const id of state.me) for (const h of board.graph.vertices[id].hexes) { const x = board.hexes[h]; if (x.number) prod[x.resource] = (prod[x.resource] || 0) + PIPS[x.number]; }
-    const missing = ['wood', 'brick', 'wheat', 'sheep', 'ore'].filter(r => !prod[r]);
-    const p = payout(state.me);
-    out += html`<div class="card"><h2>Your opening</h2>
-      <p class="sub">${esc(list(Object.entries(prod).map(([k, v]) => `${v} ${k}`)))}</p>
-      <div class="stat"><span>Total pips <b>${Object.values(prod).reduce((s, x) => s + x, 0)}</b></span><span>Produces on <b>${p} of 36</b> rolls (${Math.round(p / 36 * 100)}%)</span><span>Missing <b>${esc(list(missing) || 'nothing')}</b></span></div>
-      <p class="sub" style="margin-top:10px">Tournament players aim for both settlements to add up to 20+ pips with four or five resources covered and few repeated numbers.</p></div>`;
-  }
 
   if (reveal() && draft.length) {
     const canPick = d => !d.actual && state.mode === 'me' && stage !== 'done' && !(state.drill && state.answered !== null);

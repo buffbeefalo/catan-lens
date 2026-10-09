@@ -56,8 +56,26 @@ how much competitive weight they carry.
     The extra frame pieces add one 2:1 wool (sheep) harbour and one 3:1 harbour to the base game.
     The combined board therefore has five 3:1 harbours, two sheep harbours, and one each for wood,
     brick, wheat and ore. https://www.catan.com/sites/default/files/2024-03/Catan%20Game%205-6%20Rules%202022%20240313.pdf
+15. **Official CATAN base-game rulebook**, 2025 publication. Production, setup resources, supply/harbour
+    trading, and the building-cost diagrams on pages 8–9 establish the opening facts: one resource card
+    per producing adjacent hex per settlement; initial cards from the second settlement; 4:1 supply,
+    3:1 generic harbour and 2:1 matching harbour trades. Road costs wood/brick; settlement costs
+    wood/brick/wheat/sheep; city costs two wheat and three ore; development card costs wheat/sheep/ore.
+    https://www.catan.com/sites/default/files/2025-03/CN3081%20CATAN%E2%80%93The%20Game%20Rulebook%20secure%20%281%29.pdf
+16. **Official CATAN Cities & Knights rulebook**, 2025 publication. The second setup piece is a city;
+    setup grants one resource card per adjacent producing hex, while later city production includes
+    extra resources or commodities. The app's weighting-only mode does not simulate these rules.
+    https://www.catan.com/sites/default/files/2025-03/CN3087%20CATAN%E2%80%93Cities%26Knights_%20Rulebook.pdf
 
 ## What is source-backed and what is the author's choice
+
+**Opening facts, 2026-10-09.** The combined-opening summary and second-pick preview use source 15's
+resource, setup, trade and build rules with the existing two-dice probabilities. Expected cards and
+the probability of any income are separate quantities; multiple settlements or hexes on one number
+increase its payout without increasing its probability. Build shortfalls use the second settlement's
+starting hand and show separate possible purchases, not a sequence or a predicted wait time. Figures
+assume resource supply and omit the robber and future trades. They do not change scoring weights or
+establish winning chances. Source 16 limits C&K presentation to a labelled two-settlement comparison.
 
 **Harbour correction, 2026-10-09.** Generated 5–6-player boards previously had six 3:1 harbours and
 only one sheep harbour. The distribution now matches source 14. Tests check the complete type counts

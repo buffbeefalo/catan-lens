@@ -114,6 +114,20 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{o
 .why li.neg{color:var(--amber)}
 .stat{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:8px 0 0}
 .stat b{font-family:var(--mono);font-weight:600;color:var(--ink);font-size:13px}
+.opening-income{margin:8px 0 4px;font-size:15px}
+.opening-facts table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0 14px}
+.opening-facts caption{text-align:left;color:var(--mut);font-size:11px;margin-bottom:5px}
+.opening-facts th,.opening-facts td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+.opening-facts th{font-weight:600}.opening-facts small{display:block;font-size:11px;font-weight:400;color:var(--mut);margin-top:3px}
+.opening-resources th{width:24%}.opening-resources .income-bar{width:64%;vertical-align:middle}
+.income-bar span{display:block;height:9px;border-radius:2px}
+.opening-resources .income-value{width:12%;text-align:right;font-family:var(--mono)}
+.opening-gap{padding-left:8px;border-left:2px solid var(--amber)}
+.opening-facts details,.opening-preview{margin-top:12px}
+.opening-facts details>summary,.opening-preview>summary{min-height:44px;padding:10px 0}
+.opening-builds th[scope="row"]{width:42%}
+.opening-card h2,.verdict h2,#drill-result{scroll-margin-block:16px}
+.opening-card h2:focus-visible,.verdict h2:focus-visible,#drill-result:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .modes{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .rank{list-style:none;margin:8px 0 0;padding:0}
 .rank li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line);cursor:pointer}

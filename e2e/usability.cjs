@@ -310,6 +310,7 @@ test('near-tie drill feedback shows the point gap and precise score only after c
   await page.goto(base + '?players=4&drill=1&level=15&seed=1', { waitUntil: 'networkidle' });
   await page.getByRole('button', { name: 'Corner 31', exact: true }).press('Enter');
   assert.doesNotMatch(await page.locator('.pick-card').innerText(), /99\.5%|11\.98|0\.06 points/);
+  assert.equal(await page.locator('.opening-preview, .opening-facts').count(), 0, 'an unanswered second-settlement drill must not reveal the opening analysis');
   await page.locator('#keep').click();
   const result = await page.locator('.card.drill.fail .grade').innerText();
   assert.match(result, /99\.5%/);
@@ -319,6 +320,72 @@ test('near-tie drill feedback shows the point gap and precise score only after c
   assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score 11.98');
   assert.match(await page.locator('.verdict .grade').innerText(), /Good pick/);
   assert.equal(await page.locator('#next-stage').count(), 0);
+  assert.equal(await page.locator('.opening-card').count(), 1, 'opening facts are available once the drill answer is committed');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'drill-result', 'drill feedback takes focus before the opening details');
+});
+
+test('the completed opening explains income, starting cards and build dependencies on a phone', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?players=4&seat=3&seed=4&me=42,4&seq=m42,m4');
+  assert.equal(await page.locator('.opening-card').count(), 1);
+  const card = page.locator('.opening-card');
+  assert.match(await card.innerText(), /20.*cards.*36 rolls/i);
+  assert.match(await card.innerText(), /20 of 36/);
+  assert.match(await card.innerText(), /1 brick and 1 sheep/);
+  assert.match(await card.innerText(), /no wheat income/i);
+  assert.match(await card.innerText(), /no ore income/i);
+  assert.equal(await card.locator('[data-resource="sheep"] .income-value').innerText(), '11');
+  await card.locator('.opening-builds > summary').click();
+  assert.match(await card.locator('[data-build="settlement"]').innerText(), /1 wood and 1 wheat/);
+  assert.match(await card.locator('[data-build="city"]').innerText(), /2 wheat and 3 ore/);
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+});
+
+test('the second-pick opening preview agrees with the committed summary and stays hidden in blind practice', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?players=4&seat=2&seed=18&me=9&seq=m9');
+  await page.getByRole('button', { name: 'Corner 44', exact: true }).press('Enter');
+  assert.equal(await page.locator('.opening-preview').count(), 1);
+  await page.locator('.opening-preview > summary').click();
+  const before = await page.locator('.opening-preview .opening-facts').innerText();
+  assert.match(before, /22.*cards.*36 rolls/i);
+  assert.match(before, /14 of 36/);
+  await page.locator('#keep').click();
+  assert.equal(await page.locator('.opening-card .opening-facts').innerText(), before);
+  assert.ok(await page.evaluate(() => document.activeElement.matches('.opening-card h2')), 'confirmation focuses the opening result');
+  assert.ok(await page.locator('.opening-resources').evaluate(el => el.getBoundingClientRect().bottom <= innerHeight), 'the full income breakdown is visible immediately after confirmation');
+  await page.goto(base + '?players=4&seat=2&seed=18&me=9&seq=m9&best=0', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Corner 44', exact: true }).press('Enter');
+  assert.equal(await page.locator('.opening-preview, .opening-facts').count(), 0);
+  await page.locator('#keep').click();
+  assert.equal(await page.locator('.opening-card').count(), 1, 'committed facts remain available after blind practice');
+});
+
+test('opening details use the selected harbour assumption and disappear while board input needs repair', async t => {
+  const { generateBoard, encodeBoard } = await import('../public/board.js');
+  const board = generateBoard({ seed: 42 });
+  const first = board.graph.perimeter[0], far = board.graph.perimeter[15];
+  board.harbors = { [first]: '3:1', [far]: 'wood' };
+  const ids = [board.graph.edges[first].v[0], board.graph.edges[far].v[0]];
+  const query = new URLSearchParams({ players: 4, ...encodeBoard(board), me: ids.join(','), seq: ids.map(id => 'm' + id).join(','), ports: 'entered' });
+  const page = await open(t, { width: 1400, height: 900 }, '?' + query);
+  assert.match(await page.locator('.opening-rates').innerText(), /wood.*2:1/i);
+  await page.locator('#port-mode').click();
+  assert.match(await page.locator('.opening-rates').innerText(), /4:1/);
+  assert.doesNotMatch(await page.locator('.opening-rates').innerText(), /2:1|3:1/);
+  assert.match(await page.locator('.opening-facts').innerText(), /harbour effects excluded/i);
+  await page.locator('#tool-number').click();
+  await page.locator('.hex[data-hex="0"]').press('Enter');
+  await page.locator('.picker button[data-num="0"]').click();
+  assert.equal(await page.locator('.opening-card, .opening-preview').count(), 0);
+  assert.equal(await page.locator('.piece.me').count(), 2);
+});
+
+test('Cities and Knights opening figures clearly retain the two-settlement model boundary', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?players=4&seat=2&seed=18&me=9,44&seq=m9,m44&cak=1');
+  assert.equal(await page.locator('.opening-card').count(), 1);
+  const card = page.locator('.opening-card');
+  assert.match(await card.innerText(), /two settlements/i);
+  assert.match(await card.innerText(), /starting city.*commodities/i);
+  assert.equal(await card.locator('.opening-income, .opening-builds').count(), 0, 'base-game projections must not claim to model the C&K starting city');
 });
 
 test('editing a custom board preserves placement order for Undo', async t => {

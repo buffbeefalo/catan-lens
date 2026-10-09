@@ -90,6 +90,27 @@ stays dominant.
 - **Starting road.** For each settlement the app suggests which way to point the free road: toward the
   best open corner two roads away, preferring a direction with more than one option.
 
+### What your opening can produce and build
+
+After the second settlement, **Your opening** shows average resource cards per 36 rolls, the chance of
+receiving any cards, and the five-resource breakdown. For example, an opening can average 22 cards per
+36 rolls while collecting on only 14 of the 36 possible dice outcomes: repeated numbers pay more cards
+together, without making those numbers more likely. These are long-run averages before the robber,
+trades or supply shortages; they do not promise a particular hand after 36 rolls.
+
+The summary flags missing production and names the builds that need those resources. It lists the
+starting cards from the second settlement and the bank rates available at your own harbours. **Plan
+your first builds** compares that starting hand with the costs of a road, settlement, city and
+development card. Each row is a separate option, before further rolls or trades, and still requires a
+legal build or purchase on your turn. **Which rolls pay?** lists the cards received on each dice total.
+
+While previewing a second corner, **What this opening gives you** shows the same figures before you
+commit. This preview stays hidden in blind practice and unanswered drills. After Keep, keyboard focus
+moves to the result; on a phone the result moves into view. Excluding harbour effects also removes their
+trade rates from this summary. In Cities & Knights mode, the app labels the figures as a two-settlement
+comparison and withholds base-game build planning: its weighting switch does not model the starting
+city or commodities.
+
 ## 4. Drill mode
 
 Sixteen levels, easy to hard, on a table you choose first (3–6 players, base game or Cities & Knights
@@ -164,5 +185,5 @@ What this says, and what it does not:
 ## 6. What it does not do
 
 It does not play the game for you, model how particular opponents behave, or simulate the Cities &
-Knights rules (that switch only re-weights the same rules). The percentages are score shares, not win
+Knights rules (that switch only re-weights the same rules). Score percentages are score shares, not win
 probabilities.

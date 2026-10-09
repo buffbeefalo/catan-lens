@@ -13,7 +13,7 @@ public/
   board.js          board generation (official variable setup, seeded), Your-board encoding in links,
                     official-box checks
   score.js          the heuristic: scoreVertex (rules R1-R12), rankSpots, grade, compare,
-                    simulateDraft (snake draft projection), suggestRoad (R13)
+                    simulateDraft (snake draft projection), suggestRoad (R13), openingFacts
   drill.js          the 16-level ladder: stages, seat resolution, seed search, pass/fail,
                     saved-progress validation and pending-action replay
   style.css         all styling (system fonts only); every color is a token with a light and a dark value
@@ -69,6 +69,14 @@ serve.js            zero-dependency local server (npm start)
    these actions, preserving other tables; failed reads or writes show a retry warning. Storage events,
    including `clear()` with a null key, refresh saved flags while retaining pending local actions.
    Unreadable JSON is reported and left untouched until a saving action. No remote storage is used.
+9. `openingFacts` computes unweighted resource income, all dice-total payouts, second-placement starting
+   cards, owned-harbour bank rates and base-game build-cost shortfalls for two legal settlements. It
+   rejects incomplete land and invalid harbour geometry. Both the second-pick preview and the completed
+   summary use this helper with `analysisBoard`, so an excluded harbour never improves the displayed
+   rates. Shared hexes pay once per settlement; income probability counts each dice total once. These
+   facts do not change scores or rankings. The UI hides previews before blind/drill answers and labels
+   C&K as a two-settlement comparison without base-game income or build projections. Confirmation moves
+   focus to the result (or a saving warning), and the single-column layout scrolls the result into view.
 
 ## Where to change things
 
@@ -76,6 +84,8 @@ serve.js            zero-dependency local server (npm start)
   `test/score.test.js`, and the production-dominance test still green (the top corner stays within 4 pips of the
   board's best). Re-run `npm run report` and, if you can, the Catanatron benchmark.
 - **The board generator**: `board.js` (the drill's seed search depends on it; run `npm test`).
+- **Opening income or build facts**: `openingFacts` in `score.js`, with rulebook fixtures and independent
+  dice enumeration in `test/opening.test.js`; the presentation is shared in `app.js`.
 - **A drill level**: the `STAGES` table in `drill.js`.
 - **The UI**: `app.js` and `style.css`; run `npm run e2e`. A new color goes in as a token in both themes (the
   `:root` block and the two dark blocks); `test/theme.test.js` rejects literal colors and checks contrast.

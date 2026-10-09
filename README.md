@@ -57,6 +57,10 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 </tr>
 </table>
 
+**Turn the opening into a plan.** After the second settlement, see average resource income, missing
+resources, your starting hand and the cards still needed for each first build. Preview the same facts
+before committing a second corner; blind practice keeps them hidden until you choose.
+
 Light and dark themes: it follows your device, or pick one with the switch in the header. No account, no tracking,
 no server: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
 

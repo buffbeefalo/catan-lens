@@ -1,6 +1,6 @@
 // Placement scoring. Every term maps to a rule in docs/RESEARCH.md (R1..R12); the `parts`
 // array carries the plain-English reason for each term so the UI never invents a sentence.
-import { PIPS, RESOURCES, SETUPS } from './board.js';
+import { PIPS, RESOURCES, SETUPS, landReadiness, harborStatus } from './board.js';
 import { legalVertices } from './geometry.js';
 
 export const PLANS = {
@@ -57,6 +57,41 @@ function vertexProduction(board, vid) {
 function portsAt(board, vid) {
   const v = board.graph.vertices[vid];
   return v.edges.filter(e => board.harbors[e] !== undefined).map(e => board.harbors[e]);
+}
+
+const BUILDS = [
+  { key: 'road', label: 'Road', cost: { wood: 1, brick: 1 } },
+  { key: 'settlement', label: 'Settlement', cost: { wood: 1, brick: 1, wheat: 1, sheep: 1 } },
+  { key: 'city', label: 'City', cost: { wheat: 2, ore: 3 } },
+  { key: 'development', label: 'Development card', cost: { wheat: 1, sheep: 1, ore: 1 } },
+];
+
+export function openingFacts(board, settlements) {
+  if (!board?.graph || !Array.isArray(settlements) || settlements.length !== 2 ||
+      settlements.some(id => !Number.isInteger(id) || !board.graph.vertices[id]) ||
+      !legalVertices(board.graph, [settlements[0]]).includes(settlements[1]) ||
+      !landReadiness(board).ready || !harborStatus(board).valid) return null;
+  const emptyResources = () => Object.fromEntries(RESOURCES.map(r => [r, 0]));
+  const pips = emptyResources(), startingCards = emptyResources();
+  const rolls = Array.from({ length: 11 }, (_, i) => ({ number: i + 2, ways: i + 2 === 7 ? 6 : PIPS[i + 2], cards: emptyResources(), totalCards: 0 }));
+  settlements.forEach((id, index) => {
+    for (const hid of board.graph.vertices[id].hexes) {
+      const hex = board.hexes[hid];
+      if (!RESOURCES.includes(hex.resource) || !PIPS[hex.number]) continue;
+      pips[hex.resource] += PIPS[hex.number];
+      const roll = rolls[hex.number - 2];
+      roll.cards[hex.resource]++; roll.totalCards++;
+      if (index === 1) startingCards[hex.resource]++;
+    }
+  });
+  const ports = [...new Set(settlements.flatMap(id => portsAt(board, id)))];
+  const tradeRates = Object.fromEntries(RESOURCES.map(r => [r, ports.includes(r) ? 2 : ports.includes('3:1') ? 3 : 4]));
+  const builds = BUILDS.map(({ key, label, cost }) => {
+    const needs = Object.fromEntries(Object.entries(cost).map(([r, amount]) => [r, amount - startingCards[r]]).filter(([, amount]) => amount > 0));
+    return { key, label, cost: { ...cost }, needs, handCoversCost: Object.keys(needs).length === 0, missingProduction: RESOURCES.filter(r => cost[r] && pips[r] === 0) };
+  });
+  return { pips, totalPips: Object.values(pips).reduce((a, b) => a + b, 0), incomeWays: rolls.reduce((sum, r) => sum + (r.totalCards ? r.ways : 0), 0),
+    rolls, startingCards, ports, tradeRates, builds, missingResources: RESOURCES.filter(r => pips[r] === 0) };
 }
 
 const NAMES = { wood: 'wood', brick: 'brick', wheat: 'wheat', sheep: 'sheep', ore: 'ore' };
