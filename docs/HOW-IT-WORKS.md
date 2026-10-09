@@ -17,8 +17,9 @@ You can also enter the real board in front of you with **Your board**: paint the
 number tokens, tap the coast to place harbours. Settlement advice starts once all resources and number
 tokens are entered, with at least one producing hex. If a tile or token is removed later, rankings,
 grades, road suggestions, projections and the opening summary disappear until the input is repaired.
-Your placed pieces and their order are kept during these edits. Harbour inventory warnings remain
-separate from this land-entry check.
+Your placed pieces and their order are kept during these edits. **Check board inventory** expands the
+detailed tile, token and harbour differences from the standard box; these checks stay separate from
+land readiness so the editor remains compact on a phone.
 For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
 number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.

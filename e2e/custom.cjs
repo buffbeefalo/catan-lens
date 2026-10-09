@@ -27,6 +27,7 @@ const assert = require('node:assert/strict');
   assert.match(await hexClass(H), /\bsheep\b/); assert.equal(part(H), 's5');
   await page.click('#tool-ore'); await clickHex(H);
   assert.match(await hexClass(H), /\bore\b/); assert.equal(part(H), 'o5');
+  await page.click('[data-disclosure="inventory"] summary');
   t = await text(); assert.match(t, /ore: 4 hexes entered, the box has 3/); assert.match(t, /sheep: 3 hexes entered, the box has 4/);
   const corner = await page.$('#svg .vx.legal'); assert.equal(corner, null, 'corners inert while a paint is active');
   await page.click('#tool-ore'); assert.ok(await page.$('#svg .vx.legal'), 'corners back when the paint is put down');
@@ -63,7 +64,7 @@ const assert = require('node:assert/strict');
   console.log('reload keeps the board; placing works on it');
   // start blank: all hexes blank, no harbours, check says so, no crash with zero production
   await page.click('#blank-board');
-  assert.ok((await page.$$eval('#svg .hex.blank', a => a.length)) === 19); assert.equal(q().h, undefined); assert.match(await text(), /19 hexes are still blank/);
+  assert.ok((await page.$$eval('#svg .hex.blank', a => a.length)) === 19); assert.equal(q().h, undefined); assert.match(await text(), /19 hexes need resources/);
   await page.click('#tool-wheat'); await clickHex(9); await page.click('#tool-number'); await clickHex(9); await page.click('.picker button[data-num="6"]');
   assert.equal(await page.$$eval('#svg .tok', a => a.length), 1);
   console.log('blank board, one wheat 6 painted, no errors');

@@ -197,6 +197,18 @@ test('blank and partially entered boards do not offer settlement advice', async 
   assert.equal(await page.locator('.vx.legal').count(), 0, 'incomplete land cannot be committed as a graded settlement');
 });
 
+test('phone blank-board entry keeps its first tile visible alongside the tools', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.locator('#custom').tap();
+  await page.locator('#blank-board').tap();
+  const first = await page.locator('.hex').first().boundingBox();
+  assert.ok(first.y >= 0 && first.y + first.height <= 844, 'the first tile must not be buried below the inventory checklist');
+  assert.equal(await page.locator('.check').isVisible(), false, 'detailed inventory warnings start collapsed');
+  await page.locator('[data-disclosure="inventory"] summary').tap();
+  assert.equal(await page.locator('.check').isVisible(), true);
+  assert.match(await page.locator('.check').innerText(), /wood: 0 hexes entered, the box has 4/);
+});
+
 test('removing and restoring a number invalidates and restores all advice without losing pieces', async t => {
   for (const players of [4, 6]) {
     const page = await open(t, { width: 1400, height: 900 }, `?seed=42&players=${players}`);
