@@ -1,0 +1,381 @@
+{
+  "date": "2026-10-09",
+  "predeclaredAt": "2026-10-09T22:46:32.202530+00:00",
+  "sourceCommit": "00cf63e78b7130772c8db86fc08b79ba0b7498d7",
+  "engineCommit": "ecf931181b9a65bb4116a2153fb78c16f1438e00",
+  "hashSeeds": [
+    101,
+    120
+  ],
+  "boardSeeds": [
+    1000000,
+    1007999
+  ],
+  "games": 8000,
+  "runs": 20,
+  "totalGames": 40000,
+  "unfinished": 0,
+  "subjectSeatCounts": {
+    "1": 2007,
+    "2": 1954,
+    "3": 1995,
+    "4": 2044
+  },
+  "method": "Two-sided 95% Student t intervals over 20 run means, df19, t=2.093024054408263. Differences pair the same hash-seed/board cluster across arms; units are percentage points.",
+  "arms": [
+    {
+      "key": "lens",
+      "label": "Catan Lens settlements and road",
+      "win": 24.3,
+      "ci": 1.1,
+      "wins": 1944,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "lens-sett",
+      "label": "Catan Lens settlements, bot's roads",
+      "win": 23.5,
+      "ci": 1.2,
+      "wins": 1876,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "value",
+      "label": "The bot's own opening",
+      "win": 24.5,
+      "ci": 1.2,
+      "wins": 1963,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "pips",
+      "label": "Most pips",
+      "win": 16.4,
+      "ci": 1.1,
+      "wins": 1312,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "random",
+      "label": "Random corner",
+      "win": 1.5,
+      "ci": 0.2,
+      "wins": 119,
+      "games": 8000,
+      "runs": 20
+    }
+  ],
+  "pairedDifferences": {
+    "lens-minus-value": {
+      "differencePP": -0.2375000000000002,
+      "lower95PP": -1.7973568524867498,
+      "upper95PP": 1.3223568524867495
+    },
+    "lens-minus-pips": {
+      "differencePP": 7.9,
+      "lower95PP": 6.50760280592306,
+      "upper95PP": 9.29239719407694
+    }
+  },
+  "unroundedSummary": {
+    "lens": {
+      "meanPercent": 24.3,
+      "ci95HalfWidthPP": 1.1417360643709442,
+      "ci95Lower": 23.158263935629055,
+      "ci95Upper": 25.441736064370946,
+      "clusters": 20,
+      "games": 8000,
+      "wins": 1944,
+      "unfinished": 0
+    },
+    "lens-sett": {
+      "meanPercent": 23.45,
+      "ci95HalfWidthPP": 1.246138227904478,
+      "ci95Lower": 22.20386177209552,
+      "ci95Upper": 24.696138227904477,
+      "clusters": 20,
+      "games": 8000,
+      "wins": 1876,
+      "unfinished": 0
+    },
+    "value": {
+      "meanPercent": 24.5375,
+      "ci95HalfWidthPP": 1.2184676649040618,
+      "ci95Lower": 23.31903233509594,
+      "ci95Upper": 25.755967664904063,
+      "clusters": 20,
+      "games": 8000,
+      "wins": 1963,
+      "unfinished": 0
+    },
+    "pips": {
+      "meanPercent": 16.400000000000002,
+      "ci95HalfWidthPP": 1.0685864458115797,
+      "ci95Lower": 15.331413554188423,
+      "ci95Upper": 17.468586445811578,
+      "clusters": 20,
+      "games": 8000,
+      "wins": 1312,
+      "unfinished": 0
+    },
+    "random": {
+      "meanPercent": 1.4874999999999998,
+      "ci95HalfWidthPP": 0.24150763023055707,
+      "ci95Lower": 1.2459923697694428,
+      "ci95Upper": 1.729007630230557,
+      "clusters": 20,
+      "games": 8000,
+      "wins": 119,
+      "unfinished": 0
+    }
+  },
+  "inputHashes": {
+    "package.json": "ba0a95ed53574257491acf0b39ed37f6cc60ae8e92f624282d0254ce45a74dd9",
+    "public/board.js": "7323591c172d61444a03a8bab462176374a8e6f951901a3af32d08e057ffee67",
+    "public/score.js": "ca83caf8a540dde93b868b4a43096ed3420d3b8d0daad2f149bce60b90345c45",
+    "public/geometry.js": "dd1262c4f51370cfa6f0a000e9a16d8167a89338f43bcaac5bd096a104454896",
+    "bench/lens-bridge.mjs": "ab7bc94731b9ead48404fee2d415a4df4b27fd766ebe9c7c9539e11e764a6f93",
+    "bench/catanatron/catanatron_bench.py": "536244e9fd88f969f194f1b300a8545e629f73cc1f0a0cafc3766a563188cf8e",
+    "bench/catanatron/road_deadends.py": "2522c05f3e7ceae516357c3b23f4ee18eb2c46008e27eeea176e13948895abd9",
+    "bench/catanatron/requirements.txt": "b4afebd40f8c2e620c0db5589ae87b0662de7b5fc032b8bbdca8cbb7382df3ce",
+    "bench/catanatron/summarize.py": "77c3f7e00db6579f1589df7c6519af3d804eaa7ebb57adfe844b4859e3c43c83"
+  },
+  "rawData": {
+    "file": "holdout-2026-10-09.jsonl.gz",
+    "gzipSha256": "af3c30e09309722338bd1472350054f7fd3bb164ac91f6c1a80308bfcf237e4a",
+    "jsonlSha256": "eebbd08f022f8ff7e27009f0b8970cb4aac21bdf3de0d729bd7979a8fd494d5b",
+    "records": 40000
+  },
+  "clusters": [
+    {
+      "hashseed": "101",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 84,
+        "lens-sett": 85,
+        "value": 104,
+        "pips": 55,
+        "random": 4
+      }
+    },
+    {
+      "hashseed": "102",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 101,
+        "lens-sett": 101,
+        "value": 93,
+        "pips": 62,
+        "random": 10
+      }
+    },
+    {
+      "hashseed": "103",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 118,
+        "lens-sett": 115,
+        "value": 98,
+        "pips": 67,
+        "random": 5
+      }
+    },
+    {
+      "hashseed": "104",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 97,
+        "lens-sett": 95,
+        "value": 112,
+        "pips": 76,
+        "random": 3
+      }
+    },
+    {
+      "hashseed": "105",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 78,
+        "lens-sett": 79,
+        "value": 92,
+        "pips": 63,
+        "random": 5
+      }
+    },
+    {
+      "hashseed": "106",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 107,
+        "lens-sett": 113,
+        "value": 116,
+        "pips": 88,
+        "random": 6
+      }
+    },
+    {
+      "hashseed": "107",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 98,
+        "lens-sett": 86,
+        "value": 78,
+        "pips": 52,
+        "random": 5
+      }
+    },
+    {
+      "hashseed": "108",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 92,
+        "lens-sett": 91,
+        "value": 115,
+        "pips": 57,
+        "random": 4
+      }
+    },
+    {
+      "hashseed": "109",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 86,
+        "lens-sett": 84,
+        "value": 90,
+        "pips": 58,
+        "random": 9
+      }
+    },
+    {
+      "hashseed": "110",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 90,
+        "lens-sett": 83,
+        "value": 96,
+        "pips": 80,
+        "random": 9
+      }
+    },
+    {
+      "hashseed": "111",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 99,
+        "lens-sett": 105,
+        "value": 96,
+        "pips": 73,
+        "random": 6
+      }
+    },
+    {
+      "hashseed": "112",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 111,
+        "lens-sett": 107,
+        "value": 111,
+        "pips": 56,
+        "random": 4
+      }
+    },
+    {
+      "hashseed": "113",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 83,
+        "lens-sett": 80,
+        "value": 97,
+        "pips": 60,
+        "random": 6
+      }
+    },
+    {
+      "hashseed": "114",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 105,
+        "lens-sett": 90,
+        "value": 91,
+        "pips": 62,
+        "random": 4
+      }
+    },
+    {
+      "hashseed": "115",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 97,
+        "lens-sett": 96,
+        "value": 99,
+        "pips": 70,
+        "random": 7
+      }
+    },
+    {
+      "hashseed": "116",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 98,
+        "lens-sett": 85,
+        "value": 83,
+        "pips": 74,
+        "random": 9
+      }
+    },
+    {
+      "hashseed": "117",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 99,
+        "lens-sett": 102,
+        "value": 108,
+        "pips": 69,
+        "random": 8
+      }
+    },
+    {
+      "hashseed": "118",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 102,
+        "lens-sett": 98,
+        "value": 90,
+        "pips": 61,
+        "random": 5
+      }
+    },
+    {
+      "hashseed": "119",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 96,
+        "lens-sett": 93,
+        "value": 103,
+        "pips": 65,
+        "random": 6
+      }
+    },
+    {
+      "hashseed": "120",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens": 103,
+        "lens-sett": 88,
+        "value": 91,
+        "pips": 64,
+        "random": 4
+      }
+    }
+  ],
+  "rounding": "Displayed win rates use decimal half-up rounding to one decimal from exact win counts. Inference uses unrounded cluster means.",
+  "interpretation": "Fresh board seeds1000000..1007999 and hash seeds101..120, separate from the original fixed-seed replication. No policy tuning on these outcomes. Bot evidence for four-player base-game openings; not human win-rate evidence or proof of equal strategies.",
+  "environment": {
+    "python": "3.12.3",
+    "requirements": "requirements-2026-10-09.txt"
+  }
+}

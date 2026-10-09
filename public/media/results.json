@@ -42,5 +42,81 @@
    "runs": 20,
    "games": 8000
   }
- ]
+ ],
+ "holdout": {
+  "date": "2026-10-09",
+  "sourceCommit": "00cf63e78b7130772c8db86fc08b79ba0b7498d7",
+  "engineCommit": "ecf931181b9a65bb4116a2153fb78c16f1438e00",
+  "hashSeeds": [
+   101,
+   120
+  ],
+  "boardSeeds": [
+   1000000,
+   1007999
+  ],
+  "games": 8000,
+  "runs": 20,
+  "totalGames": 40000,
+  "unfinished": 0,
+  "arms": [
+   {
+    "key": "lens",
+    "label": "Catan Lens settlements and road",
+    "win": 24.3,
+    "ci": 1.1,
+    "wins": 1944,
+    "games": 8000,
+    "runs": 20
+   },
+   {
+    "key": "lens-sett",
+    "label": "Catan Lens settlements, bot's roads",
+    "win": 23.5,
+    "ci": 1.2,
+    "wins": 1876,
+    "games": 8000,
+    "runs": 20
+   },
+   {
+    "key": "value",
+    "label": "The bot's own opening",
+    "win": 24.5,
+    "ci": 1.2,
+    "wins": 1963,
+    "games": 8000,
+    "runs": 20
+   },
+   {
+    "key": "pips",
+    "label": "Most pips",
+    "win": 16.4,
+    "ci": 1.1,
+    "wins": 1312,
+    "games": 8000,
+    "runs": 20
+   },
+   {
+    "key": "random",
+    "label": "Random corner",
+    "win": 1.5,
+    "ci": 0.2,
+    "wins": 119,
+    "games": 8000,
+    "runs": 20
+   }
+  ],
+  "pairedDifferences": {
+   "lens-minus-value": {
+    "differencePP": -0.2375000000000002,
+    "lower95PP": -1.7973568524867498,
+    "upper95PP": 1.3223568524867495
+   },
+   "lens-minus-pips": {
+    "differencePP": 7.9,
+    "lower95PP": 6.50760280592306,
+    "upper95PP": 9.29239719407694
+   }
+  }
+ }
 }

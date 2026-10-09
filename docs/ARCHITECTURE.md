@@ -27,6 +27,8 @@ bench/
   production-report.mjs   deterministic opening report (MIT)
   lens-bridge.mjs         JSON-lines bridge so another engine can ask Catan Lens for picks
   catanatron/             full-game benchmark in Catanatron (GPL-3.0-or-later)
+    evidence/            frozen fresh-seed game records, summaries and dependency versions
+    verify_holdout.py    standard-library checks of raw games, clustered intervals and public figures
 video/              how the demo videos are made: scenes.mjs -> narrate.py -> cards.cjs + record.cjs
                     -> render.py -> assemble.py -> qa.py (see video/README.md)
 docs/               HOW-IT-WORKS.md, RESEARCH.md (sources and weights), this file;
@@ -90,6 +92,10 @@ serve.js            zero-dependency local server (npm start)
 - **The board generator**: `board.js` (the drill's seed search depends on it; run `npm test`).
 - **Opening income or build facts**: `openingFacts` in `score.js`, with rulebook fixtures and independent
   dice enumeration in `test/opening.test.js`; the presentation is shared in `app.js`.
+- **Benchmark presentation**: `public/media/results.json` retains the original table and a separate
+  `holdout` result. The help page displays both with intervals and explains download failures.
+  `python3 bench/catanatron/verify_holdout.py` checks the frozen raw data and public holdout figures;
+  CI runs it without installing the simulation engine. Do not retune on a dataset labelled holdout.
 - **A drill level**: the `STAGES` table in `drill.js`.
 - **The UI**: `app.js` and `style.css`; run `npm run e2e`. A new color goes in as a token in both themes (the
   `:root` block and the two dark blocks); `test/theme.test.js` rejects literal colors and checks contrast.

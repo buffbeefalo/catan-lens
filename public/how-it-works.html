@@ -15,8 +15,9 @@
   .doc video{width:100%;border-radius:var(--r);border:1px solid var(--line);background:#000;display:block}
   .doc details{margin:8px 0 0;font-size:14px;color:var(--mut)}
   .doc table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0}
+  .doc caption{text-align:left;color:var(--mut);font-size:12px;margin:4px 0 8px}
   .doc th,.doc td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
-  .doc td.n{font-family:var(--mono);text-align:right}
+  .doc td.n{font-family:var(--mono);text-align:right;white-space:nowrap}.doc th.n{text-align:right}
 </style>
 </head>
 <body>
@@ -78,12 +79,18 @@
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/HOW-IT-WORKS.md">HOW-IT-WORKS.md</a>.</p>
 
   <h2>Does following it win games?</h2>
-  <p>In thousands of complete four-player games played by <a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s
-  strong bot, one seat had its opening chosen by different strategies and then played on like everyone else.
-  A fair seat wins 25%.</p>
-  <table id="results"></table>
-  <p>These are bot games, so they show the advice is sound, not how much it will raise your own win rate. Details and
-  the code to reproduce them are in the repository.</p>
+  <p><a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s value-function bot plays every seat. One seat's opening is chosen by each strategy, then it plays on like everyone else. Strategies face the same boards and seat orders. An evenly matched seat would win 25%.</p>
+  <p id="results-status" role="status">Loading benchmark results…</p>
+  <h3>Fresh boards · 9 October 2026</h3>
+  <p>This test used 40,000 complete games on fresh board and bot tie-breaking seeds. The scoring policy was fixed before the test; these outcomes were not used to tune it.</p>
+  <table id="holdout-results"></table>
+  <p id="paired-results">Across matched runs, Lens's advantage over “most pips” was 7.9 percentage points, with a 95% interval from 6.5 to 9.3 points. Against the bot's own opening, the difference was −0.2 points, with an interval from −1.8 to +1.3. That comparison shows no clear advantage and does not prove equal performance.</p>
+  <p id="benchmark-limits">These results cover bot play in the four-player base game. They support this opening policy in that setting; they do not predict your personal win rate or validate three-, five- or six-player games, Cities &amp; Knights, or play against people.</p>
+  <details id="original-results"><summary>Original benchmark · 29 September 2026</summary>
+    <table id="results"></table>
+    <p>A same-seed audit reproduced the original result. This table still represents the original 40,000 game observations; the newer test above uses different seeds.</p>
+  </details>
+  <p>Intervals use the variation across 20 runs, each with its own bot tie-breaking seed. See the <a href="https://github.com/buffbeefalo/catan-lens/blob/main/bench/catanatron/results.md">benchmark methods and records</a> for the raw games, paired comparisons and reproduction instructions.</p>
 </main>
 <footer class="foot">Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio; CATAN is their trademark. <a href="https://github.com/buffbeefalo/catan-lens">Open source on GitHub</a>.</footer>
 <script type="module">
@@ -93,10 +100,21 @@
   for (const p of document.querySelectorAll('[data-transcript]')) {
     fetch(`media/${p.dataset.transcript}.txt`).then(r => (r.ok ? r.text() : '')).then(t => { p.textContent = t || 'Transcript unavailable.'; });
   }
-  fetch('media/results.json').then(r => r.json()).then(res => {
-    document.getElementById('results').innerHTML = '<tr><th>Opening chosen by</th><th>Games</th><th>Win rate</th></tr>' +
-      res.arms.map(a => `<tr><td>${a.label}</td><td class="n">${res.games.toLocaleString('en-US')}</td><td class="n">${a.win.toFixed(1)}%</td></tr>`).join('');
-  }).catch(() => {});
+  const showResults = (id, data) => {
+    if (!data?.arms?.length) throw new Error('Missing benchmark data');
+    document.getElementById(id).innerHTML = `<caption>${data.runs} runs · ${data.games.toLocaleString('en-US')} games per strategy</caption>` +
+      '<thead><tr><th scope="col">Opening chosen by</th><th scope="col" class="n">Win rate<br>95% interval</th></tr></thead><tbody>' +
+      data.arms.map(a => `<tr><td>${a.label}</td><td class="n">${a.win.toFixed(1)}% ± ${a.ci.toFixed(1)}</td></tr>`).join('') + '</tbody>';
+  };
+  fetch('media/results.json').then(r => { if (!r.ok) throw new Error('Results unavailable'); return r.json(); }).then(res => {
+    showResults('results', res);
+    showResults('holdout-results', res.holdout);
+    document.getElementById('results-status').hidden = true;
+  }).catch(() => {
+    document.getElementById('results').textContent = '';
+    document.getElementById('holdout-results').textContent = '';
+    document.getElementById('results-status').textContent = 'Benchmark results could not be loaded. The methods and records are linked below.';
+  });
 </script>
 </body>
 </html>

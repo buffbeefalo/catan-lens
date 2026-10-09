@@ -428,6 +428,31 @@ test('help preserves an unreadable link verbatim and its return stays within thi
   assert.equal(await page.locator('.best-ring').count(), 0);
 });
 
+test('the evidence page shows fresh and original benchmark intervals and their limits on phones', async t => {
+  for (const width of [320, 1400]) {
+    const page = await open(t, { width, height: 900 }, 'how-it-works.html');
+    const fresh = page.locator('#holdout-results');
+    assert.equal(await fresh.locator('tbody tr').count(), 5);
+    assert.match(await fresh.innerText(), /24\.3%.*1\.1/);
+    assert.match(await fresh.innerText(), /16\.4%.*1\.1/);
+    assert.match(await fresh.locator('caption').innerText(), /8,000 games per strategy/);
+    assert.match(await page.locator('#benchmark-limits').innerText(), /four-player base game/);
+    assert.match(await page.locator('#paired-results').innerText(), /6\.5.*9\.3/);
+    await page.locator('#original-results > summary').click();
+    assert.match(await page.locator('#results').innerText(), /25\.2%.*1\.2/);
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'benchmark tables fit the phone width');
+    await page.close();
+  }
+});
+
+test('the evidence page explains a results download failure instead of leaving an empty table', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.route('**/media/results.json', route => route.abort());
+  await page.goto(base + 'how-it-works.html', { waitUntil: 'networkidle' });
+  assert.match(await page.locator('#results-status').innerText(), /could not be loaded/i);
+  assert.ok(await page.getByRole('link', { name: /benchmark methods and records/i }).isVisible());
+});
+
 test('editing a custom board preserves placement order for Undo', async t => {
   const page = await open(t, { width: 1400, height: 900 });
   await page.locator('#custom').click();

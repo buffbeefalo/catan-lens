@@ -143,13 +143,24 @@ The rules come from expert advice, but advice is not proof, so the repository te
 are Catanatron's value-function bot; one seat has its opening chosen by a different strategy, then plays the rest of
 the game exactly like the others. A fair seat wins 25%.
 
+This table is the **2026-10-09 fresh-seed test**: 20 bot tie-breaking seeds and 8,000 board seeds that
+were not in the earlier benchmark. The policy was frozen before the test, and its outcomes were not
+used for tuning. All 40,000 games finished. [Methods, raw games and the original result](../bench/catanatron/results.md)
+are available for checking. A same-seed replication reproduced the original table; it is kept separate
+from this new test.
+
 | Opening chosen by | Win rate (95% interval) | Games |
 |---|---|---|
-| Catan Lens settlements and road | 25.2% ± 1.2 | 8,000 |
-| Catan Lens settlements, bot's roads | 24.9% ± 1.2 | 8,000 |
-| The bot's own opening | 25.8% ± 1.3 | 8,000 |
-| Most pips | 16.9% ± 0.9 | 8,000 |
-| Random corner | 1.8% ± 0.3 | 8,000 |
+| Catan Lens settlements and road | 24.3% ± 1.1 | 8,000 |
+| Catan Lens settlements, bot's roads | 23.5% ± 1.2 | 8,000 |
+| The bot's own opening | 24.5% ± 1.2 | 8,000 |
+| Most pips | 16.4% ± 1.1 | 8,000 |
+| Random corner | 1.5% ± 0.2 | 8,000 |
+
+Comparing strategies within each run gives Lens a **7.9 percentage-point advantage over most-pips**
+(95% interval: 6.5 to 9.3). Its difference from the bot's own opening is **−0.2 points** (−1.8 to +1.3).
+The second interval includes both a disadvantage and an advantage, so it does not establish which is
+better or prove equal performance.
 
 One trap worth knowing if you run it yourself: the bots break ties between equally good moves in Python's hash
 order, which is fixed for a whole run and differs between runs. A single run therefore plays with one arbitrary bot
@@ -174,15 +185,15 @@ identical situations on 500 boards and every seat, without playing the game:
 | random | 0.30 | 2.73 | 1% | 3.30 | 0.56 | 2.4 / 1.8 / 2.4 / 2.6 / 1.7 |
 
 Taking the most pips wins raw production, as it must by construction. The openings Catan Lens picks cover more
-resources, spread across more numbers, and hold far more of the wheat/ore pair that builds cities, which is why
-they win more games than "most pips" does.
+resources, spread across more numbers, and hold more of the wheat/ore pair that builds cities. This report
+describes the tradeoffs; the game benchmark measures their combined effect.
 
 What this says, and what it does not:
 
-- Openings chosen by Catan Lens win about as often as the strong bot's own, computer-searched openings, and far
-  more often than the popular "take the corner with the most dots" rule.
-- These are bot games. Bots trade and plan differently from people, so the numbers show the advice is sound, not
-  how much it will raise your personal win rate.
+- Lens outperformed the popular "take the corner with the most dots" rule in this bot test. The comparison
+  with the strong bot's own openings remains uncertain within the reported interval.
+- Bots trade and plan differently from people. These results support the policy in the tested setting;
+  they do not establish a person's improvement or winning chances.
 - The simulation covers the four-player base game only.
 
 ## 6. What it does not do

@@ -69,6 +69,15 @@ how much competitive weight they carry.
 
 ## What is source-backed and what is the author's choice
 
+**Fresh-seed check, 2026-10-09.** A predeclared 40,000-game test of the frozen opening policy used
+20 new bot tie-breaking seeds and 8,000 new board seeds. Lens settlements and roads won 24.3%, versus
+24.5% for the value bot's own opening and 16.4% for most-pips. Paired 95% intervals put Lens minus
+value at −1.8 to +1.3 percentage points and Lens minus most-pips at +6.5 to +9.3. This supports the
+policy relative to most-pips in the tested four-player bot setting; it establishes neither superiority
+nor equivalence to the value bot, human improvement, or other rulesets. No weights were tuned on these
+outcomes. The [raw games, frozen inputs and reproduction method](../bench/catanatron/results.md)
+remain separate from the original benchmark and its same-seed replication.
+
 **Opening facts, 2026-10-09.** The combined-opening summary and second-pick preview use source 15's
 resource, setup, trade and build rules with the existing two-dice probabilities. Expected cards and
 the probability of any income are separate quantities; multiple settlements or hexes on one number

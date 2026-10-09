@@ -88,18 +88,26 @@ on exactly like the others. Every strategy sees the same boards and seat orders,
 under 20 different bot tie-breaking orders, with intervals computed across those runs (see
 [HOW-IT-WORKS](docs/HOW-IT-WORKS.md#5-does-following-it-actually-win-games) for why). A fair seat wins 25%.
 
+The table shows a **fresh-seed test on 2026-10-09**, with the opening policy frozen beforehand and no
+tuning on its outcomes. All 40,000 games finished. The [methods and raw records](bench/catanatron/results.md)
+also preserve the earlier benchmark and its same-seed replication.
+
 | Opening chosen by | Win rate (95% interval) | Games |
 |---|---|---|
-| Catan Lens settlements and road | 25.2% ± 1.2 | 8,000 |
-| Catan Lens settlements, bot's roads | 24.9% ± 1.2 | 8,000 |
-| The bot's own opening | 25.8% ± 1.3 | 8,000 |
-| Most pips | 16.9% ± 0.9 | 8,000 |
-| Random corner | 1.8% ± 0.3 | 8,000 |
+| Catan Lens settlements and road | 24.3% ± 1.1 | 8,000 |
+| Catan Lens settlements, bot's roads | 23.5% ± 1.2 | 8,000 |
+| The bot's own opening | 24.5% ± 1.2 | 8,000 |
+| Most pips | 16.4% ± 1.1 | 8,000 |
+| Random corner | 1.5% ± 0.2 | 8,000 |
 
-These are bot games: they show the advice is sound, not how much it will raise your own win rate. A deterministic
-report of what each strategy's opening looks like (`npm run report`) shows why: taking the most pips wins raw
-production, as it must by construction, but the openings Catan Lens picks cover more resources, spread across more
-numbers, and hold far more of the wheat/ore pair that builds cities.
+Across matched runs, Lens led most-pips by **7.9 percentage points** (95% interval: 6.5 to 9.3). Its
+difference from the bot's own opening was −0.2 points (−1.8 to +1.3): no clear advantage, and no proof
+of equal performance. These are four-player base-game bot results; they do not predict a person's win
+rate or validate other table sizes or Cities & Knights.
+
+A deterministic report of what each strategy's opening looks like (`npm run report`) describes the
+resource tradeoffs: taking the most pips wins raw production, as it must by construction, while Lens
+covers more resources, spreads across more numbers, and holds more of the wheat/ore pair that builds cities.
 
 ## Run it
 
