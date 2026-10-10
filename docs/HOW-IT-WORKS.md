@@ -58,6 +58,8 @@ returns from the board to the selected tool. Opening a number picker focuses the
 chooses another token and Escape returns to its hex, then another Escape returns to Numbers.
 The number picker brings its choices into view, including when editing guidance is expanded.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
+Choosing Players or Your seat also keeps focus on that button, so Tab continues from the choice
+you just made instead of restarting the group.
 When the device uses a high-contrast palette, selected controls use its highlight colours, the current
 Drill level keeps an outline, and focused board corners remain visible against the page.
 Settlement taps and mouse clicks choose the closest corner within a limited reach. Tapping near a

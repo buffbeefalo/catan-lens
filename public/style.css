@@ -52,6 +52,7 @@ button{font:inherit;color:inherit}
 .header-actions[inert],#bar[inert]{opacity:.45}
 .btn:hover{filter:brightness(1.15)}.btn.ghost:hover,.toggle:hover{background:var(--hover)}
 button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.seg button:focus-visible{outline-color:currentColor;outline-offset:-4px}
 .seed{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);width:140px;min-height:44px;color:var(--ink)}
 .wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:0 24px 32px;align-items:start}
 @media (max-width:1023px){.wrap{grid-template-columns:1fr;gap:12px}.top,.bar,.wrap{padding-left:16px;padding-right:16px}}

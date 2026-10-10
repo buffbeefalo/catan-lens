@@ -180,6 +180,10 @@ focus alone can leave the token above the viewport. Changing the missing-token c
 palette after selection. Number selection reveals the whole picker so touch users can see the other
 choices. Nearest scrolling leaves an already visible target in place, including on the picker-to-hex
 Escape path. Ordinary repaint focus restoration still uses `preventScroll`.
+The Players and Your seat groups likewise restore their focused value when their buttons are rebuilt,
+preserving native Tab order without moving focus from another control.
+Segmented buttons draw their focus outline inside the button in its text colour, so the group's clipped
+rounded border does not hide it and the selected state retains contrast.
 
 URL serialization skips `replaceState` when the current query already matches. Choosing an editing
 tool, opening a number picker or repainting an identical value should not consume the browser's history

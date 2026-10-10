@@ -737,8 +737,12 @@ function render() {
 
 // ---- Controls ----------------------------------------------------------------
 function seg(id, values, current, onpick) {
-  const s = $(id); s.innerHTML = '';
-  for (const v of values) { const b = document.createElement('button'); b.textContent = v; b.setAttribute('aria-pressed', String(v === current)); b.onclick = () => onpick(v); s.append(b); }
+  const s = $(id), focused = s.querySelector(':focus')?.textContent;
+  s.innerHTML = '';
+  for (const v of values) {
+    const b = document.createElement('button'); b.textContent = v; b.setAttribute('aria-pressed', String(v === current)); b.onclick = () => onpick(v); s.append(b);
+    if (String(v) === focused) b.focus({ preventScroll: true });
+  }
 }
 function setPlayers(players) {
   if (players === state.players) return;

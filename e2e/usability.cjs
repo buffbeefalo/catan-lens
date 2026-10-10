@@ -405,6 +405,34 @@ test('a phone placement can be confirmed without searching below the board', asy
   assert.ok(new URL(page.url()).searchParams.has('me'), 'confirmation persists in the share link');
 });
 
+test('keyboard table settings keep focus and continue from the chosen button', async t => {
+  for (const width of [390, 1400]) {
+    const page = await open(t, { width, height: 800 });
+    await page.locator('#settings summary').click();
+    for (const [group, value, key, nextGroup, nextValue] of [
+      ['players', '6', 'Enter', 'seat', '1'],
+      ['players', '6', ' ', 'seat', '1'],
+      ['players', '5', ' ', 'players', '6'],
+      ['seat', '3', 'Enter', 'seat', '4'],
+      ['seat', '2', ' ', 'seat', '3'],
+    ]) {
+      const chosen = page.locator('#' + group).getByRole('button', { name: value, exact: true });
+      await chosen.focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      assert.ok(await chosen.evaluate(el => el === document.activeElement && el.matches(':focus-visible')), 'native Tab establishes visible keyboard focus before activation');
+      await page.keyboard.press(key);
+      assert.equal(new URL(page.url()).searchParams.get(group), value);
+      assert.equal(await chosen.getAttribute('aria-pressed'), 'true');
+      assert.ok(await chosen.evaluate(el => el === document.activeElement && el.matches(':focus-visible')), 'the chosen setting retains visible keyboard focus');
+      await page.keyboard.press('Tab');
+      const next = page.locator('#' + nextGroup).getByRole('button', { name: nextValue, exact: true });
+      assert.ok(await next.evaluate(el => el === document.activeElement), 'Tab continues after the chosen setting');
+    }
+    await page.close();
+  }
+});
+
 test('keyboard preview preserves a useful focus target through board redraw', async t => {
   const page = await open(t, { width: 1400, height: 900 });
   await page.locator('#svg .vx.legal').first().focus();
