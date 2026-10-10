@@ -107,4 +107,9 @@ serve.js            zero-dependency local server (npm start)
 - **A drill level**: the `STAGES` table in `drill.js`.
 - **The UI**: `app.js` and `style.css`; run `npm run e2e`. A new color goes in as a token in both themes (the
   `:root` block and the two dark blocks); `test/theme.test.js` rejects literal colors and checks contrast.
+  Forced-colour overrides use the device's `Highlight`, `HighlightText` and `Canvas` system colours for
+  selected controls and board focus. Selected buttons opt out of automatic text backplates only after
+  receiving those system colours, so a backplate cannot cover their labels. The current Drill level gets an outline because forced-colour mode
+  suppresses box shadows; the rest of the page keeps the browser's adaptations. See the
+  [browser behaviour reference](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/forced-colors).
 - **The videos**: edit narration and actions in `video/scenes.mjs`, then run the pipeline in `video/README.md`.

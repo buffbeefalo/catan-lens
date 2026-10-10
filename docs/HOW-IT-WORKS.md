@@ -31,6 +31,8 @@ without crowding the phone editor.
 For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
 number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
+When the device uses a high-contrast palette, selected controls use its highlight colours, the current
+Drill level keeps an outline, and focused board corners remain visible against the page.
 Settlement taps and mouse clicks choose the closest corner within a limited reach. Tapping near a
 blocked corner does not redirect to another corner; your own settlement still needs **Keep** to confirm.
 Keyboard and assistive-button activation select the focused corner directly.

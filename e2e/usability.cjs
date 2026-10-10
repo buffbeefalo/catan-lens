@@ -108,6 +108,47 @@ async function cornerPoint(page, id, dx = 0, dy = 0) {
   }, { dx, dy });
 }
 
+test('high-contrast palettes visibly distinguish selected modes, table choices and editing tools', async t => {
+  for (const colorScheme of ['light', 'dark']) {
+    const page = await open(t, { width: 1400, height: 900 });
+    await page.emulateMedia({ forcedColors: 'active', colorScheme });
+    if (!await page.evaluate(() => matchMedia('(forced-colors: active)').matches)) { t.skip('This browser does not emulate forced colours'); return; }
+    const distinguish = async (selected, other) => {
+      const style = locator => page.locator(locator).first().evaluate(el => {
+        const s = getComputedStyle(el); return { background: s.backgroundColor, text: s.color };
+      });
+      const a = await style(selected), b = await style(other);
+      assert.notEqual(a.background, b.background, `${colorScheme}: ${selected} must remain visually selected`);
+      assert.notEqual(a.text, a.background, `${colorScheme}: selected text must remain visible`);
+    };
+    await distinguish('#practice', '#drill');
+    await page.locator('#settings summary').click();
+    await distinguish('#players button[aria-pressed="true"]', '#players button[aria-pressed="false"]');
+    await page.locator('#mode-opp').click();
+    await distinguish('#mode-opp', '#mode-me');
+    await page.locator('#custom').click();
+    await page.locator('#tool-ore').click();
+    await distinguish('#tool-ore', '#tool-wood');
+    await page.close();
+  }
+});
+
+test('high-contrast keyboard focus remains distinct from the page beside a coastal corner', async t => {
+  const page = await open(t, { width: 1400, height: 900 });
+  await page.emulateMedia({ forcedColors: 'active', colorScheme: 'dark' });
+  if (!await page.evaluate(() => matchMedia('(forced-colors: active)').matches)) { t.skip('This browser does not emulate forced colours'); return; }
+  await page.getByRole('button', { name: 'Corner 0', exact: true }).focus();
+  const { stroke, background } = await page.evaluate(() => ({ stroke: getComputedStyle(document.activeElement).stroke, background: getComputedStyle(document.body).backgroundColor }));
+  const luminance = color => {
+    const [r, g, b] = color.match(/[\d.]+/g).slice(0, 3).map(Number).map(x => x / 255).map(x => x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4);
+    return .2126 * r + .7152 * g + .0722 * b;
+  };
+  const values = [luminance(stroke), luminance(background)].sort((a, b) => b - a);
+  assert.ok((values[0] + .05) / (values[1] + .05) >= 3, 'the coastal focus stroke must contrast with the page at 3:1 or better');
+  await page.keyboard.press('Enter');
+  assert.equal(await page.locator('#keep').getAttribute('data-corner'), '0');
+});
+
 test('nearby phone taps and desktop clicks preview the closest corner across both board sizes', async t => {
   for (const width of [320, 390, 1400]) for (const players of [4, 6]) {
     const page = await open(t, { width, height: 1000 }, `?players=${players}&seed=42`);

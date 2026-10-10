@@ -173,6 +173,13 @@ details p{font-size:12px;color:var(--mut);margin:8px 0}
 .picker{display:inline-flex;flex-wrap:wrap}
 .check.ok{color:var(--accent)}
 
+@media (forced-colors:active){
+  .mode-nav .toggle[aria-pressed="true"],.toggle[aria-pressed="true"],.seg button[aria-pressed="true"],.btn[aria-pressed="true"]{forced-color-adjust:none;background:Highlight;color:HighlightText}
+  .track li.current{outline:2px solid Highlight;outline-offset:2px}
+  .vx.legal:focus-visible{stroke:Highlight;fill:Canvas}
+  .hex.editable:focus-visible,.coast-hit:focus-visible{stroke:Highlight}
+}
+
 @media (min-width:1024px){
   .table-settings:not([open]){flex:0 1 320px;border:1px solid var(--line);border-radius:8px;padding-inline:12px}
 }
