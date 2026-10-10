@@ -62,7 +62,8 @@ When the device uses a high-contrast palette, selected controls use its highligh
 Drill level keeps an outline, and focused board corners remain visible against the page.
 Settlement taps and mouse clicks choose the closest corner within a limited reach. Tapping near a
 blocked corner does not redirect to another corner; your own settlement still needs **Keep** to confirm.
-Keyboard and assistive-button activation select the focused corner directly.
+With Ports selected, a tap near the coast changes its closest edge. Tile centers do not change ports.
+Keyboard and assistive-button activation select the focused corner or coastal edge directly.
 Changing between the 19-hex and 30-hex layouts starts a blank board of the new shape. The app keeps
 the previous board in this tab's history: **Restore previous board** or the browser's Back button
 recovers its tiles, harbours, table settings and placements, even after a refresh. Start blank,

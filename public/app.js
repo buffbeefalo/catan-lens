@@ -1,5 +1,5 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
-import { hexCorners, legalVertices, nearestVertex } from './geometry.js';
+import { hexCorners, legalVertices, nearestVertex, nearestCoastalEdge } from './geometry.js';
 import { suggestRoad, rankSpots, compare, grade, simulateDraft, openingFacts, PLANS, planFor } from './score.js';
 import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel, normalizeProgress, applyProgressActions } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
@@ -8,6 +8,7 @@ const $ = s => document.querySelector(s);
 const initialState = () => ({ setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], seq: null, mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check' });
 const state = initialState();
 let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
+let boardTouch = null;
 let stageFitsDifficulty = true;
 const HEUR = 'opening heuristic v1';
 
@@ -207,7 +208,7 @@ function drawBoard() {
     const [a, b] = board.graph.edges[eid].v.map(i => board.graph.vertices[i]);
     const hit = el('line', { class: 'coast-hit' + (board.harbors[eid] ? '' : ' empty') + (conflicts.has(eid) ? ' conflict' : ''), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'data-edge': eid });
     hit.append(el('title', {}, board.harbors[eid] ? `Harbour: ${board.harbors[eid]} — tap to change` : 'Tap to add a harbour'));
-    svgButton(hit, `Coastal edge ${eid}: ${board.harbors[eid] || 'no harbour'}. ${conflicts.has(eid) ? 'Shares a corner with another harbour. ' : ''}Change harbour`, () => cycleHarbor(eid));
+    svgButton(hit, `Coastal edge ${eid}: ${board.harbors[eid] || 'no harbour'}. ${conflicts.has(eid) ? 'Shares a corner with another harbour. ' : ''}Change harbour`, event => { if (!event?.detail) cycleHarbor(eid); });
     g.append(hit);
   }
   // Grow the frame to fit the labels (they may sit further out than the fixed padding allows).
@@ -218,7 +219,9 @@ function drawBoard() {
   }
   svg.append(el('g', { id: 'marks' }));
   svg.append(el('g', { id: 'hits' }));
-  svg.onclick = pickNearestCorner;
+  svg.onpointerdown = svg.onpointercancel = () => { boardTouch = null; };
+  svg.onpointerup = event => { boardTouch = event.pointerType === 'touch' ? { clientX: event.clientX, clientY: event.clientY } : null; };
+  svg.onclick = pickOnBoard;
   fitBoard();
   if (focusTarget) svg.querySelector(focusTarget + '[tabindex="0"]')?.focus({ preventScroll: true });
 }
@@ -407,12 +410,24 @@ function startDrill() { $('#settings').open = false; state.drillSetup = false; s
 function nextStage() { state.stage = Math.min(MAX_LEVEL, state.stage + 1); state.attempts = 0; newStageBoard(); }
 
 // ---- Interaction -----------------------------------------------------------
-function pickNearestCorner(event) {
-  if (!event.detail || !canPlace()) return;
+function pickOnBoard(event) {
+  const pointer = boardTouch || event;
+  boardTouch = null;
+  if (!event.detail || state.linkError) return;
+  const editingPorts = state.custom && state.tool === 'port';
+  if (!editingPorts && !canPlace()) return;
   const matrix = $('#svg').getScreenCTM();
   if (!matrix) return;
-  const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+  const point = new DOMPoint(pointer.clientX, pointer.clientY).matrixTransform(matrix.inverse());
   const scale = Math.hypot(matrix.a, matrix.b);
+  if (editingPorts) {
+    const id = nearestCoastalEdge(board.graph, point, Math.min(0.65, 22 / scale));
+    if (id !== null) {
+      cycleHarbor(id);
+      $(`.coast-hit[data-edge="${id}"]`)?.focus({ preventScroll: true });
+    }
+    return;
+  }
   const reach = Math.min(0.9, Math.max(0.3, 22 / scale));
   const id = nearestVertex(board.graph, point, reach);
   if (id !== null && legalVertices(board.graph, [...state.me, ...state.opp]).includes(id)) place(id);
@@ -782,6 +797,7 @@ $('#share').onclick = async () => { const link = new URL(location.href); link.se
 
 function restoreLocation() {
   Object.assign(state, initialState());
+  boardTouch = null;
   historyIssue = null;
   const saved = history.state?.catanFreePlay;
   freePlay = saved?.version === 1 ? saved.state : null;

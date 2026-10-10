@@ -107,3 +107,17 @@ export function nearestVertex(graph, point, reach) {
   }
   return distance <= reach ? nearest : null;
 }
+
+export function nearestCoastalEdge(graph, point, reach) {
+  let nearest = null, distance = Infinity;
+  for (const id of graph.perimeter) {
+    const [a, b] = graph.edges[id].v.map(v => graph.vertices[v]);
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / (dx * dx + dy * dy)));
+    const d = Math.hypot(point.x - a.x - t * dx, point.y - a.y - t * dy);
+    if (d < distance - 1e-9 || (Math.abs(d - distance) <= 1e-9 && (nearest === null || id < nearest))) {
+      nearest = id; distance = d;
+    }
+  }
+  return distance <= reach ? nearest : null;
+}

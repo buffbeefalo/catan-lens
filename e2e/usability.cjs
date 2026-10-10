@@ -520,6 +520,32 @@ test('keyboard users can cycle coastal harbours through redraws', async t => {
   assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-port');
 });
 
+test('coastal taps choose the nearest edge with room for finger error and leave hex centers alone', async t => {
+  for (const width of [320, 390, 1400]) for (const players of [4, 6]) {
+    const page = await open(t, { width, height: 1000 }, `?seed=42&players=${players}`);
+    await page.locator('#custom').click(); await page.locator('#tool-port').click();
+    const edge = await page.locator('.coast-hit.empty').first().getAttribute('data-edge');
+    await page.locator('#svg').scrollIntoViewIfNeeded();
+    const point = async offset => page.locator(`.coast-hit[data-edge="${edge}"]`).evaluate((line, offset) => {
+      const matrix = line.getScreenCTM();
+      const a = new DOMPoint(line.x1.baseVal.value, line.y1.baseVal.value).matrixTransform(matrix);
+      const b = new DOMPoint(line.x2.baseVal.value, line.y2.baseVal.value).matrixTransform(matrix);
+      const length = Math.hypot(b.x - a.x, b.y - a.y);
+      return { x: (a.x + b.x) / 2 - (b.y - a.y) / length * offset, y: (a.y + b.y) / 2 + (b.x - a.x) / length * offset };
+    }, offset);
+    for (const [offset, type] of [[8, '3:1'], [-8, 'wood'], [0, 'brick']]) {
+      const p = await point(offset);
+      if (width < 500) await page.touchscreen.tap(p.x, p.y); else await page.mouse.click(p.x, p.y);
+      assert.match(await page.locator(`.coast-hit[data-edge="${edge}"]`).getAttribute('aria-label'), new RegExp(`: ${type}\\.`), 'one tap advances exactly one step on the intended edge');
+    }
+    const before = page.url();
+    await page.locator('.hex').first().click();
+    assert.equal(page.url(), before, 'a hex center is outside the coastal editing reach');
+    assert.equal(await page.locator('#keep').count(), 0, 'coastal editing never starts a settlement preview');
+    await page.close();
+  }
+});
+
 test('pointer activation of editing tools does not move focus onto the board', async t => {
   const page = await open(t, { width: 390, height: 900 });
   await page.locator('#custom').click();

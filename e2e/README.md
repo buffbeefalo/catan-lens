@@ -18,6 +18,9 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   compact phone entry, explicit harbour assumptions, and board recovery across layout changes, refresh
   and browser Back/Forward. Offset taps and mouse clicks cover nearest-corner selection at phone and
   desktop widths, blocked corners, opponent marks and clicks beyond the corner reach.
+  Coastal checks tap eight pixels to either side of an edge and at its center, verify one harbour
+  change per tap, exclude tile centers, and retain direct keyboard cycling. Geometry checks cover
+  coastal-only segment distance, endpoints, stable ties and both full board layouts.
   Storage checks deny reads and writes, retry failed saves and resets, validate malformed progress,
   and exercise real storage events between two tabs sharing one browser context.
   Opening checks compare preview and committed income, starting cards and build shortfalls, cover

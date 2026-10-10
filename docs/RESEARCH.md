@@ -198,7 +198,7 @@ measured from the entered numbers. Every existing rule then applies unchanged â€
 **Considered on the 2026-09-15 research pass and NOT adopted (yet):**
 - *A denial term* (Catanatron weights enemy production as much as its own; several guides say "the spots you block
   are as important as the one you take"). It would change every score and needs its own tuning against the 4-pip
-  rule; parked. The projected-placements card already shows what each seat is likely to take.
+  rule; parked. The projected-placements card shows the heuristic's choices for each seat.
 - *Tournament-style board constraints* beyond 6/8 separation (2 and 12 apart, no identical numbers touching,
   a pip cap per corner). The 2025 rulebook only forbids 6 next to 8; the rest are generator conventions
   (settlersboard.com/rules, thisisrandy/catan-randomizer). Adopting them would silently change every seeded board
@@ -216,5 +216,5 @@ measured from the entered numbers. Every existing rule then applies unchanged â€
   the board consumed in turn order. That projection is the heuristic applied greedily, not a model of how
   particular opponents play; the ranking itself never depends on it, and the user's own marks always win.
 - **Robber penalty.** See R5.
-- **LLM-written explanations.** Every sentence in the "Why" panel is generated from the score
-  components, so it is always true of the board in front of you.
+- **LLM-written explanations.** The "Why" panel uses fixed text filled from the entered board and score
+  components. It explains the heuristic's factors and assumptions; no language-model response is used.

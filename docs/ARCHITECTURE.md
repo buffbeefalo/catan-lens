@@ -82,7 +82,12 @@ and explicit research-document route apply before opening anything. See
 7. Pointer placement converts the click into board coordinates and uses `nearestVertex` across all corners,
    then checks legality. Its reach is bounded in both screen pixels and board units, so overlapping hit
    areas cannot select a farther corner or redirect an occupied corner to a legal one. Keyboard and
-   coordinate-free button clicks still activate the named corner; editor tools keep their own handlers.
+   coordinate-free button clicks still activate the named corner. With Ports selected,
+   `nearestCoastalEdge` measures finite coastal segments within 22 CSS pixels and 0.65 board units;
+   it excludes inland edges and tile centers. Equal-distance coastal ties use the smaller edge id.
+   Touch selection retains pointer-release coordinates because WebKit can move a generated click
+   toward another interactive target. New/cancelled pointers and history restoration clear that value.
+   Keyboard/coordinate-free coastal activation edits its named edge; resource tools keep direct hex handlers.
 8. Drill progress validates known table keys and unique integer levels from 1 through `MAX_LEVEL`.
    Unsaved clear/reset actions stay in memory. Each save reads the latest local record and replays only
    these actions, preserving other tables; failed reads or writes show a retry warning. Storage events,
