@@ -84,7 +84,7 @@ test('a browser with JavaScript disabled gets a written explanation and guide', 
   assert.equal(await page.locator('.hex').count(), 0);
 });
 
-test('help return links are ready while the theme download is delayed or fails', async t => {
+test('help return links and content work while the theme download is delayed or fails', async t => {
   for (const delayed of [true, false]) for (const query of ['?seed=42&players=4&me=43&opp=0&seq=m43,o0', '?players=6&b=unreadable']) {
     const page = await open(t, { width: 390, height: 844 }, query);
     const original = page.url();
@@ -97,8 +97,8 @@ test('help return links are ready while the theme download is delayed or fails',
         page.getByRole('link', { name: 'How it works', exact: true }).click({ noWaitAfter: true }),
       ]);
       const back = page.locator('#back-to-app'); await back.waitFor();
-      assert.equal(new URL(await back.getAttribute('href'), page.url()).search, new URL(original).search);
       await page.waitForFunction(() => document.querySelector('#results tbody tr') && document.querySelector('[data-transcript="overview"]').textContent.trim().length > 20);
+      assert.equal(new URL(await back.getAttribute('href'), page.url()).search, new URL(original).search);
       assert.equal(await page.locator('.header-actions').evaluate(el => el.inert), true, 'an unavailable theme switch stays inactive while the help content works');
       await Promise.all([
         page.waitForURL(url => !url.pathname.endsWith('/how-it-works.html'), { waitUntil: 'commit' }),
