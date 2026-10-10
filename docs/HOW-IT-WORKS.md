@@ -49,6 +49,10 @@ the placement marks and offers **Restore cleared pieces**, including their origi
 Clearing an empty board or entering the same seed does not discard that recovery point. A shared link contains
 only the current board; recovery history belongs to the original tab. Changing 3↔4 or 5↔6 players
 keeps the entered board and placements because its shape has not changed.
+If the browser temporarily refuses link updates, a warning appears and editing still works. **Copy
+link** uses the board currently shown, even if the address bar is behind. Keep the tab open, wait a
+moment and choose **Retry link update** before refreshing. If a recovery checkpoint or a Drill mode
+change cannot be saved, that change is not applied; the current board and pieces stay in place.
 If a board link cannot be read, the app shows an error and keeps the original link in the address bar.
 It gives no settlement advice until you open a readable board or explicitly start again. If the saved
 tiles and harbours match the other board size, choose one of the offered player counts to recover the

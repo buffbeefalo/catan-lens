@@ -46,23 +46,49 @@ function readUrl() {
   // Free play keeps the placement ORDER too (seq=o23,m13,…), so Undo and the verdicts survive a reload.
   state.seq = (q.get('seq') || '').split(',').filter(Boolean).map(t => ({ k: t[0] === 'o' ? 'opp' : 'me', id: Number(t.slice(1)), user: t[0] === 'm' })).filter(t => Number.isInteger(t.id) && t.id >= 0);
 }
-function writeUrl() {
-  if (state.linkError) { history.replaceState(history.state, '', state.linkError.query); return; }
-  const q = new URLSearchParams({ players: state.players, seed: state.seed, seat: state.seat, cak: state.cak ? 1 : 0, bal: state.balanced ? 1 : 0, best: state.showBest ? 1 : 0, rseat: state.randomSeat ? 1 : 0 });
-  if (state.drill) {
+let historyIssue = null;
+function currentQuery(snapshot = state, customBoard = board) {
+  if (snapshot.linkError) return snapshot.linkError.query;
+  const q = new URLSearchParams({ players: snapshot.players, seed: snapshot.seed, seat: snapshot.seat, cak: snapshot.cak ? 1 : 0, bal: snapshot.balanced ? 1 : 0, best: snapshot.showBest ? 1 : 0, rseat: snapshot.randomSeat ? 1 : 0 });
+  if (snapshot.drill) {
     q.set('drill', 1);
-    if (state.drillSetup) q.set('setup', 1);
-    else q.set('level', state.stage);   // the level defines its pieces; none are written
+    if (snapshot.drillSetup) q.set('setup', 1);
+    else q.set('level', snapshot.stage);   // the level defines its pieces; none are written
   }
   else {
-    if (state.custom) { const enc = encodeBoard(board); q.delete('seed'); q.set('b', enc.b); if (enc.h) q.set('h', enc.h); if (state.portMode !== 'check') q.set('ports', state.portMode); }
-    if (state.me.length) q.set('me', state.me.join(','));
-    if (state.opp.length) q.set('opp', state.opp.join(','));
-    if (state.history.length) q.set('seq', state.history.map(h => (h.k === 'opp' ? 'o' : 'm') + h.id).join(','));
+    if (snapshot.custom) { const enc = encodeBoard(customBoard); q.delete('seed'); q.set('b', enc.b); if (enc.h) q.set('h', enc.h); if (snapshot.portMode !== 'check') q.set('ports', snapshot.portMode); }
+    if (snapshot.me.length) q.set('me', snapshot.me.join(','));
+    if (snapshot.opp.length) q.set('opp', snapshot.opp.join(','));
+    if (snapshot.history.length) q.set('seq', snapshot.history.map(h => (h.k === 'opp' ? 'o' : 'm') + h.id).join(','));
   }
-  history.replaceState(history.state, '', '?' + q.toString());
+  return '?' + q.toString();
 }
-function keepPreviousBoard(kind = state.linkError ? 'link' : 'board') { history.pushState({ catanRecovery: kind }, '', location.href); }
+function writeHistory(method, entry, query, issue) {
+  try {
+    history[method](entry, '', query);
+    historyIssue = null;
+    return true;
+  } catch (error) {
+    if (!(error instanceof DOMException) || !['SecurityError', 'DataCloneError'].includes(error.name)) throw error;
+    historyIssue = issue;
+    return false;
+  }
+}
+function writeUrl(retry = false) {
+  const query = currentQuery();
+  if (!retry && location.search === query) return true;
+  if (!retry && historyIssue) return false;
+  return writeHistory('replaceState', history.state, query, 'url');
+}
+function historyActionBlocked() {
+  historyIssue = 'blocked';
+  controls(); render();
+  return false;
+}
+function keepPreviousBoard(kind = state.linkError ? 'link' : 'board') {
+  if (!writeUrl() || !writeHistory('pushState', { catanRecovery: kind }, location.href, 'blocked')) return historyActionBlocked();
+  return true;
+}
 addEventListener('popstate', () => location.reload());
 
 // ---- Model -----------------------------------------------------------------
@@ -302,26 +328,30 @@ function newStageBoard() {
 // Drill on = set your table first (players + C&K stay live in the bar, everything else locks); Start begins
 // the ladder at the next open level for that table. A drill=1&level=N link skips the setup and uses its table.
 function setDrill(on) {
+  const next = structuredClone(state);
+  const entry = { ...history.state };
+  const saved = on ? structuredClone(state) : freePlay;
+  next.drill = on; next.drillSetup = on; next.answered = null; next.attempts = 0; next.pick = null; next.mode = 'me';
+  next.me = []; next.opp = []; next.history = [];
   if (on) {
-    freePlay = structuredClone(state);
-    history.replaceState({ ...history.state, catanFreePlay: { version: 1, state: freePlay } }, '', location.href);
-    state.custom = false; state.linkError = null; state.tool = null; state.numHex = null;
+    entry.catanFreePlay = { version: 1, state: saved };
+    next.custom = false; next.linkError = null; next.tool = null; next.numHex = null;
+  } else {
+    if (saved) Object.assign(next, saved); else next.seed = randomSeed();
+    delete entry.catanFreePlay;
   }
-  state.drill = on; state.drillSetup = on; state.answered = null; state.attempts = 0; state.pick = null; state.mode = 'me';
-  state.me = []; state.opp = []; state.history = [];
-  if (!on) {
-    if (freePlay) Object.assign(state, freePlay); else state.seed = randomSeed();
-    freePlay = null;
-    const entry = { ...history.state }; delete entry.catanFreePlay;
-    history.replaceState(entry, '', location.href);
-  }
+  const customBoard = next.custom && !next.linkError ? boardFrom({ setup: next.setup, hexes: next.customHexes, harbors: next.customHarbors }) : board;
+  if (!writeHistory('replaceState', entry, currentQuery(next, customBoard), 'blocked')) return historyActionBlocked();
+  Object.assign(state, next);
+  freePlay = on ? saved : null;
   controls(); rebuild();
+  return true;
 }
 // ---- Your board (enter the board in front of you) -----------------------------
 const HARBOR_CYCLE = [null, '3:1', 'wood', 'brick', 'wheat', 'sheep', 'ore'];
 function setCustom(on) {
-  if (on && state.drill) setDrill(false);
-  if (!on) keepPreviousBoard();
+  if (on && state.drill && !setDrill(false)) return;
+  if (!on && !keepPreviousBoard()) return;
   state.custom = on; state.tool = null; state.numHex = null; state.pick = null;
   if (on) { state.portMode = 'check'; state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
   else { state.seed = randomSeed(); state.linkError = null; state.me = []; state.opp = []; state.history = []; }
@@ -337,11 +367,15 @@ function hexClick(i) {
 }
 function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); }
 function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; if (state.portMode === 'entered') state.portMode = 'check'; rebuild(); }
-function fillCustom(b) { keepPreviousBoard(); state.linkError = null; state.portMode = 'check'; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
+function fillCustom(b) { if (!keepPreviousBoard()) return; state.linkError = null; state.portMode = 'check'; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
 function bindBoardActions() {
   const bb = $('#blank-board'); if (bb) bb.onclick = () => fillCustom(blankBoard(state.setup));
   const rb = $('#rand-board'); if (rb) rb.onclick = () => fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true }));
   const restore = $('#restore-board'); if (restore) restore.onclick = () => history.back();
+  const retry = $('#retry-url'); if (retry) retry.onclick = () => {
+    const saved = writeUrl(true); render();
+    if (saved) $('#share').focus({ preventScroll: true });
+  };
 }
 
 function startDrill() { $('#settings').open = false; state.drillSetup = false; state.stage = Math.min(MAX_LEVEL, maxCleared() + 1); state.attempts = 0; newStageBoard(); }
@@ -390,7 +424,7 @@ function keepPick() {
     if (state.answered.pass && !cleared().includes(state.stage)) markCleared(state.stage);
   }
   state.me.push(state.pick); state.history.push({ k: 'me', id: state.pick, user: true }); state.pick = null; recompute();
-  const result = $('.progress-warning h2') || (state.drill ? $('#drill-result') : state.me.length === 2 ? $('#opening-heading') : $('.verdict h2'));
+  const result = $('#history-warning h2') || $('.progress-warning h2') || (state.drill ? $('#drill-result') : state.me.length === 2 ? $('#opening-heading') : $('.verdict h2'));
   if (result) {
     result.tabIndex = -1; result.focus({ preventScroll: true });
     const rect = result.getBoundingClientRect();
@@ -407,7 +441,7 @@ function undo() {
   else { const i = state.opp.lastIndexOf(last.id); if (i >= 0) state.opp.splice(i, 1); }
   recompute();
 }
-function reset() { if (state.me.length || state.opp.length) keepPreviousBoard('pieces'); state.me = []; state.opp = []; state.history = []; state.pick = null; recompute(); }
+function reset() { if ((state.me.length || state.opp.length) && !keepPreviousBoard('pieces')) return; state.me = []; state.opp = []; state.history = []; state.pick = null; recompute(); }
 
 // ---- Panel -----------------------------------------------------------------
 // Grade each placed settlement against the corners that were open when it went down (replayed
@@ -490,7 +524,7 @@ function harborControls() {
 
 const disclosures = new Map();
 function render() {
-  $('.brand .sub-link').search = location.search;
+  $('.brand .sub-link').search = currentQuery();
   for (const details of $('#panel').querySelectorAll('details[data-disclosure]')) disclosures.set(details.dataset.disclosure, details.open);
   const plan = PLANS[planFor(settings())];
   const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';
@@ -506,13 +540,15 @@ function render() {
   $('#showbest').textContent = state.drill ? (state.answered ? 'Answers shown' : 'Hints hidden') : 'Show best';
   $('#showbest').setAttribute('aria-pressed', String(reveal()));
   $('#showbest').disabled = state.drill || !entry.ready;
-  let out = '';
+  let out = historyIssue ? `<div class="card lead" id="history-warning" role="status"><h2>Board link needs attention</h2>
+    <p class="sub">${historyIssue === 'blocked' ? 'The change was not applied because the browser could not save its recovery point. Your current board and pieces are still here. ' : ''}The address bar may be behind your latest edits. Keep this tab open; Copy link includes the board shown here.</p>
+    <p class="sub">Wait a moment, then retry the link update${historyIssue === 'blocked' ? ' before repeating the change' : ''}.</p><button class="btn ghost" id="retry-url">Retry link update</button></div>` : '';
   const recovery = history.state?.catanRecovery;
   const recoveryName = recovery === 'link' ? 'original link' : recovery === 'pieces' ? 'cleared pieces' : 'previous board';
   const restore = recovery ? `<button class="btn ghost" id="restore-board">Restore ${recoveryName}</button>` : '';
   if (state.linkError) {
     $('#plan-note').textContent = 'Board link needs attention · no settlement advice is shown';
-    panel.innerHTML = `<div class="card edit lead link-error" role="alert"><h2>Board link could not be read</h2>
+    panel.innerHTML = out + `<div class="card edit lead link-error" role="alert"><h2>Board link could not be read</h2>
       <p>The saved tiles or harbours do not form a readable board for this table. Your original link is unchanged. Ask the sender for a fresh link, or start again below.</p>
       ${state.linkError.players.length ? `<p>The saved board fits the other board size. Choose its player count to keep the tiles, harbours and settlement marks:</p><p>${state.linkError.players.map(n => `<button class="btn ghost" data-recover-players="${n}">Open as ${n} players</button>`).join(' ')}</p>` : ''}
       <p><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
@@ -668,7 +704,7 @@ function setPlayers(players) {
   if (players === state.players) return;
   const setup = players >= 5 ? 'ext56' : 'base';
   if (setup !== state.setup) {
-    if (!state.drill) keepPreviousBoard();
+    if (!state.drill && !keepPreviousBoard()) return;
     if (state.custom) { state.customHexes = []; state.customHarbors = {}; state.numHex = null; state.portMode = 'check'; }
     state.me = []; state.opp = []; state.history = []; state.seq = null; state.pick = null;
   }
@@ -699,7 +735,7 @@ function controls() {
 $('#cak').onclick = () => { state.cak = !state.cak; controls(); recompute(); };
 $('#showbest').onclick = () => { state.showBest = !state.showBest; controls(); recompute(); };
 $('#randseat').onclick = () => { state.randomSeat = !state.randomSeat; if (state.randomSeat) rollSeat(); controls(); recompute(); };
-$('#balanced').onclick = () => { keepPreviousBoard(); state.balanced = !state.balanced; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
+$('#balanced').onclick = () => { if (!keepPreviousBoard()) return; state.balanced = !state.balanced; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
 $('#drill').onclick = () => setDrill(!state.drill);
 $('#practice').onclick = () => { if (state.drill) setDrill(false); else if (state.custom) setCustom(false); };
 $('#custom').onclick = () => setCustom(!state.custom);
@@ -709,9 +745,9 @@ $('#panel').addEventListener('keydown', e => {
   if (state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); }
   else if (state.numHex !== null && e.target.closest('.picker')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); $(`.hex[data-hex="${id}"]`)?.focus(); }
 });
-$('#new').onclick = () => { if (inLevel()) return newStageBoard(); if (state.custom) return fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true })); if (!state.drill) keepPreviousBoard(); state.seed = randomSeed(); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
-$('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.test(t) && Number(t) < 4294967296 && Number(t) !== state.seed) { keepPreviousBoard(); state.seed = Number(t); state.answered = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); } else controls(); };
+$('#new').onclick = () => { if (inLevel()) return newStageBoard(); if (state.custom) return fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true })); if (!state.drill && !keepPreviousBoard()) return; state.seed = randomSeed(); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
+$('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.test(t) && Number(t) < 4294967296 && Number(t) !== state.seed) { if (!keepPreviousBoard()) return; state.seed = Number(t); state.answered = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); } else controls(); };
 setupThemeSwitch($('#theme'));
-$('#share').onclick = async () => { try { await navigator.clipboard.writeText(location.href); $('#share').textContent = 'Copied'; setTimeout(() => { $('#share').textContent = 'Copy link'; }, 1500); } catch { prompt('Copy this link', location.href); } };
+$('#share').onclick = async () => { const link = new URL(location.href); link.search = currentQuery(); try { await navigator.clipboard.writeText(link.href); $('#share').textContent = 'Copied'; setTimeout(() => { $('#share').textContent = 'Copy link'; }, 1500); } catch { prompt('Copy this link', link.href); } };
 
 readUrl(); controls(); rebuild();

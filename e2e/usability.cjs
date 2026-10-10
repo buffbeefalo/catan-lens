@@ -755,6 +755,130 @@ test('blank and partially entered boards do not offer settlement advice', async 
   assert.equal(await page.locator('.vx.legal').count(), 0, 'incomplete land cannot be committed as a graded settlement');
 });
 
+test('rapid keyboard entry of the larger board stays responsive and shareable without a connection', async t => {
+  const { generateBoard, decodeBoard } = await import('../public/board.js');
+  const original = generateBoard({ setup: 'ext56', seed: 42, balanced: true });
+  const page = await open(t, { width: 390, height: 900 }, '?players=6&seed=42&seat=1');
+  await page.context().setOffline(true);
+  await page.locator('#custom').click();
+  await page.locator('#blank-board').click();
+  for (const hex of original.hexes) {
+    const tool = page.locator('#tool-' + hex.resource);
+    if (await tool.getAttribute('aria-pressed') !== 'true') await tool.click();
+    await page.locator(`.hex[data-hex="${hex.id}"]`).focus();
+    await page.keyboard.press('Enter');
+  }
+  await page.locator('#tool-number').click();
+  for (const hex of original.hexes.filter(h => h.number)) {
+    await page.locator(`.hex[data-hex="${hex.id}"]`).focus();
+    await page.keyboard.press('Enter');
+    await page.locator(`[data-num="${hex.number}"]`).click();
+  }
+  assert.equal(await page.locator('#port-mode').count(), 1, 'the last number must render the harbour decision');
+  assert.equal(await page.locator('#preview-best').count(), 0, 'unresolved harbours still withhold advice');
+  await page.locator('#port-mode').click();
+  await page.locator('#tool-number').click();
+  const query = new URL(page.url()).searchParams;
+  const decoded = decodeBoard('ext56', query.get('b'), query.get('h'));
+  assert.deepEqual(decoded.hexes.map(h => [h.resource, h.number]), original.hexes.map(h => [h.resource, h.number]));
+  assert.equal(query.get('ports'), 'ignore');
+  await page.locator('#preview-best').click();
+  await page.locator('#keep').click();
+  await page.locator('#preview-best').click();
+  await page.locator('#keep').click();
+  assert.match(await page.locator('.opening-card').innerText(), /expected cards/);
+});
+
+test('refused address updates keep edits usable, copy the current board and recover on explicit retry', async t => {
+  const { decodeBoard } = await import('../public/board.js');
+  const page = await open(t, { width: 390, height: 900 });
+  await page.locator('#custom').click();
+  const original = page.url();
+  const resource = (await page.locator('.hex[data-hex="0"]').getAttribute('class')).includes('wood') ? 'ore' : 'wood';
+  await page.evaluate(() => {
+    const replace = history.replaceState.bind(history);
+    window.refuseHistory = true; window.historyAttempts = 0;
+    history.replaceState = (...args) => {
+      window.historyAttempts++;
+      if (window.refuseHistory) throw new DOMException('Simulated browser history limit', 'SecurityError');
+      return replace(...args);
+    };
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.copiedBoard = text; } } });
+  });
+  await page.locator('#tool-' + resource).click();
+  await page.locator('.hex[data-hex="0"]').focus();
+  await page.keyboard.press('Enter');
+  assert.equal(page.url(), original, 'the browser refused the address change');
+  assert.equal(await page.locator('#history-warning').count(), 1);
+  assert.match(await page.locator('#history-warning').innerText(), /address.*behind|latest edits/i);
+  assert.ok((await page.locator('.hex[data-hex="0"]').getAttribute('class')).includes(resource));
+  const attempts = await page.evaluate(() => window.historyAttempts);
+  await page.locator('#share').click();
+  const copied = await page.evaluate(() => window.copiedBoard);
+  const query = new URL(copied).searchParams;
+  assert.equal(decodeBoard('base', query.get('b'), query.get('h')).hexes[0].resource, resource);
+  assert.notEqual(copied, original);
+  const help = new URL(await page.getByRole('link', { name: 'How it works', exact: true }).getAttribute('href'), page.url());
+  assert.equal(help.search, new URL(copied).search, 'help also carries the latest board');
+  assert.equal(await page.evaluate(() => window.historyAttempts), attempts, 'copying never retries a refused history write');
+  await page.evaluate(() => { window.refuseHistory = false; });
+  await page.locator('#retry-url').click();
+  assert.equal(page.url(), copied);
+  assert.equal(await page.locator('#history-warning').count(), 0);
+  assert.equal(await page.locator('#share').evaluate(el => el === document.activeElement), true);
+  await reloadInBrowser(page);
+  assert.ok((await page.locator('.hex[data-hex="0"]').getAttribute('class')).includes(resource));
+});
+
+test('a refused recovery checkpoint leaves the existing board and pieces intact', async t => {
+  for (const action of ['clear', 'new', 'players', 'seed', 'balanced', 'blank', 'random', 'explore']) {
+    const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
+    if (['blank', 'random', 'explore'].includes(action)) await page.locator('#custom').click();
+    const original = page.url();
+    await page.evaluate(() => { history.pushState = () => { throw new DOMException('Simulated recovery limit', 'SecurityError'); }; });
+    if (['players', 'seed', 'balanced'].includes(action)) await page.locator('#settings summary').click();
+    if (action === 'seed') { await page.locator('#seed').fill('77'); await page.locator('#seed').press('Tab'); }
+    else if (action === 'players') await page.locator('#players button').filter({ hasText: '6' }).click();
+    else await page.locator(({ clear: '#reset', blank: '#blank-board', random: '#rand-board', explore: '#practice', balanced: '#balanced', new: '#new' })[action]).click();
+    assert.equal(page.url(), original, action);
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2, action);
+    assert.equal(await page.locator('#history-warning').count(), 1, action);
+    assert.match(await page.locator('#history-warning').innerText(), /not applied/i);
+    if (action === 'seed') assert.equal(await page.locator('#seed').inputValue(), '42');
+    await page.close();
+  }
+});
+
+test('refused Drill history writes leave the mode unchanged and preserve the return board', async t => {
+  const page = await open(t, { width: 390, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
+  const original = page.url();
+  await page.evaluate(() => {
+    const replace = history.replaceState.bind(history);
+    window.refuseHistory = true;
+    history.replaceState = (...args) => {
+      if (window.refuseHistory) throw new DOMException('Simulated history limit', 'SecurityError');
+      return replace(...args);
+    };
+  });
+  await page.locator('#drill').click();
+  assert.equal(page.url(), original);
+  assert.equal(await page.locator('#history-warning').count(), 1);
+  assert.equal(await page.locator('#drill').getAttribute('aria-pressed'), 'false');
+  await page.evaluate(() => { window.refuseHistory = false; });
+  await page.locator('#drill').click();
+  assert.equal(await page.locator('#start-drill').count(), 1);
+  const drillURL = page.url();
+  await page.evaluate(() => { window.refuseHistory = true; });
+  await page.locator('#drill').click();
+  assert.equal(page.url(), drillURL);
+  assert.equal(await page.locator('#history-warning').count(), 1);
+  assert.equal(await page.locator('#drill').getAttribute('aria-pressed'), 'true');
+  await page.evaluate(() => { window.refuseHistory = false; });
+  await page.locator('#drill').click();
+  assert.equal(page.url(), original);
+  assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+});
+
 test('phone blank-board entry keeps its first tile visible alongside the tools', async t => {
   const page = await open(t, { width: 390, height: 844 });
   await page.locator('#custom').tap();

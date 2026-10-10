@@ -93,12 +93,13 @@ and explicit research-document route apply before opening anything. See
    facts do not change scores or rankings. The UI hides previews before blind/drill answers and labels
    C&K as a two-settlement comparison without base-game income or build projections. Confirmation moves
    focus to the result (or a saving warning), and the single-column layout scrolls the result into view.
-10. The app's help link and the explainer's return link copy `location.search` onto fixed relative
-    destinations. They preserve the current shareable state, including unreadable queries, without a
+10. The app's help link uses the current serialized board query; the explainer's return link copies its
+    `location.search` onto a fixed relative destination. They preserve shareable state, including unreadable queries, without a
     second storage record or a user-controlled return destination. The links work under both the local
     dashboard prefix and GitHub Pages, and the help page can be refreshed before returning.
 11. Entering Drill stores the existing free-play state in versioned `history.state.catanFreePlay`.
-    Reload reads that snapshot; exiting restores it and removes only that field, retaining older
+    The snapshot and destination query are written together before changing modes. Reload reads that
+    snapshot; exiting restores it and removes only that field, retaining older
     recovery metadata. `drill=1&setup=1` shares the table-selection screen, while an active exercise
     uses `drill=1&level=N`. The return snapshot stays out of the URL and belongs to the current history
     entry, so a fresh tab's drill link contains no earlier exploration board.
@@ -109,6 +110,17 @@ boards neutral finite scarcity factors, while the UI still withholds advice unti
 copy. An absent choice is unavailable, retains the out-of-range rank sentinel, and cannot pass `judge`,
 including when the ranking is empty or has fewer entries than the stage target. Valid grades and
 complete-board scores are unchanged by these guards.
+
+URL serialization skips `replaceState` when the current query already matches. Choosing an editing
+tool, opening a number picker or repainting an identical value should not consume the browser's history
+update allowance. Changed board data still updates the link synchronously. A refused history write
+(`SecurityError` or `DataCloneError`) shows a warning without interrupting rendering. Further ordinary
+edits do not repeatedly retry the refused write; the explicit Retry action attempts an update once.
+Copy and help use the current board query even when the address bar is stale. A replacement requires
+the current URL and its recovery checkpoint to be saved first; a refused checkpoint or Drill transition
+leaves the existing board and mode intact. Unexpected programming errors still propagate.
+Rapid full-board entry previously exhausted WebKit's limit and interrupted rendering. Browsers may throw for overly frequent calls, as documented for
+[`History.replaceState`](https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState).
 
 ## Where to change things
 
