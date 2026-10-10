@@ -78,6 +78,13 @@ picture fidelity and all 21/52 caption cues. The recogniser matched 173/173 over
 explains that a road destination is not guaranteed to remain available. These checks do not establish
 natural-sounding speech or playback on every device.
 
+A follow-up overview refresh replaces the older road-conflict wording visible in its captured app
+screens. The narration, captions, transcript and poster are byte-for-byte unchanged; the finished
+movie again passed all seven acceptance checks, including 173/173 recognised words and 21 caption
+cues. The walkthrough remains byte-for-byte unchanged from the preceding refresh. The signed-score
+display and repeated-number wording were reviewed against both demonstrations: these examples use
+positive scores, and no old discard-frequency claim appears in the reviewed explanation scenes.
+
 The later owned-harbour correction was reviewed against these demonstrations: the seed-42 first/second
 choices, second ranking and both suggested roads are unchanged. The results card remains the dated
 fresh-seed test of its recorded policy; the help page identifies later policy changes separately.
