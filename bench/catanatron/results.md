@@ -1,5 +1,83 @@
 # Benchmark results
 
+## Owned-harbour correction, 2026-10-09
+
+Policy `r7-owned-ports-2026-10-09` removes R7 credit for a harbour type already supplied by your
+settlements. It preserves all bonus magnitudes and other scoring weights. This rules-correctness
+repair was fixed before its games; outcomes were not used to tune it or select a policy.
+
+The [plan](evidence/owned-harbour-plan-2026-10-09.json) was recorded at **2026-10-10T00:57:41Z**
+(9 October in Pacific time). The baseline snapshot was frozen then; the corrected snapshot was frozen
+at **01:10:10Z**, before its first game. All nine baseline inputs match commit
+[`6955a68`](https://github.com/buffbeefalo/catan-lens/tree/6955a683c1c9e7eba2560614bda98ac95d11ebe5);
+all nine corrected inputs match
+[`2f8c75c`](https://github.com/buffbeefalo/catan-lens/tree/2f8c75c7e14e385df50cea6ed825c3500ac5ea91).
+Only the scoring input differs between snapshots.
+
+Hash seeds **201–220** and board seeds **2,000,000–2,007,999** are separate from both earlier tests.
+Each strategy plays the same 8,000 boards and subject seats, grouped into 20 clusters of 400 boards.
+All **24,000 games finished**. Python, Catanatron and the value-function opponent policy are unchanged.
+
+| Opening chosen by | Wins / games | Win rate (95% interval) |
+|---|---|---|
+| Lens with owned-harbour correction | 1,972 / 8,000 | 24.7% ± 1.1 |
+| Lens before the correction | 1,976 / 8,000 | 24.7% ± 1.0 |
+| The bot's own opening | 1,985 / 8,000 | 24.8% ± 0.9 |
+
+Both Lens rates round to 24.7%, but their exact rates are 24.6500% and 24.7000%. The predeclared
+primary comparison subtracts old Lens from corrected Lens within each cluster, using the same
+approximate 95% t-interval method described below. The comparison with the value bot is descriptive.
+
+| Comparison | Difference in percentage points | Approximate 95% interval |
+|---|---|---|
+| Corrected Lens minus Lens before correction (primary) | −0.0500 | −0.0980 to −0.0020 |
+| Corrected Lens minus bot's own opening (descriptive) | −0.1625 | −1.6749 to +1.3499 |
+
+The correction won **four fewer games**. Only four matched win/loss pairs differ, all favoring the
+older policy; four clusters each lose one win and 16 have identical win counts. The primary interval
+lies slightly below zero, but its narrowness relies on a t approximation with very sparse differences.
+Keep that limitation with the reported interval; this is no demonstrated win-rate gain or proof of
+equivalent policies. Thirteen paired records differ in win, victory points or turns; the archive
+does not record every move, so identical result fields do not establish identical game histories.
+
+Subject seats were distributed **2,023 / 1,977 / 2,033 / 1,967** across seats 1–4, identically for each
+strategy. These are four-player base-game bots, not evidence of human improvement, other table sizes
+or Cities & Knights. The repair corrects the explanation of trading access; its rationale does not
+depend on gaining wins in this sample.
+
+### Check this comparison
+
+- [All 24,000 games, compressed JSON Lines](evidence/owned-harbour-2026-10-09.jsonl.gz)
+- [Frozen input hashes, exact results, clusters and paired differences](evidence/owned-harbour-2026-10-09.json)
+- [Standard-library verifier](verify_owned_harbours.py)
+- [Frozen Python dependency versions](evidence/requirements-2026-10-09.txt)
+
+```sh
+python3 bench/catanatron/verify_owned_harbours.py
+python3 bench/catanatron/verify_owned_harbours.py --sources
+```
+
+The first command verifies the archive, complete paired games, seats, cluster counts, exact wins,
+changed outcomes, intervals and public figures. The optional second command also checks all frozen
+input hashes against their git commits and requires full repository history. Continuous integration
+runs the first command along with the earlier holdout verifier. Original run hashes are retained in
+the report; raw game records change only the Lens arm labels to distinguish old and corrected policies.
+
+### Reproduce this comparison
+
+Use separate checkouts at the two exact commits above and the frozen Python dependency versions.
+For runs 1–20 in each checkout, use the invocation below. Set `arms=value,lens` for the baseline and
+`arms=lens` for the correction; keep outputs in separate directories. Every run contains 400 boards.
+
+```sh
+PYTHONHASHSEED=$((200 + run)) .venv/bin/python bench/catanatron/catanatron_bench.py \
+  --games 400 --start $((2000000 + (run - 1) * 400)) --jobs 4 \
+  --arms "$arms" --out "comparison-output/run-$run.jsonl"
+```
+
+Use the fresh-seed setup instructions below for the environment, substituting the recorded commits.
+This comparison is never pooled with the earlier results.
+
 ## Fresh-seed test, 2026-10-09
 
 The opening policy was frozen before this test at Catan Lens commit

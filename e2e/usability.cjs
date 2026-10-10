@@ -163,7 +163,9 @@ test('a failed help transcript has an explicit retry and recovers without losing
     if (!await details.evaluate(el => el.open)) await details.locator('summary').click();
     const retry = details.getByRole('button', { name: 'Retry transcript' });
     assert.equal(await retry.isVisible(), true);
-    assert.ok((await page.locator('[data-transcript="walkthrough"]').innerText()).length > 20, 'one failed transcript must not suppress the other');
+    const otherTranscript = page.locator('[data-transcript="walkthrough"]'), otherDetails = otherTranscript.locator('..');
+    if (!await otherDetails.evaluate(el => el.open)) await otherDetails.locator('summary').click();
+    assert.ok((await otherTranscript.innerText()).length > 20, 'one failed transcript must not suppress the other');
     available = true;
     await retry.focus();
     await page.keyboard.press('Enter');
@@ -601,9 +603,16 @@ test('help preserves an unreadable link verbatim and its return stays within thi
   assert.equal(await page.locator('.best-ring').count(), 0);
 });
 
-test('the evidence page shows fresh and original benchmark intervals and their limits on phones', async t => {
+test('the evidence page separates the harbour correction from earlier benchmarks on phones', async t => {
   for (const width of [320, 1400]) {
     const page = await open(t, { width, height: 900 }, 'how-it-works.html');
+    const corrected = page.locator('#owned-harbour-results');
+    assert.equal(await corrected.locator('tbody tr').count(), 3);
+    assert.match(await corrected.innerText(), /1,972 wins/);
+    assert.match(await corrected.innerText(), /1,976 wins/);
+    assert.match(await page.locator('#owned-harbour-comparison').innerText(), /four fewer wins/i);
+    assert.match(await page.locator('#owned-harbour-comparison').innerText(), /−0\.098 to −0\.002/);
+    assert.doesNotMatch(await page.locator('#policy-version-note').innerText(), /in progress/i);
     const fresh = page.locator('#holdout-results');
     assert.equal(await fresh.locator('tbody tr').count(), 5);
     assert.match(await fresh.innerText(), /24\.3%.*1\.1/);
@@ -623,6 +632,7 @@ test('the evidence page explains a results download failure instead of leaving a
   await page.route('**/media/results.json', route => route.abort());
   await page.goto(base + 'how-it-works.html', { waitUntil: 'networkidle' });
   assert.match(await page.locator('#results-status').innerText(), /could not be loaded/i);
+  assert.equal(await page.locator('#owned-harbour-results tbody tr').count(), 0);
   assert.ok(await page.getByRole('link', { name: /benchmark methods and records/i }).isVisible());
 });
 

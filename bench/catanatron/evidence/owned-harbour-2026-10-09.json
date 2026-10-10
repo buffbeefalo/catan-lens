@@ -1,0 +1,378 @@
+{
+  "date": "2026-10-09",
+  "policy": "r7-owned-ports-2026-10-09",
+  "predeclaredAt": "2026-10-10T00:57:41.821386+00:00",
+  "baselineCommit": "6955a683c1c9e7eba2560614bda98ac95d11ebe5",
+  "sourceCommit": "2f8c75c7e14e385df50cea6ed825c3500ac5ea91",
+  "engineCommit": "ecf931181b9a65bb4116a2153fb78c16f1438e00",
+  "hashSeeds": [
+    201,
+    220
+  ],
+  "boardSeeds": [
+    2000000,
+    2007999
+  ],
+  "games": 8000,
+  "runs": 20,
+  "totalGames": 24000,
+  "unfinished": 0,
+  "subjectSeatCounts": {
+    "1": 2023,
+    "2": 1977,
+    "3": 2033,
+    "4": 1967
+  },
+  "method": "Predeclared two-sided approximate 95% Student t intervals over 20 cluster means, df19, t=2.093024054408263. Paired differences subtract policies within each cluster; units are percentage points.",
+  "primaryComparison": "corrected-minus-lens-before",
+  "descriptiveComparison": "corrected-minus-value",
+  "arms": [
+    {
+      "key": "lens-corrected",
+      "label": "Lens with owned-harbour correction",
+      "win": 24.7,
+      "ci": 1.1,
+      "wins": 1972,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "lens-before",
+      "label": "Lens before the correction",
+      "win": 24.7,
+      "ci": 1.0,
+      "wins": 1976,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "value",
+      "label": "The bot's own opening",
+      "win": 24.8,
+      "ci": 0.9,
+      "wins": 1985,
+      "games": 8000,
+      "runs": 20
+    }
+  ],
+  "pairedDifferences": {
+    "corrected-minus-lens-before": {
+      "differencePP": -0.050000000000000044,
+      "lower95PP": -0.09801726494508112,
+      "upper95PP": -0.0019827350549189784
+    },
+    "corrected-minus-value": {
+      "differencePP": -0.1625,
+      "lower95PP": -1.6748890202754994,
+      "upper95PP": 1.3498890202754992
+    }
+  },
+  "unroundedSummary": {
+    "lens-before": {
+      "meanPercent": 24.7,
+      "ci95HalfWidthPP": 1.0386335310092092,
+      "ci95Lower": 23.66136646899079,
+      "ci95Upper": 25.73863353100921,
+      "wins": 1976,
+      "games": 8000,
+      "runs": 20
+    },
+    "lens-corrected": {
+      "meanPercent": 24.65,
+      "ci95HalfWidthPP": 1.050223318123875,
+      "ci95Lower": 23.599776681876122,
+      "ci95Upper": 25.700223318123875,
+      "wins": 1972,
+      "games": 8000,
+      "runs": 20
+    },
+    "value": {
+      "meanPercent": 24.8125,
+      "ci95HalfWidthPP": 0.9022223990717485,
+      "ci95Lower": 23.91027760092825,
+      "ci95Upper": 25.71472239907175,
+      "wins": 1985,
+      "games": 8000,
+      "runs": 20
+    }
+  },
+  "recordChanges": {
+    "changedToWin": 0,
+    "changedToLoss": 4,
+    "winChanged": 4,
+    "recordedOutcomeChanged": 13
+  },
+  "inputSnapshots": {
+    "baseline": {
+      "frozenAt": "2026-10-10T00:57:41.790576+00:00",
+      "sourceCommit": "6955a683c1c9e7eba2560614bda98ac95d11ebe5",
+      "files": {
+        "package.json": "ba0a95ed53574257491acf0b39ed37f6cc60ae8e92f624282d0254ce45a74dd9",
+        "public/board.js": "59ebeac9ff77d97e8ca8fbf7f017fd7ce7d1777177cc5fc79fec346d896f4693",
+        "public/score.js": "6926838de406222e58fc2c8dc1e22668ca7f6bd8989990b0c4f1f2291e00e302",
+        "public/geometry.js": "38e6274b3565518b08e1e1bd7d3cd43b04a5ee2237648567bf21e5543353c6fd",
+        "bench/lens-bridge.mjs": "ab7bc94731b9ead48404fee2d415a4df4b27fd766ebe9c7c9539e11e764a6f93",
+        "bench/catanatron/catanatron_bench.py": "536244e9fd88f969f194f1b300a8545e629f73cc1f0a0cafc3766a563188cf8e",
+        "bench/catanatron/road_deadends.py": "2522c05f3e7ceae516357c3b23f4ee18eb2c46008e27eeea176e13948895abd9",
+        "bench/catanatron/requirements.txt": "b4afebd40f8c2e620c0db5589ae87b0662de7b5fc032b8bbdca8cbb7382df3ce",
+        "bench/catanatron/summarize.py": "77c3f7e00db6579f1589df7c6519af3d804eaa7ebb57adfe844b4859e3c43c83"
+      }
+    },
+    "candidate": {
+      "frozenAt": "2026-10-10T01:10:10.441812+00:00",
+      "sourceCommit": "2f8c75c7e14e385df50cea6ed825c3500ac5ea91",
+      "files": {
+        "package.json": "ba0a95ed53574257491acf0b39ed37f6cc60ae8e92f624282d0254ce45a74dd9",
+        "public/board.js": "59ebeac9ff77d97e8ca8fbf7f017fd7ce7d1777177cc5fc79fec346d896f4693",
+        "public/score.js": "d49813ffd609b86c4cb9fc9ca030b9aca04b50cb9089fe5860e628a480df8386",
+        "public/geometry.js": "38e6274b3565518b08e1e1bd7d3cd43b04a5ee2237648567bf21e5543353c6fd",
+        "bench/lens-bridge.mjs": "ab7bc94731b9ead48404fee2d415a4df4b27fd766ebe9c7c9539e11e764a6f93",
+        "bench/catanatron/catanatron_bench.py": "536244e9fd88f969f194f1b300a8545e629f73cc1f0a0cafc3766a563188cf8e",
+        "bench/catanatron/road_deadends.py": "2522c05f3e7ceae516357c3b23f4ee18eb2c46008e27eeea176e13948895abd9",
+        "bench/catanatron/requirements.txt": "b4afebd40f8c2e620c0db5589ae87b0662de7b5fc032b8bbdca8cbb7382df3ce",
+        "bench/catanatron/summarize.py": "77c3f7e00db6579f1589df7c6519af3d804eaa7ebb57adfe844b4859e3c43c83"
+      }
+    }
+  },
+  "originalRunHashes": {
+    "baseline": [
+      "fff8a4b9acfc6938e4298f85cf811c3c9f7b2a79dc17066dd710f0db0538da63",
+      "ea094479cc3798099275bbb7d63d5c282aa598843267694782da62d88056a626",
+      "317ea4caa3bbbd1c94698464710debc6f01ea58a38330cfdb5ba7f4a443f13f3",
+      "c741fec4ae50ba585a8f9db8981291937ec752575d1996131fd86fa27e563fbd",
+      "5f5fbc6ef651ddbbf75f206a3f7c9393466aca5561c818ac8f7bf7aa665dc780",
+      "3aa75ddcc6de5de148d3d1124cb722b5bc273a25dbc06121e735ec97cf25448d",
+      "26f858449e39df9036a031d2095deeb7d00b6877a2fb02466ef3f7371eb57fbf",
+      "6899c927d08878a6666c9d77b525c34cfe0db756a77f16514db9aee5860ac87f",
+      "fed9a94244d0c75128309cd16683a7c212a59e21ebb36371e947307469b5bc83",
+      "5a2e152343159a26329550c86e39fdf7dcef797da19b3cbe34737f84bc75c8c9",
+      "ac7357f922eaaa2d846deb510f6ee2eeda56a5e118ae8f135cac19ea536af5b9",
+      "1f52f5fe192e18548e5c7dc7e09f8026cf0887ace3ef8e929be452eef58c3cf6",
+      "153a5d54f429377640ffccdf2e692b6a7f91836aee775a764e30d123a3746369",
+      "d45b63fc967349e036d31edf02cb5f8dff515919c61e56aee108ee1fd17993a2",
+      "5b709899f8b616b4258230d764e6687601e143c6ad458749d6f28f3a41aa1f1f",
+      "b9a630e58f2460e683f95ed8409cfb5b2bcf594bb48559434cfd01b993b75f5e",
+      "019269d9defb4e4246abeaee66a45dfdd6a2c0615f8113e76731753354ae8fb7",
+      "c95001d6fbb03d19312623df47028fc6f5570e3cbfb8f842b53dcb45c28a919e",
+      "c98c6aaa3877c5b6b3c878c4b3dd1d3afbfb436417fdbcd01f8c6c7e45b57859",
+      "15cff8c62f14d136f66908ec99c9064ea9791200d23231a7bd494f40b296386b"
+    ],
+    "candidate": [
+      "8eb5c60c6678ecc680d0850908e47a9d1dd5d24a8fbf81a7b78e95e27e1046f4",
+      "01cfced37a17c3d4220ede1546ce8a166e1bb2ac5fc969a295418a223cac9a80",
+      "a6d4eb3acea1a8be2d101923499eaed329faf13a60c9d765ef0bfe33c51fdd5d",
+      "20241319f8bd8761162d82ed5536a5b85a8f0bdb216ae3f794fe53f17db0a525",
+      "4cd733b9816f46906937a4a4f306c472b43186c9e83d8d6392e4a8247ea47b1c",
+      "eff41b0fd156f0f4f9d512d197df25e7d402deec16fa21ce5b51215750483570",
+      "63ae9cefd42477b399e250c73e3c6f8df0f2de57c2c044246089c442bf83bb67",
+      "96d5984637bf1860a62ab456d8333b0362646955963f0832860a2102a2547bbc",
+      "1fdb922ed4d9b6c28c970aa6d813320d42be75d03f68076cdaf212f91a599f7a",
+      "8e0595b8663c3a374e80dfeb8264b0a3fb747312425a6d61661085c06a3c296a",
+      "6a78b06724383c6f8118b30d4c417169b324465912f0c1b3bb7bdf2671cbba91",
+      "8dfc31ca4049440c47d678e8dec3e0d0e24d769447f61a56493fdd3ee6d7800d",
+      "b8e2831ce3a1b07c99d08a7c70a5daf8d0c9e8130ea864cde7b52851642e6ea0",
+      "785121fb947e1c8fa8cde7dff65cce5f868ebc4b8a706e33a0cb1a612e8a3a18",
+      "83e3838c299d5978b70965c469a335fa436d90cc52593dbbabf03c3fa7a9b78a",
+      "c67b6b49a22aec3ac903c2f01e2adec5769c0f029cf324815064380c2f171669",
+      "cbc15aab6ba99d89264ce91a12b57dbdddee90a34abc001f8b888332598ad97a",
+      "4e4fa97a91d784a6dcea308d6c797cb79fbd809592265b7e070d920777df5c70",
+      "90d0b1b1ae1e23166dea2f768deb3250b9d5d44e33336ac8b481257acf42557a",
+      "30d31ff35fcf6544c03bb29bd1b1c655bb8a38829242ba37dc58d552a709129e"
+    ]
+  },
+  "rawData": {
+    "file": "owned-harbour-2026-10-09.jsonl.gz",
+    "gzipSha256": "acc0fabf8217773cc034d5089bad293216782af0762b14a846a59ce4d8ee3c33",
+    "jsonlSha256": "5392986291df8542385a9961c993a13b8a6f32a670e5037c60ed9ca2d375a5fb",
+    "records": 24000,
+    "normalization": "Only the arm label changes: baseline lens becomes lens-before; candidate lens becomes lens-corrected. Records are sorted by hash seed, board seed and arm, with sorted JSON keys."
+  },
+  "clusters": [
+    {
+      "hashseed": "201",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 100,
+        "lens-corrected": 100,
+        "value": 94
+      }
+    },
+    {
+      "hashseed": "202",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 82,
+        "lens-corrected": 82,
+        "value": 106
+      }
+    },
+    {
+      "hashseed": "203",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 88,
+        "lens-corrected": 88,
+        "value": 102
+      }
+    },
+    {
+      "hashseed": "204",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 104,
+        "lens-corrected": 103,
+        "value": 85
+      }
+    },
+    {
+      "hashseed": "205",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 101,
+        "lens-corrected": 101,
+        "value": 108
+      }
+    },
+    {
+      "hashseed": "206",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 107,
+        "lens-corrected": 107,
+        "value": 107
+      }
+    },
+    {
+      "hashseed": "207",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 95,
+        "lens-corrected": 95,
+        "value": 103
+      }
+    },
+    {
+      "hashseed": "208",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 106,
+        "lens-corrected": 106,
+        "value": 102
+      }
+    },
+    {
+      "hashseed": "209",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 110,
+        "lens-corrected": 110,
+        "value": 88
+      }
+    },
+    {
+      "hashseed": "210",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 106,
+        "lens-corrected": 106,
+        "value": 89
+      }
+    },
+    {
+      "hashseed": "211",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 103,
+        "lens-corrected": 103,
+        "value": 101
+      }
+    },
+    {
+      "hashseed": "212",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 84,
+        "lens-corrected": 83,
+        "value": 104
+      }
+    },
+    {
+      "hashseed": "213",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 92,
+        "lens-corrected": 91,
+        "value": 96
+      }
+    },
+    {
+      "hashseed": "214",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 107,
+        "lens-corrected": 107,
+        "value": 115
+      }
+    },
+    {
+      "hashseed": "215",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 94,
+        "lens-corrected": 94,
+        "value": 99
+      }
+    },
+    {
+      "hashseed": "216",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 95,
+        "lens-corrected": 95,
+        "value": 87
+      }
+    },
+    {
+      "hashseed": "217",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 92,
+        "lens-corrected": 92,
+        "value": 101
+      }
+    },
+    {
+      "hashseed": "218",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 100,
+        "lens-corrected": 99,
+        "value": 102
+      }
+    },
+    {
+      "hashseed": "219",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 94,
+        "lens-corrected": 94,
+        "value": 100
+      }
+    },
+    {
+      "hashseed": "220",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 116,
+        "lens-corrected": 116,
+        "value": 96
+      }
+    }
+  ],
+  "rounding": "Displayed win rates use decimal half-up rounding to one decimal from exact win counts. Inference uses unrounded cluster means.",
+  "interpretation": "The correction won four fewer matched games (1972 versus 1976). Only four win/loss pairs differ, all favoring the older policy; the primary t interval is sensitive to these sparse differences. This test shows no win-rate gain from the correction and is not evidence of equivalent policies. It measures four-player base-game bot play, not human improvement or other table sizes/rulesets. No outcomes were used to tune, select or retry the policies.",
+  "environment": {
+    "python": "3.12.3",
+    "requirements": "requirements-2026-10-09.txt"
+  }
+}

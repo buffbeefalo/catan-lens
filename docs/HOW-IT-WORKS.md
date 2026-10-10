@@ -160,7 +160,16 @@ The rules come from expert advice, but advice is not proof, so the repository te
 are Catanatron's value-function bot; one seat has its opening chosen by a different strategy, then plays the rest of
 the game exactly like the others. A fair seat wins 25%.
 
-This table is the **2026-10-09 fresh-seed test**: 20 bot tie-breaking seeds and 8,000 board seeds that
+The current policy avoids rewarding a harbour type you already own. A separate 24,000-game comparison
+on 8,000 new boards gave it **1,972 wins**, versus **1,976** before the correction and **1,985** for the
+bot's own opening. The correction's difference is **−0.05 percentage points**, with the planned approximate
+95% interval from **−0.098 to −0.002**. Only four win/loss pairs changed, all against the correction;
+this narrow estimate rests on very few differences. It does not show a win-rate gain or prove equal
+policies. Against the bot's own opening, the difference is −0.16 points (−1.67 to +1.35), which remains
+uncertain. [Frozen inputs, exact counts and raw games](../bench/catanatron/results.md#owned-harbour-correction-2026-10-09)
+keep this test separate from those below. No policy was tuned on these results.
+
+This table is the **earlier policy's 2026-10-09 fresh-seed test**: 20 bot tie-breaking seeds and 8,000 board seeds that
 were not in the earlier benchmark. The policy was frozen before the test, and its outcomes were not
 used for tuning. All 40,000 games finished. [Methods, raw games and the original result](../bench/catanatron/results.md)
 are available for checking. A same-seed replication reproduced the original table; it is kept separate

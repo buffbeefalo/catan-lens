@@ -118,5 +118,71 @@
     "upper95PP": 9.29239719407694
    }
   }
+ },
+ "ownedHarbour": {
+  "date": "2026-10-09",
+  "policy": "r7-owned-ports-2026-10-09",
+  "baselineCommit": "6955a683c1c9e7eba2560614bda98ac95d11ebe5",
+  "sourceCommit": "2f8c75c7e14e385df50cea6ed825c3500ac5ea91",
+  "engineCommit": "ecf931181b9a65bb4116a2153fb78c16f1438e00",
+  "hashSeeds": [
+   201,
+   220
+  ],
+  "boardSeeds": [
+   2000000,
+   2007999
+  ],
+  "games": 8000,
+  "runs": 20,
+  "totalGames": 24000,
+  "unfinished": 0,
+  "arms": [
+   {
+    "key": "lens-corrected",
+    "label": "Lens with owned-harbour correction",
+    "win": 24.7,
+    "ci": 1.1,
+    "wins": 1972,
+    "games": 8000,
+    "runs": 20
+   },
+   {
+    "key": "lens-before",
+    "label": "Lens before the correction",
+    "win": 24.7,
+    "ci": 1.0,
+    "wins": 1976,
+    "games": 8000,
+    "runs": 20
+   },
+   {
+    "key": "value",
+    "label": "The bot's own opening",
+    "win": 24.8,
+    "ci": 0.9,
+    "wins": 1985,
+    "games": 8000,
+    "runs": 20
+   }
+  ],
+  "pairedDifferences": {
+   "corrected-minus-lens-before": {
+    "differencePP": -0.050000000000000044,
+    "lower95PP": -0.09801726494508112,
+    "upper95PP": -0.0019827350549189784
+   },
+   "corrected-minus-value": {
+    "differencePP": -0.1625,
+    "lower95PP": -1.6748890202754994,
+    "upper95PP": 1.3498890202754992
+   }
+  },
+  "recordChanges": {
+   "changedToWin": 0,
+   "changedToLoss": 4,
+   "winChanged": 4,
+   "recordedOutcomeChanged": 13
+  }
  }
 }

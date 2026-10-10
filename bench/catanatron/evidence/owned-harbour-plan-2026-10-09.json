@@ -1,0 +1,50 @@
+{
+  "predeclaredAt": "2026-10-10T00:57:41.821386+00:00",
+  "purpose": "Measure the effect of a rules-correctness repair, not tune a strategy for winning on these observations.",
+  "baselineCommit": "6955a683c1c9e7eba2560614bda98ac95d11ebe5",
+  "baselineManifestSha256": "ef0bb6fd6fc0f370dcbd89ea8ce55483e99c964f03c3df2eff950a86c7f3f80a",
+  "candidate": "Exclude direct or reachable harbour credit when owned settlements already supply that trading access. Retain all existing bonus magnitudes and other score weights. Candidate source hashes must be frozen before its first game.",
+  "arms": [
+    "published Lens settlements and road",
+    "corrected Lens settlements and road",
+    "value-function opening control"
+  ],
+  "hashSeeds": [
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209,
+    210,
+    211,
+    212,
+    213,
+    214,
+    215,
+    216,
+    217,
+    218,
+    219,
+    220
+  ],
+  "boardSeeds": [
+    2000000,
+    2007999
+  ],
+  "gamesPerArm": 8000,
+  "totalGames": 24000,
+  "workersPerProcess": 4,
+  "baselineArms": [
+    "lens",
+    "value"
+  ],
+  "candidateArms": [
+    "lens"
+  ],
+  "analysis": "Report all finishes, matching board and seat pairs, exact wins, 20 cluster means and paired 95% t intervals (19df). Candidate-minus-baseline is primary; candidate-minus-value is descriptive. Publish results regardless of direction, do not tune or retry seeds on outcomes. These remain four-player bot results, not human or other-ruleset evidence.",
+  "acceptance": "Legal placements, finite explained scores, no duplicate trade credit, unchanged first-placement scores and unchanged unrelated score components. Win outcomes describe impact; they do not decide whether duplicate ports improve trading rates."
+}

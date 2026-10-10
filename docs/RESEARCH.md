@@ -99,8 +99,14 @@ and reachable-port bonuses. A different resource-specific port can still improve
 a new generic port still helps resources not covered by an existing specific port. A duplicate on the
 candidate corner does not hide a useful different port two roads away. The entered coast stays intact,
 and the explanation states why a duplicate direct port adds no bonus. All bonus sizes and other weights
-are unchanged. Earlier benchmark tables retain their original frozen policy and source hashes; a
-separate fresh-board comparison of this correction is being recorded without outcome-based tuning.
+are unchanged. Earlier benchmark tables retain their original frozen policy and source hashes.
+The separate, predeclared 24,000-game comparison finished on new boards with no outcome-based tuning:
+corrected Lens won 1,972/8,000 versus 1,976/8,000 before the correction. The primary paired difference
+is −0.05 percentage points (planned approximate 95% t interval: −0.098 to −0.002). Only four win/loss
+pairs differ, all favoring the old policy; this narrow interval rests on sparse changes. These results
+show no win-rate gain and do not establish equivalence. The correction follows source 15's trading
+rules, independently of those outcomes. [Full evidence](../bench/catanatron/results.md#owned-harbour-correction-2026-10-09)
+includes exact counts, source hashes and the descriptive comparison against the value bot.
 
 **Comparison correction, 2026-10-09.** When two corners shared the same kinds of bonuses, the old
 comparison could fall back to a claim of “same production” even when their raw pips differed. The

@@ -82,10 +82,15 @@
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/HOW-IT-WORKS.md">HOW-IT-WORKS.md</a>.</p>
 
   <h2>Does following it win games?</h2>
-  <p id="policy-version-note">The dated tables below test the earlier scoring policy. The current version also avoids rewarding a harbour type you already own; a separate comparison of that correction is in progress.</p>
+  <p id="policy-version-note">The current version avoids rewarding a harbour type you already own. Its comparison is separate from the earlier scoring policy's results below; no weights were tuned on these outcomes.</p>
   <p><a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s value-function bot plays every seat. One seat's opening is chosen by each strategy, then it plays on like everyone else. Strategies face the same boards and seat orders. An evenly matched seat would win 25%.</p>
   <p id="results-status" role="status">Loading benchmark results…</p>
-  <h3>Fresh boards · 9 October 2026</h3>
+  <h3>Owned-harbour correction · 9 October 2026</h3>
+  <p>This separate test finished 24,000 games on another 8,000 fresh boards. Both policies were fixed before their games began. The correction removes credit for trading access you already have; it was not chosen to improve these results.</p>
+  <table id="owned-harbour-results"></table>
+  <p id="owned-harbour-comparison">The correction had <b>four fewer wins</b> than the older policy: 1,972 versus 1,976 out of 8,000. That is −0.05 percentage points, with the planned approximate 95% interval from −0.098 to −0.002. Only four win/loss pairs changed, all against the correction, so the narrow estimate rests on very few changed outcomes. This test shows no win-rate gain from the correction and does not prove equal performance.</p>
+  <p>Against the bot's own opening, the corrected policy's difference was −0.16 percentage points (95% interval: −1.67 to +1.35). That comparison remains uncertain.</p>
+  <h3>Earlier policy on fresh boards · 9 October 2026</h3>
   <p>This test used 40,000 complete games on fresh board and bot tie-breaking seeds. The scoring policy was fixed before the test; these outcomes were not used to tune it.</p>
   <table id="holdout-results"></table>
   <p id="paired-results">Across matched runs, Lens's advantage over “most pips” was 7.9 percentage points, with a 95% interval from 6.5 to 9.3 points. Against the bot's own opening, the difference was −0.2 points, with an interval from −1.8 to +1.3. That comparison shows no clear advantage and does not prove equal performance.</p>
@@ -137,15 +142,17 @@
     if (!data?.arms?.length) throw new Error('Missing benchmark data');
     document.getElementById(id).innerHTML = `<caption>${data.runs} runs · ${data.games.toLocaleString('en-US')} games per strategy</caption>` +
       '<thead><tr><th scope="col">Opening chosen by</th><th scope="col" class="n">Win rate<br>95% interval</th></tr></thead><tbody>' +
-      data.arms.map(a => `<tr><td>${a.label}</td><td class="n">${a.win.toFixed(1)}% ± ${a.ci.toFixed(1)}</td></tr>`).join('') + '</tbody>';
+      data.arms.map(a => `<tr><td>${a.label}</td><td class="n">${a.win.toFixed(1)}% ± ${a.ci.toFixed(1)}${a.wins === undefined ? '' : `<br><small>${a.wins.toLocaleString('en-US')} wins</small>`}</td></tr>`).join('') + '</tbody>';
   };
   fetch('media/results.json').then(r => { if (!r.ok) throw new Error('Results unavailable'); return r.json(); }).then(res => {
     showResults('results', res);
     showResults('holdout-results', res.holdout);
+    showResults('owned-harbour-results', res.ownedHarbour);
     document.getElementById('results-status').hidden = true;
   }).catch(() => {
     document.getElementById('results').textContent = '';
     document.getElementById('holdout-results').textContent = '';
+    document.getElementById('owned-harbour-results').textContent = '';
     document.getElementById('results-status').textContent = 'Benchmark results could not be loaded. The methods and records are linked below.';
   });
 </script>
