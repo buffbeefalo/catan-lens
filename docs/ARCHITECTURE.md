@@ -125,6 +125,12 @@ requests. It has no service worker or offline installation cache: first loads, r
 help page and videos can still need a connection. History navigation clears per-board editing and
 answer state, while keeping pending local progress actions available for Retry saving.
 
+Keyboard or assistive activation of Your board focuses its first tool; activating a tool focuses the
+first editable hex or coast edge. These transitions use the button click's zero `detail`; pointer
+activation keeps the existing focus behavior. Escape returns from the SVG editor to its selected tool,
+while the number picker's Escape first returns to its hex. Native Tab order remains available, with
+no global letter shortcuts or focus trap.
+
 URL serialization skips `replaceState` when the current query already matches. Choosing an editing
 tool, opening a number picker or repainting an identical value should not consume the browser's history
 update allowance. Changed board data still updates the link synchronously. A refused history write

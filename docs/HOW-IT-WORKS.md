@@ -52,8 +52,10 @@ Your placed pieces and their order are kept during these edits. **Check board in
 detailed tile, token and harbour differences from the standard box. Nonstandard land counts remain a
 visible caveat, so house-rule boards can still be analysed. **Editing help** expands the full controls
 without crowding the phone editor.
-For keyboard entry, choose a tool, Tab to a hex or coastal edge, then press Enter or Space. Opening a
-number picker focuses the current token; Tab chooses another token and Escape returns to its hex.
+Opening **Your board** by keyboard focuses the first tool. Activate a tool with Enter or Space to
+focus the first hex or coastal edge; Tab moves through the board and Enter or Space edits it. Escape
+returns from the board to the selected tool. Opening a number picker focuses the current token; Tab
+chooses another token and Escape returns to its hex, then another Escape returns to Numbers.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
 When the device uses a high-contrast palette, selected controls use its highlight colours, the current
 Drill level keeps an outline, and focused board corners remain visible against the page.

@@ -357,15 +357,19 @@ function setDrill(on) {
 }
 // ---- Your board (enter the board in front of you) -----------------------------
 const HARBOR_CYCLE = [null, '3:1', 'wood', 'brick', 'wheat', 'sheep', 'ore'];
-function setCustom(on) {
+function setCustom(on, keyboard = false) {
   if (on && state.drill && !setDrill(false)) return;
   if (!on && !keepPreviousBoard()) return;
   state.custom = on; state.tool = null; state.numHex = null; state.pick = null;
   if (on) { state.portMode = 'check'; state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
   else { state.seed = randomSeed(); state.linkError = null; state.me = []; state.opp = []; state.history = []; }
   controls(); rebuild();
+  if (on && keyboard) $('#tool-wood')?.focus();
 }
-function setTool(t) { state.tool = state.tool === t ? null : t; state.numHex = null; state.pick = null; controls(); rebuild(); }
+function setTool(t, keyboard = false) {
+  state.tool = state.tool === t ? null : t; state.numHex = null; state.pick = null; controls(); rebuild();
+  if (keyboard && state.tool) $(state.tool === 'port' ? '#svg .coast-hit' : '#svg .hex[tabindex="0"]')?.focus();
+}
 function hexClick(i) {
   if (!state.tool || state.tool === 'port') return;
   if (state.tool === 'number') { state.numHex = state.numHex === i ? null : i; rebuild(); $('.picker button[aria-pressed="true"]')?.focus(); return; }
@@ -603,7 +607,7 @@ function render() {
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
         ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         ${notes.length || !board.balanced ? `<details data-disclosure="inventory"><summary>Check board inventory</summary><p class="sub check">${notes.map(esc).join(' ')}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p></details>` : '<p class="sub check ok">Matches the official box.</p>'}
-        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. You can also Tab to a hex or coastal edge and press Enter or Space. Escape returns from the number picker to its hex.</p><p class="sub">Once loaded, this tab can edit, score, practise and restore earlier boards without a connection. Keep it open; refreshing, opening help or watching videos may need a connection.</p></details>
+        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. By keyboard, activate a tool with Enter or Space to reach the first hex or coastal edge. Tab moves through the board; Enter or Space edits it. Escape returns from the number picker to its hex, and from the board to the selected tool.</p><p class="sub">Once loaded, this tab can edit, score, practise and restore earlier boards without a connection. Keep it open; refreshing, opening help or watching videos may need a connection.</p></details>
         <p style="margin:8px 0 0"><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
     }
     out += html`<div class="card"><div class="modes">
@@ -686,7 +690,7 @@ function render() {
     if (!progressIssue) ($('#next-stage') || $('#start-drill') || $('.track button[aria-current="step"]'))?.focus({ preventScroll: true });
   };
   const sd = $('#start-drill'); if (sd) sd.onclick = startDrill;
-  for (const b of panel.querySelectorAll('.palette button')) b.onclick = () => setTool(b.id.slice('tool-'.length));
+  for (const b of panel.querySelectorAll('.palette button')) b.onclick = e => setTool(b.id.slice('tool-'.length), e.detail === 0);
   for (const b of panel.querySelectorAll('.picker button')) b.onclick = () => setNumber(Number(b.dataset.num) || null);
   bindBoardActions();
   for (const button of panel.querySelectorAll('[data-port-mode]')) button.onclick = () => { state.portMode = button.dataset.portMode; recompute(); };
@@ -747,12 +751,18 @@ $('#randseat').onclick = () => { state.randomSeat = !state.randomSeat; if (state
 $('#balanced').onclick = () => { if (!keepPreviousBoard()) return; state.balanced = !state.balanced; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
 $('#drill').onclick = () => setDrill(!state.drill);
 $('#practice').onclick = () => { if (state.drill) setDrill(false); else if (state.custom) setCustom(false); };
-$('#custom').onclick = () => setCustom(!state.custom);
+$('#custom').onclick = e => setCustom(!state.custom, e.detail === 0);
 $('#settings').addEventListener('toggle', fitBoard);
 $('#panel').addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); }
   else if (state.numHex !== null && e.target.closest('.picker')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); $(`.hex[data-hex="${id}"]`)?.focus(); }
+});
+$('#svg').addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !state.custom || !state.tool || !e.target.matches('.hex, .coast-hit')) return;
+  e.preventDefault();
+  if (state.numHex !== null) { state.numHex = null; rebuild(); }
+  $('#tool-' + state.tool)?.focus();
 });
 $('#new').onclick = () => { if (inLevel()) return newStageBoard(); if (state.custom) return fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true })); if (!state.drill && !keepPreviousBoard()) return; state.seed = randomSeed(); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
 $('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.test(t) && Number(t) < 4294967296 && Number(t) !== state.seed) { if (!keepPreviousBoard()) return; state.seed = Number(t); state.answered = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); } else controls(); };

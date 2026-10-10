@@ -262,25 +262,28 @@ test('keyboard users can paint and number a hex without losing their place', asy
     const page = await open(t, viewport);
     const tile = () => new URL(page.url()).searchParams.get('b').match(/[wbhsod-]\d{0,2}/g)[1];
     await page.locator('#custom').press('Enter');
-    await page.locator('#tool-ore').press('Enter');
-    await page.locator('#settings summary').focus();
-    await page.keyboard.press('Tab');
-    assert.ok(await page.evaluate(() => document.activeElement.matches('.hex[role="button"]')), 'Tab must reach the board editor');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-wood', 'entering the editor by keyboard reaches its first tool directly');
+    const beforePaint = page.url();
+    await page.keyboard.press('Enter');
+    assert.equal(page.url(), beforePaint, 'choosing a tool does not paint a tile');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '0', 'activating a tool reaches the board directly');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
-    assert.equal(tile(), 'o5', 'Enter paints the second tile');
+    assert.equal(tile(), 'w5', 'Enter paints the second tile');
     assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '1', 'redrawing a painted tile preserves focus');
     assert.ok(await page.evaluate(() => document.activeElement.matches(':focus-visible')), 'the board shows keyboard focus');
-    await page.locator('#tool-number').press('Enter');
-    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-number', 'redrawing the palette preserves focus');
-    await page.locator('#settings summary').focus();
-    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-wood', 'Escape leaves the board at its selected tool');
+    for (let i = 0; i < 6; i++) await page.keyboard.press('Tab');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-number');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '0');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Space');
     assert.equal(await page.evaluate(() => document.activeElement.dataset.num), '5', 'opening the number picker focuses the current token');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Enter');
-    assert.equal(tile(), 'o6', 'the keyboard can change the token');
+    assert.equal(tile(), 'w6', 'the keyboard can change the token');
     assert.equal(await page.evaluate(() => document.activeElement.dataset.num), '6', 'setting the token preserves focus');
     const visible = await page.evaluate(() => {
       const r = document.activeElement.getBoundingClientRect();
@@ -289,6 +292,8 @@ test('keyboard users can paint and number a hex without losing their place', asy
     assert.ok(visible, 'the focused token remains visible on a phone');
     await page.keyboard.press('Escape');
     assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '1', 'Escape returns from the picker to its tile');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-number', 'another Escape returns to the selected Numbers tool');
     await page.close();
   }
 });
@@ -309,9 +314,7 @@ test('keyboard users can cycle coastal harbours through redraws', async t => {
   const page = await open(t, { width: 1400, height: 900 });
   await page.locator('#custom').press('Enter');
   await page.locator('#tool-port').press('Enter');
-  await page.locator('#settings summary').focus();
-  await page.keyboard.press('Tab');
-  assert.ok(await page.evaluate(() => document.activeElement.matches('.coast-hit[role="button"]')), 'Tab must reach the harbour editor');
+  assert.ok(await page.evaluate(() => document.activeElement.matches('.coast-hit[role="button"]')), 'keyboard activation reaches the harbour editor directly');
   for (let i = 0; i < 30 && !await page.evaluate(() => document.activeElement.matches('.coast-hit.empty')); i++) await page.keyboard.press('Tab');
   const edge = await page.evaluate(() => document.activeElement.dataset.edge);
   assert.ok(edge, 'an empty coastal edge is reachable');
@@ -325,6 +328,18 @@ test('keyboard users can cycle coastal harbours through redraws', async t => {
   for (let i = 0; i < 5; i++) await page.keyboard.press('Space');
   assert.ok(!new URL(page.url()).searchParams.get('h').split(',').some(h => h.startsWith(`${edge}:`)), 'keyboard users can also remove a harbour');
   assert.equal(await page.evaluate(() => document.activeElement.dataset.edge), edge);
+  await page.keyboard.press('Escape');
+  assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-port');
+});
+
+test('pointer activation of editing tools does not move focus onto the board', async t => {
+  const page = await open(t, { width: 390, height: 900 });
+  await page.locator('#custom').click();
+  assert.equal(await page.evaluate(() => !!document.activeElement.closest('.palette')), false);
+  for (const tool of ['wood', 'number', 'port']) {
+    await page.locator('#tool-' + tool).click();
+    assert.equal(await page.evaluate(() => document.activeElement.matches('.hex, .coast-hit')), false, tool);
+  }
 });
 
 test('drill levels are keyboard buttons with locked levels disabled', async t => {
