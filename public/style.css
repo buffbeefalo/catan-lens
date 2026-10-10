@@ -48,6 +48,8 @@ button{font:inherit;color:inherit}
 .toggle:disabled{opacity:.45;cursor:default}
 .btn{border:1px solid var(--ink);background:var(--ink);color:var(--on-ink);border-radius:8px;padding:10px 16px;min-height:44px;cursor:pointer;font-size:12px;font-weight:600}
 .btn.ghost{background:transparent;color:var(--ink)}
+#retry-startup{display:inline-flex;align-items:center}
+.header-actions[inert],#bar[inert]{opacity:.45}
 .btn:hover{filter:brightness(1.15)}.btn.ghost:hover,.toggle:hover{background:var(--hover)}
 button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .seed{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--card);width:140px;min-height:44px;color:var(--ink)}

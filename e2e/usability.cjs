@@ -30,6 +30,60 @@ async function moveInBrowserHistory(page, delta) {
   await navigateHistory(page, () => page.evaluate(n => history.go(n), delta));
 }
 
+test('failed app downloads explain the problem, preserve the help link and reload the saved board', async t => {
+  for (const file of ['app.js', 'score.js']) {
+    const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
+    const original = page.url(); let available = false;
+    await page.route('**/' + file, route => available ? route.continue() : route.abort());
+    await reloadInBrowser(page);
+    await page.waitForFunction(() => document.querySelector('#startup h2')?.textContent === 'Board could not load', null, { timeout: 2500 });
+    assert.equal(await page.locator('#bar').evaluate(el => el.inert), true);
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('.hex, .best-card').count(), 0);
+    await page.getByRole('link', { name: 'How it works', exact: true }).click();
+    assert.equal(new URL(page.url()).search, new URL(original).search);
+    await page.locator('#back-to-app').click();
+    await page.waitForFunction(() => document.querySelector('#startup h2')?.textContent === 'Board could not load', null, { timeout: 2500 });
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('#startup').count(), 1);
+    available = true;
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#retry-startup').click()]);
+    await page.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
+    assert.equal(await page.locator('#startup').count(), 0);
+    assert.equal(await page.locator('#bar').evaluate(el => el.inert), false);
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+    assert.equal(page.url(), original);
+    await page.close();
+  }
+});
+
+test('retrying a failed Drill download preserves this tab’s exploration return board', async t => {
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
+  await page.locator('#custom').click(); const original = page.url();
+  await page.locator('#drill').click(); await page.locator('#start-drill').click();
+  let available = false;
+  await page.route('**/app.js', route => available ? route.continue() : route.abort());
+  await reloadInBrowser(page);
+  await page.waitForFunction(() => document.querySelector('#startup h2')?.textContent === 'Board could not load', null, { timeout: 2500 });
+  assert.equal(await page.locator('#startup').count(), 1);
+  available = true;
+  await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#retry-startup').click()]);
+  await page.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
+  assert.equal(await page.locator('#drill').getAttribute('aria-pressed'), 'true');
+  await page.locator('#drill').click();
+  assert.equal(page.url(), original);
+  assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+});
+
+test('a browser with JavaScript disabled gets a written explanation and guide', async t => {
+  const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  t.after(() => context.close());
+  const page = await context.newPage(); await page.goto(base + '?seed=42&players=4', { waitUntil: 'networkidle' });
+  assert.match(await page.locator('#startup').innerText(), /JavaScript is off/i);
+  assert.equal(await page.locator('#nojs-guide').getAttribute('target'), '_blank');
+  assert.equal(await page.locator('.hex').count(), 0);
+});
+
 test('generated board replacements retain the prior board and placement order through refresh and history', async t => {
   for (const width of [390, 1400]) for (const action of ['new', 'balanced', 'seed']) {
     const page = await open(t, { width, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');

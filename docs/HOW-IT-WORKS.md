@@ -83,6 +83,10 @@ blank tiles and duplicate harbours on the same edge are rejected instead of sile
 **How it works** carries your current board link into the help page. **Back to the app** reopens that
 board, table settings, harbour choice and placement order, including after refreshing the help page.
 Unreadable board data is also preserved so visiting help does not discard the link you need to repair.
+If the app cannot finish loading, **Reload this board** retries while keeping the board link and this
+tab's Drill return point. Check your connection first. The loading screen also keeps **How it works**
+available with your current link. With JavaScript turned off, it explains how to enable the interactive
+board and offers the written guide in a new tab.
 
 ## 2. The score for one corner
 

@@ -778,3 +778,5 @@ function restoreLocation() {
   readUrl(); controls(); rebuild();
 }
 restoreLocation();
+$('#bar').inert = false; $('.header-actions').inert = false;
+document.documentElement.dataset.appReady = 'true';

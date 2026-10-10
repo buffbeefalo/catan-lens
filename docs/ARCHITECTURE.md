@@ -125,6 +125,13 @@ requests. It has no service worker or offline installation cache: first loads, r
 help page and videos can still need a connection. History navigation clears per-board editing and
 answer state, while keeping pending local progress actions available for Retry saving.
 
+The HTML contains a startup message before loading any application module. A small inline handler
+preserves the query in the help link and shows a retry message when the module download or initial
+evaluation fails. It clears a partly rendered board and keeps app controls inert until initialization
+finishes. Retry uses native reload, retaining the history entry's Drill return snapshot. The handler
+does not suppress errors or replace a working board after startup. Without JavaScript, a written
+explanation links to the guide in a separate tab; this is recovery guidance, not offline caching.
+
 Keyboard or assistive activation of Your board focuses its first tool; activating a tool focuses the
 first editable hex or coast edge. These transitions use the button click's zero `detail`; pointer
 activation keeps the existing focus behavior. Escape returns from the SVG editor to its selected tool,
