@@ -31,6 +31,9 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   across setup/exercise reloads, preserve older recovery checkpoints and keep fresh-tab links separate.
   Set `CATAN_BROWSER=firefox` or `CATAN_BROWSER=webkit` to run this suite in another engine.
   Recovery checks use in-page reload and history navigation to exercise the browser's native behavior.
+  Generated-board checks cover New board, seed/balance changes and clearing pieces through refresh,
+  Back/Forward and restored Undo order. Empty clears and unchanged seeds retain useful checkpoints;
+  a new preview during Drill setup still preserves the original free-play return.
 
 Each walkthrough ends with an `... OK, zero page errors` line. Some write drill progress to the browser's
 localStorage; every run starts from a fresh browser context.

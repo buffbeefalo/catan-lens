@@ -48,7 +48,10 @@ serve.js            zero-dependency local server (npm start)
    combined-opening totals without deleting placements.
    Hints (ring, scores, projections, road) are drawn only when the
    current mode allows them (`reveal()`), so blind practice and unanswered drills leak nothing.
-4. Replacing a custom board or changing its layout checkpoints the existing URL with `pushState`.
+4. Replacing a custom board, changing its layout, or changing an Explore board's seed/balance setting
+   checkpoints the existing URL with `pushState`. New board does the same outside Drill.
+   Clearing placements creates a `pieces` recovery marker; clearing nothing or reentering the current
+   seed creates no checkpoint. The previous URL contains both ownership and placement order.
    Ordinary edits still use `replaceState`, preserving the recovery marker. Restore uses browser Back;
    a `popstate` reload rebuilds the board from that history entry's URL, so recovery also survives refresh.
    Tiles and coastal edge ids are never carried between the 19- and 30-hex graphs. Same-shape player-count

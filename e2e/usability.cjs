@@ -30,6 +30,77 @@ async function moveInBrowserHistory(page, delta) {
   await Promise.all([page.waitForEvent('domcontentloaded'), page.evaluate(n => history.go(n), delta)]);
 }
 
+test('generated board replacements retain the prior board and placement order through refresh and history', async t => {
+  for (const width of [390, 1400]) for (const action of ['new', 'balanced', 'seed']) {
+    const page = await open(t, { width, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
+    const original = page.url();
+    if (action !== 'new') await page.locator('#settings summary').click();
+    if (action === 'seed') { await page.locator('#seed').fill('77'); await page.locator('#seed').press('Tab'); }
+    else await page.locator('#' + action).click();
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 0);
+    assert.equal(await page.locator('#restore-board').count(), 1, action + ' must retain a recovery action');
+    const replacement = page.url();
+    assert.notEqual(replacement, original);
+    await reloadInBrowser(page);
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+    await moveInBrowserHistory(page, 1);
+    assert.equal(page.url(), replacement);
+    await moveInBrowserHistory(page, -1);
+    await page.locator('#undo').click();
+    assert.equal(new URL(page.url()).searchParams.get('me'), '43');
+    assert.equal(new URL(page.url()).searchParams.has('opp'), false, 'restored Undo follows the actual placement order');
+    await page.close();
+  }
+});
+
+test('cleared pieces can be restored on generated and custom boards without changing tiles or harbour choices', async t => {
+  for (const custom of [false, true]) {
+    const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&me=43&opp=0&seq=m43,o0');
+    if (custom) { await page.locator('#custom').click(); await page.locator('#port-mode').click(); }
+    const original = page.url();
+    await page.locator('#reset').click();
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 0);
+    assert.equal(await page.locator('#restore-board').count(), 1);
+    assert.equal(await page.locator('#restore-board').innerText(), 'Restore cleared pieces');
+    const cleared = new URL(page.url()).searchParams;
+    for (const key of ['seed', 'b', 'h', 'ports']) assert.equal(cleared.get(key), new URL(original).searchParams.get(key));
+    const entries = await page.evaluate(() => history.length);
+    await page.locator('#reset').click();
+    assert.equal(await page.evaluate(() => history.length), entries, 'clearing an empty board keeps the meaningful recovery point');
+    await reloadInBrowser(page);
+    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+    await page.close();
+  }
+});
+
+test('reentering the current seed keeps pieces and does not create a recovery checkpoint', async t => {
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&me=43&opp=0&seq=m43,o0');
+  const original = page.url(), entries = await page.evaluate(() => history.length);
+  await page.locator('#settings summary').click();
+  await page.locator('#seed').fill('042');
+  await page.locator('#seed').press('Tab');
+  assert.equal(page.url(), original);
+  assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+  assert.equal(await page.locator('#seed').inputValue(), '42');
+  assert.equal(await page.evaluate(() => history.length), entries);
+});
+
+test('a new preview board during drill setup keeps the original free-play return after refresh', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&me=43&opp=0&seq=m43,o0');
+  const original = page.url();
+  await page.locator('#drill').click();
+  await page.locator('#new').click();
+  await reloadInBrowser(page);
+  assert.equal(new URL(page.url()).searchParams.get('setup'), '1');
+  await page.locator('#practice').click();
+  assert.equal(page.url(), original);
+  assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+});
+
 async function cornerPoint(page, id, dx = 0, dy = 0) {
   return page.locator(`.vx[aria-label="Corner ${id}"]`).evaluate((el, offset) => {
     const p = new DOMPoint(Number(el.getAttribute('cx')), Number(el.getAttribute('cy'))).matrixTransform(el.getScreenCTM());

@@ -37,7 +37,10 @@ Keyboard and assistive-button activation select the focused corner directly.
 Changing between the 19-hex and 30-hex layouts starts a blank board of the new shape. The app keeps
 the previous board in this tab's history: **Restore previous board** or the browser's Back button
 recovers its tiles, harbours, table settings and placements, even after a refresh. Start blank,
-Random board and leaving Your board for Explore provide the same recovery. A shared link contains
+Random board and leaving Your board for Explore provide the same recovery. In Explore, New board,
+changing the seed, and toggling balanced numbers also keep the previous board. **Clear** removes only
+the placement marks and offers **Restore cleared pieces**, including their original Undo order.
+Clearing an empty board or entering the same seed does not discard that recovery point. A shared link contains
 only the current board; recovery history belongs to the original tab. Changing 3↔4 or 5↔6 players
 keeps the entered board and placements because its shape has not changed.
 If a board link cannot be read, the app shows an error and keeps the original link in the address bar.
