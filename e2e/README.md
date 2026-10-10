@@ -36,6 +36,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   a new preview during Drill setup still preserves the original free-play return.
   High-contrast checks cover visible selected controls in light/dark palettes and a coastal keyboard
   focus ring against the page. These are browser emulations, not an assistive-technology certification.
+  Owned-harbour checks explain duplicate access without improving trade rates, survive reload and
+  keep that explanation hidden before a blind-practice commitment.
   Media fallback checks simulate network errors, unsuccessful HTTP responses and empty transcripts,
   then retry successfully with keyboard focus retained. Video errors open the corresponding transcript.
 

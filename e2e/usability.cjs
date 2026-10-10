@@ -474,6 +474,29 @@ test('near-tie drill feedback shows the point gap and precise score only after c
   assert.equal(await page.evaluate(() => document.activeElement.id), 'drill-result', 'drill feedback takes focus before the opening details');
 });
 
+test('duplicate harbour access is explained without extra trade credit or blind-preview hints', async t => {
+  for (const showBest of [true, false]) {
+    const page = await open(t, { width: 390, height: 844 }, `?players=4&seat=1&seed=42&me=0&seq=m0&best=${showBest ? 1 : 0}`);
+    await page.getByRole('button', { name: 'Corner 16', exact: true }).press('Enter');
+    const pick = page.locator('.pick-card');
+    if (showBest) {
+      await pick.locator('[data-disclosure="pick"] summary').click();
+      assert.match(await pick.innerText(), /already have 3:1 port access/);
+      assert.match(await pick.innerText(), /adds no port bonus/);
+    } else {
+      assert.doesNotMatch(await pick.textContent(), /already have|trade rate|port bonus/);
+    }
+    await page.locator('#keep').click();
+    assert.match(await page.locator('.verdict').nth(1).innerText(), /already have 3:1 port access/);
+    assert.match(await page.locator('.opening-rates').innerText(), /3:1/);
+    assert.doesNotMatch(await page.locator('.opening-rates').innerText(), /2:1/);
+    await reloadInBrowser(page);
+    assert.match(await page.locator('.verdict').nth(1).innerText(), /adds no port bonus/);
+    assert.equal(new URL(page.url()).searchParams.get('me'), '0,16');
+    await page.close();
+  }
+});
+
 test('the completed opening explains income, starting cards and build dependencies on a phone', async t => {
   const page = await open(t, { width: 390, height: 844 }, '?players=4&seat=3&seed=4&me=42,4&seq=m42,m4');
   assert.equal(await page.locator('.opening-card').count(), 1);

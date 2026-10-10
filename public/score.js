@@ -137,6 +137,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
 
   // R7 ports (on the corner, or a potential settlement two roads away at half value)
   const minePips = mine.reduce((acc, m) => { const p = vertexProduction(board, m).prod; for (const r in p) acc[r] = (acc[r] || 0) + p[r]; return acc; }, {});
+  const ownedPorts = new Set(mine.flatMap(m => portsAt(board, m)));
   const portValue = (type, mul, where) => {
     if (type === '3:1') return { v: PORT.generic * mul, text: `${where} the 3:1 port — the flexible port top players value most.` };
     const have = (prod[type] || 0) + (minePips[type] || 0);
@@ -146,9 +147,15 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   const v = board.graph.vertices[vid];
   const after = new Set(legalVertices(board.graph, [...occupied, vid]));   // corners still open once this one is taken
   let port = null;
-  for (const t of portsAt(board, vid)) { const c = portValue(t, plan.portMul, 'Sits on'); if (!port || c.v > port.v) port = c; }
+  for (const t of portsAt(board, vid)) {
+    if (ownedPorts.has(t)) {
+      parts.push({ k: 'port-owned', v: null, text: `You already have ${t === '3:1' ? '3:1' : '2:1 ' + NAMES[t]} port access from an owned settlement. Another copy does not improve your trade rate, so it adds no port bonus.` });
+      continue;
+    }
+    const c = portValue(t, plan.portMul, 'Sits on'); if (!port || c.v > port.v) port = c;
+  }
   if (!port) for (const n of v.neighbors) for (const e of board.graph.vertices[n].edges) {
-    const t = board.harbors[e]; if (t === undefined) continue;
+    const t = board.harbors[e]; if (t === undefined || ownedPorts.has(t)) continue;
     const far = board.graph.edges[e].v.find(x => x !== n);   // the port edge's other end: the only corner you could still settle on
     if (far === undefined || far === vid || !after.has(far)) continue;
     const c = portValue(t, plan.portMul * PORT.farMul, 'Two roads and a new settlement would reach'); if (!port || c.v > port.v) port = c;

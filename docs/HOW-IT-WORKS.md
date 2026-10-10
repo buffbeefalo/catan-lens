@@ -61,8 +61,11 @@ Unreadable board data is also preserved so visiting help does not discard the li
 ## 2. The score for one corner
 
 A settlement touches up to three hexes. The score starts with **production** and adds a few small
-bonuses and penalties. Production dominates on purpose: across 400 generated boards the top-ranked corner
-is always within 4 pips of the board's best-producing corner (this is a test in the repository).
+bonuses and penalties. Production is the main score term. A regression test covers 400 generated boards
+with seat 1, base-game weights and no opponents placed; its first pick and following second pick stay
+within 4 raw pips of the best-producing legal corner. This is a sampled check, not a guarantee for every
+draft position or the Cities & Knights weighting. The resource, repeat and coverage terms can favor a
+corner with lower raw production; the explanation and opening summary show that tradeoff.
 
 | Rule | What it means at the table |
 |---|---|
@@ -111,7 +114,9 @@ together, without making those numbers more likely. These are long-run averages 
 trades or supply shortages; they do not promise a particular hand after 36 rolls.
 
 The summary flags missing production and names the builds that need those resources. It lists the
-starting cards from the second settlement and the bank rates available at your own harbours. **Plan
+starting cards from the second settlement and the bank rates available at your own harbours. Owning
+another harbour of the same type does not improve those rates, so it adds no harbour score bonus;
+the explanation calls out a duplicate on the corner. A different port can still improve your access. **Plan
 your first builds** compares that starting hand with the costs of a road, settlement, city and
 development card. Each row is a separate option, before further rolls or trades, and still requires a
 legal build or purchase on your turn. **Which rolls pay?** lists the cards received on each dice total.

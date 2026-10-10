@@ -72,7 +72,7 @@
     <tr><td>Scarcity</td><td>A resource that is rare on this board is worth more.</td></tr>
     <tr><td>Pairs</td><td>Wood with brick, or wheat with ore, from the same corner earns a small bonus.</td></tr>
     <tr><td>Repeats</td><td>Two hexes with the same number is feast-or-famine: a small penalty.</td></tr>
-    <tr><td>Harbours</td><td>When included, 3:1 helps anyone; 2:1 helps most when you produce plenty of that resource. A nearby harbour needs two roads and a new settlement before use.</td></tr>
+    <tr><td>Harbours</td><td>When included, 3:1 helps anyone; 2:1 helps most when you produce plenty of that resource. A harbour type you already own adds no duplicate bonus. A nearby harbour needs two roads and a new settlement before use.</td></tr>
     <tr><td>Room to grow</td><td>A strong open corner two roads away is worth something; a dead end is not.</td></tr>
     <tr><td>Second settlement</td><td>Credit for covering what the first one lacks, especially wheat and ore.</td></tr>
     <tr><td>Starting road</td><td>Point it at the best corner two roads away that the other seats are not likely to take before your next turn.</td></tr>
@@ -82,13 +82,14 @@
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/HOW-IT-WORKS.md">HOW-IT-WORKS.md</a>.</p>
 
   <h2>Does following it win games?</h2>
+  <p id="policy-version-note">The dated tables below test the earlier scoring policy. The current version also avoids rewarding a harbour type you already own; a separate comparison of that correction is in progress.</p>
   <p><a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s value-function bot plays every seat. One seat's opening is chosen by each strategy, then it plays on like everyone else. Strategies face the same boards and seat orders. An evenly matched seat would win 25%.</p>
   <p id="results-status" role="status">Loading benchmark results…</p>
   <h3>Fresh boards · 9 October 2026</h3>
   <p>This test used 40,000 complete games on fresh board and bot tie-breaking seeds. The scoring policy was fixed before the test; these outcomes were not used to tune it.</p>
   <table id="holdout-results"></table>
   <p id="paired-results">Across matched runs, Lens's advantage over “most pips” was 7.9 percentage points, with a 95% interval from 6.5 to 9.3 points. Against the bot's own opening, the difference was −0.2 points, with an interval from −1.8 to +1.3. That comparison shows no clear advantage and does not prove equal performance.</p>
-  <p id="benchmark-limits">These results cover bot play in the four-player base game. They support this opening policy in that setting; they do not predict your personal win rate or validate three-, five- or six-player games, Cities &amp; Knights, or play against people.</p>
+  <p id="benchmark-limits">These results cover bot play in the four-player base game. They describe the frozen policy tested in that setting; they do not predict your personal win rate or validate three-, five- or six-player games, Cities &amp; Knights, or play against people.</p>
   <details id="original-results"><summary>Original benchmark · 29 September 2026</summary>
     <table id="results"></table>
     <p>A same-seed audit reproduced the original result. This table still represents the original 40,000 game observations; the newer test above uses different seeds.</p>

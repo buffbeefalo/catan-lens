@@ -72,3 +72,7 @@ picture fidelity and all 21/52 caption cues. The recogniser matched 173/173 over
 477/478 walkthrough words; its one difference was spelling the brand "Katan" instead of "Catan".
 The script and captions retain the correct name. These checks do not establish natural-sounding speech
 or playback on every device.
+
+The later owned-harbour correction was reviewed against these demonstrations: the seed-42 first/second
+choices, second ranking and both suggested roads are unchanged. The results card remains the dated
+fresh-seed test of its recorded policy; the help page identifies later policy changes separately.
