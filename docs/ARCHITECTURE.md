@@ -128,6 +128,12 @@ case, without changing its rank-based pass rule. Ordinary nonnegative scores ben
 retain the existing percentage and grade boundaries. Negative-score choices outside the top N remain
 Weak; exact ties still share rank 1, including ties at zero or below.
 
+Score rounding snaps only values within eight scaled machine epsilons of a half-cent boundary before
+applying `Math.round`. Summing the same three weighted hexes in a different order can otherwise
+straddle that boundary, so a rotated or reflected board can acquire a different score or a false tie.
+The weights and tie direction are unchanged. Fixed reflection regressions cover both an exact 8.775
+production term and a close second-pick ranking whose reflected version previously gained rank 1.
+
 Starting-road explanations use the same full opening projection as the target filter. They identify
 opponent conflicts as projected setup choices, and flag a target also assigned to the player's
 unplaced second settlement. This adds no score term or direction preference. `roadLine` shares the

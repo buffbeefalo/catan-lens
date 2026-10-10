@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateBoard, blankBoard, landReadiness, PIPS } from '../public/board.js';
+import { generateBoard, boardFrom, blankBoard, landReadiness, PIPS } from '../public/board.js';
 import { rankSpots, scoreVertex, boardFacts, planFor, compare, grade, simulateDraft, suggestRoad } from '../public/score.js';
 import { legalVertices } from '../public/geometry.js';
 
@@ -21,6 +21,42 @@ test('ranking covers every legal corner, best-first, and every entry explains it
   for (let i = 1; i < r.length; i++) assert.ok(r[i - 1].score >= r[i].score);
   for (const x of r) assert.match(x.parts[0].text, /pips of production/);
   assert.match(r[0].parts[0].text, /the most on the board|within a pip/);
+});
+
+function reflectVertically(board) {
+  const g = board.graph, centerY = g.hexes.reduce((sum, h) => sum + h.y, 0) / g.hexes.length;
+  const reflect = list => list.map(h => list.find(other => Math.abs(other.x - h.x) < 1e-8 && Math.abs(other.y - (2 * centerY - h.y)) < 1e-8).id);
+  const hexMap = reflect(g.hexes), vertexMap = reflect(g.vertices);
+  const hexes = g.hexes.map(() => null);
+  for (const h of board.hexes) hexes[hexMap[h.id]] = { resource: h.resource, number: h.number };
+  const harbors = Object.fromEntries(Object.entries(board.harbors).map(([id, type]) => {
+    const ends = g.edges[id].v.map(v => vertexMap[v]);
+    return [g.edges.find(e => ends.every(v => e.v.includes(v))).id, type];
+  }));
+  return { board: boardFrom({ setup: board.setup, hexes, harbors }), vertexMap };
+}
+
+test('half-cent scoring is stable when the same physical board is reflected', () => {
+  const board = generateBoard({ setup: 'ext56', seed: 3 }), reflected = reflectVertically(board);
+  const settings = S({ players: 6 });
+  for (const [b, id] of [[board, 46], [reflected.board, reflected.vertexMap[46]]]) {
+    const pick = scoreVertex(b, settings, id);
+    // Exact production: 2 × 1.15 × 6/7 + 3 × 0.9 × 1.25 + 4 × 6/7 = 8.775.
+    assert.equal(pick.parts.find(p => p.k === 'production').v, 8.78);
+    assert.equal(pick.score, 10.08, 'adding 1.3 expansion points gives exactly 10.075 before rounding');
+  }
+});
+
+test('reflection cannot manufacture a first-place tie in a close second-settlement ranking', () => {
+  const board = generateBoard({ setup: 'ext56', seed: 373 }), reflected = reflectVertically(board);
+  const settings = S({ players: 6, cak: true });
+  const occupied = [46, 57, 15, 42, 61, 48, 59, 8, 31, 68, 20];
+  const before = rankSpots(board, settings, { mine: [46], occupied });
+  const after = rankSpots(reflected.board, settings, { mine: [reflected.vertexMap[46]], occupied: occupied.map(id => reflected.vertexMap[id]) });
+  const original = grade(before.find(r => r.id === 38), before, 6);
+  const changed = grade(after.find(r => r.id === reflected.vertexMap[38]), after, 6);
+  assert.equal(original.rank, 2);
+  assert.deepEqual(changed, original);
 });
 
 test('more pips wins when everything else is equal (R1)', () => {

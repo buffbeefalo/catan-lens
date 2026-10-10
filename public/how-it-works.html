@@ -109,7 +109,7 @@
   <p><b>Projected placements</b> shows this model's choices for each unmarked turn. People may choose differently. Road advice considers the remaining setup; if its target is also your projected second settlement, the card explains that the site would be occupied when setup ends. <b>Show best</b> reveals road hints in the map and verdicts.</p>
 
   <h2>Does following it win games?</h2>
-  <p id="policy-version-note">The current version avoids rewarding a harbour type you already own. Its comparison is separate from the earlier scoring policy's results below; no weights were tuned on these outcomes.</p>
+  <p id="policy-version-note">The current version avoids rewarding a harbour type you already own. That correction's comparison is separate from the earlier policy's results below; no weights were tuned on these outcomes. A later correction makes score rounding consistent when the same board is turned. The frozen game tests below predate that rounding correction, which has no new win-rate result.</p>
   <p><a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s value-function bot plays every seat. One seat's opening is chosen by each strategy, then it plays on like everyone else. Strategies face the same boards and seat orders. An evenly matched seat would win 25%.</p>
   <p id="results-status" role="status">Loading benchmark results…</p>
   <h3>Owned-harbour correction · 9 October 2026</h3>

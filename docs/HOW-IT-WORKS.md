@@ -133,6 +133,8 @@ stays dominant.
   score cannot look like a 100% tie or cross the 90% grade boundary through display rounding.
   A negative pick score or a nonpositive best score uses the point gap instead: these heuristic scores
   can cross zero on unusual custom boards, where a percentage is not a useful comparison.
+  The rounding step also removes tiny arithmetic errors at halfway boundaries, so turning the same
+  physical board does not change a score merely by changing the order in which its hexes are counted.
 - **Opponents.** Switch to "Mark opponent" and click where others placed; the ranking only counts what is
   still open.
 - **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app fills
@@ -219,7 +221,7 @@ The rules come from expert advice, but advice is not proof, so the repository te
 are Catanatron's value-function bot; one seat has its opening chosen by a different strategy, then plays the rest of
 the game exactly like the others. A fair seat wins 25%.
 
-The current policy avoids rewarding a harbour type you already own. A separate 24,000-game comparison
+The owned-harbour policy avoids rewarding a harbour type you already own. A separate 24,000-game comparison
 on 8,000 new boards gave it **1,972 wins**, versus **1,976** before the correction and **1,985** for the
 bot's own opening. The correction's difference is **−0.05 percentage points**, with the planned approximate
 95% interval from **−0.098 to −0.002**. Only four win/loss pairs changed, all against the correction;
@@ -227,6 +229,9 @@ this narrow estimate rests on very few differences. It does not show a win-rate 
 policies. Against the bot's own opening, the difference is −0.16 points (−1.67 to +1.35), which remains
 uncertain. [Frozen inputs, exact counts and raw games](../bench/catanatron/results.md#owned-harbour-correction-2026-10-09)
 keep this test separate from those below. No policy was tuned on these results.
+
+The current app also corrects tiny arithmetic errors at half-cent scoring boundaries. These game
+tests predate that rounding repair and retain their frozen policies; the repair has no new win-rate result.
 
 This table is the **earlier policy's 2026-10-09 fresh-seed test**: 20 bot tie-breaking seeds and 8,000 board seeds that
 were not in the earlier benchmark. The policy was frozen before the test, and its outcomes were not

@@ -1,5 +1,9 @@
 # Benchmark results
 
+The current app also corrects tiny arithmetic errors at half-cent scoring boundaries. The game tests
+below predate that rounding repair and continue to describe their exact frozen source commits.
+No new win-rate test is attributed to the rounding change, and none of these outcomes tuned it.
+
 ## Owned-harbour correction, 2026-10-09
 
 Policy `r7-owned-ports-2026-10-09` removes R7 credit for a harbour type already supplied by your

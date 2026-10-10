@@ -103,13 +103,16 @@ on exactly like the others. Every strategy sees the same boards and seat orders,
 under 20 different bot tie-breaking orders, with intervals computed across those runs (see
 [HOW-IT-WORKS](docs/HOW-IT-WORKS.md#5-does-following-it-actually-win-games) for why). A fair seat wins 25%.
 
-The current policy removes credit for a harbour type you already own. Its separate 24,000-game
+The owned-harbour policy removes credit for a harbour type you already own. Its separate 24,000-game
 comparison produced **1,972 wins out of 8,000**, versus **1,976** before the correction and **1,985**
 for the bot's own opening. The correction's four fewer wins give a −0.05 percentage-point difference;
 the planned approximate 95% interval is −0.098 to −0.002. Only four win/loss pairs changed, so this
 estimate rests on sparse differences. It shows no win-rate gain and is not proof of equal policies.
 The [full comparison and raw records](bench/catanatron/results.md#owned-harbour-correction-2026-10-09)
 preserve the frozen inputs and explain the limits.
+
+The current app also corrects tiny rounding errors that could change a score when the same board is
+turned. These frozen game tests predate that repair; it has no new win-rate result.
 
 The table shows the **earlier policy's fresh-seed test on 2026-10-09**, frozen beforehand with no
 tuning on its outcomes. All 40,000 games finished. The [methods and raw records](bench/catanatron/results.md)

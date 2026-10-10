@@ -85,6 +85,11 @@ cues. The walkthrough remains byte-for-byte unchanged from the preceding refresh
 display and repeated-number wording were reviewed against both demonstrations: these examples use
 positive scores, and no old discard-frequency claim appears in the reviewed explanation scenes.
 
+The subsequent half-cent rounding repair was checked against the recorded Explore, Drill and custom
+board examples. Their displayed picks, grades, road advice and projected placements are unchanged,
+although some unshown lower-ranked scores move by a hundredth. The help page and benchmark records
+identify the game tests as preceding this arithmetic correction; the videos retain their dated results.
+
 The later owned-harbour correction was reviewed against these demonstrations: the seed-42 first/second
 choices, second ranking and both suggested roads are unchanged. The results card remains the dated
 fresh-seed test of its recorded policy; the help page identifies later policy changes separately.

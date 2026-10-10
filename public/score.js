@@ -200,7 +200,11 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   return { id: vid, score, pips, prod, numbers, resources, parts, plan: planFor(settings), startingCards };
 }
 
-function round(x) { return Math.round(x * 100) / 100; }
+function round(x) {
+  const cents = x * 100, half = Math.floor(cents) + 0.5;
+  const noise = 8 * Number.EPSILON * Math.max(1, Math.abs(cents));
+  return Math.round(Math.abs(cents - half) <= noise ? half : cents) / 100;
+}
 
 // Rank every legal corner. Returns best-first.
 export function rankSpots(board, settings, { mine = [], occupied = [] } = {}) {

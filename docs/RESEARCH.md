@@ -155,6 +155,16 @@ scores and ranks. An audit of 2,400 standard generated second-pick scenarios fou
 this is a custom-board presentation edge case, not evidence of a common standard-board defect.
 Across the corresponding first and second rankings, 264,230 ordinary grades were unchanged.
 
+**Rounding consistency, 2026-10-09.** A separate rotation/reflection audit compared 2,746,726 mapped
+corners across 28,000 transformed scenarios. Binary addition order changed 522 scores by 0.01,
+including two comparisons that falsely made a second-choice corner tied for best. Half-cent boundaries
+now discard only machine-precision noise before the existing rounding rule. The same audit then found
+zero score or grade differences. An independent exact-fraction calculation checked 529,186 scores
+across standard and custom boards: 3,009 older rounded scores differed from that calculation, and none
+of the corrected scores did. No weights changed and no first-ranked choice changed in those 9,600
+fixed-input rankings. This verifies arithmetic consistency; it does not establish identical choices
+on every board or a change in winning chances. All game benchmarks retain their earlier frozen policies.
+
 **Drill mode (added 2026-09-14 late) is a ladder over the same heuristic.** You set the TABLE before you start
 (2026-09-15: players 3–6 and the Cities & Knights weighting are chosen on a setup card; every level runs on that
 table and each table keeps its own progress track, so the ladder no longer switches tables on levels 1, 12–13 and
