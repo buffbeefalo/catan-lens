@@ -108,11 +108,12 @@ export function findSeed(stage, next, maxTries = 120) {
 // Did the graded pick clear the stage?
 export function judge(stage, g) {
   const top = stage.pass.top;
-  const pass = g.rank <= top;
+  const available = Number.isInteger(g.rank) && g.rank >= 1 && g.rank <= g.total;
+  const pass = available && g.rank <= top;
   const need = top === 1 ? 'the best corner' : `one of the top ${top} corners`;
   const gap = Number.isFinite(g.gap) ? ` ${g.gap.toFixed(2)} points below the top score.` : '';
   const close = g.gap > 0 && g.pct >= 99 ? ' This is a close model score; real-game outcomes can differ.' : '';
-  const text = pass
+  const text = !available ? 'This corner is not in the current legal ranking. Choose an available corner to try this stage.' : pass
     ? (g.rank === 1 ? 'You found the best corner.' : `Rank ${g.rank} — inside the top ${top}, that clears it.`)
     : `Rank ${g.rank} of ${g.total} at ${g.pct}% of the best.${gap} This stage needs ${need}.${close}`;
   return { pass, text, need };

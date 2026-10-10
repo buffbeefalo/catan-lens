@@ -36,7 +36,7 @@ export function boardFacts(board) {
   const land = RESOURCES.reduce((s, r) => s + tiles[r], 0);
   const scarcity = {};
   for (const r of RESOURCES) {
-    const expected = tiles[r] / land, actual = pips[r] / total;
+    const expected = tiles[r] / land, actual = total > 0 ? pips[r] / total : expected;
     scarcity[r] = actual === 0 ? 1.25 : Math.min(1.25, Math.max(0.8, expected / actual));
   }
   return { pips, marquee, total, scarcity };
@@ -247,12 +247,12 @@ export function compare(best, pick) {
 // The 90% share line between "fair" and "weak" is the author's choice (see RESEARCH.md).
 export function grade(pick, ranking, players) {
   const total = ranking.length;
-  const found = ranking.some(r => r.id === pick.id);
-  const rank = found ? 1 + ranking.filter(r => r.score > pick.score).length : total + 1;   // ties share the higher rank
-  const best = ranking.length ? ranking[0].score : 0;
-  const bestUnits = Math.round(best * 100), pickUnits = Math.round(pick.score * 100);
-  const pct = found && bestUnits > 0 ? Math.floor(pickUnits * 10000 / bestUnits) / 100 : found ? 100 : 0;
-  const gap = found ? (bestUnits - pickUnits) / 100 : null;
+  const ranked = ranking.find(r => r.id === pick?.id);
+  if (!ranked) return { rank: total + 1, total, pct: 0, gap: null, tier: 'weak', label: 'Unavailable pick', why: 'this corner is not in the current legal ranking.' };
+  const rank = 1 + ranking.filter(r => r.score > ranked.score).length;   // ties share the higher rank
+  const bestUnits = Math.round(ranking[0].score * 100), pickUnits = Math.round(ranked.score * 100);
+  const pct = bestUnits > 0 ? Math.floor(pickUnits * 10000 / bestUnits) / 100 : 100;
+  const gap = (bestUnits - pickUnits) / 100;
   const tier = rank === 1 ? 'great' : rank <= players ? 'good' : pct >= 90 ? 'fair' : 'weak';
   const label = { great: 'Great pick', good: 'Good pick', fair: 'Fair pick', weak: 'Weak pick' }[tier];
   const why = {

@@ -114,6 +114,18 @@ test('judge: pass when the pick ranks within the stage rule, fail otherwise, and
   assert.match(judge(hard, g3).text, /best corner/);
 });
 
+test('an unavailable corner never clears a drill stage, including empty and short rankings', () => {
+  for (const cfg of CONFIGS) for (let n = 1; n <= STAGES.length; n++) {
+    const stage = stageFor(n, cfg);
+    for (const ranking of [[], [{ id: 0, score: 10 }], [{ id: 0, score: 10 }, { id: 1, score: 9 }]]) {
+      const result = judge(stage, grade({ id: 9999, score: 99 }, ranking, cfg.players));
+      assert.equal(result.pass, false);
+      assert.match(result.text, /not in the current legal ranking/);
+      assert.doesNotMatch(result.text, /best corner\.|clears it|Rank/);
+    }
+  }
+});
+
 test('near-tie drill feedback reports the real gap and distinguishes the model target from playing strength', () => {
   const stage = stageFor(15, { players: 4, cak: false });
   const { ranking } = setupStage(stage, 1);

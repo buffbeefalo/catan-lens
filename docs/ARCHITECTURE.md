@@ -103,6 +103,13 @@ and explicit research-document route apply before opening anything. See
     uses `drill=1&level=N`. The return snapshot stays out of the URL and belongs to the current history
     entry, so a fresh tab's drill link contains no earlier exploration board.
 
+The pure helpers also handle incomplete or stale input defensively: `boardFacts` gives zero-production
+boards neutral finite scarcity factors, while the UI still withholds advice until land is complete.
+`grade` looks up a selected ID in the supplied ranking and uses that entry's score, not a possibly stale
+copy. An absent choice is unavailable, retains the out-of-range rank sentinel, and cannot pass `judge`,
+including when the ranking is empty or has fewer entries than the stage target. Valid grades and
+complete-board scores are unchanged by these guards.
+
 ## Where to change things
 
 - **A scoring rule**: `score.js`, with a source and the coefficient in `docs/RESEARCH.md`, a unit test in

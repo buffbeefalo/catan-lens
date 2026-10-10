@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateBoard, PIPS } from '../public/board.js';
+import { generateBoard, blankBoard, landReadiness, PIPS } from '../public/board.js';
 import { rankSpots, scoreVertex, boardFacts, planFor, compare, grade, simulateDraft, suggestRoad } from '../public/score.js';
 import { legalVertices } from '../public/geometry.js';
 
@@ -40,6 +40,15 @@ test('scarcity scales a resource up when the board is short of it (R3)', () => {
   const longest = perTile.sort((a, c) => c[1] - a[1])[0][0];
   assert.ok(f.scarcity[shortest] >= f.scarcity[longest]);
   assert.ok(f.scarcity[shortest] <= 1.3 && f.scarcity[longest] >= 0.8);
+});
+
+test('empty board facts have finite neutral scarcity without making the board ready for advice', () => {
+  for (const setup of ['base', 'ext56']) {
+    const board = blankBoard(setup), facts = boardFacts(board);
+    assert.equal(facts.total, 0);
+    assert.deepEqual(facts.scarcity, { wood: 1, brick: 1, wheat: 1, sheep: 1, ore: 1 });
+    assert.equal(landReadiness(board).ready, false);
+  }
 });
 
 test('wood+brick and wheat+ore pairs add their bonus and a sentence (R4)', () => {
@@ -295,6 +304,28 @@ test('grade(): exact ties share rank 1 at 100%, and a pick outside the ranking i
   const ghost = { ...r[0], id: 9999 };
   const g = grade(ghost, r, 4);
   assert.equal(g.rank, r.length + 1); assert.equal(g.tier, 'weak'); assert.equal(g.pct, 0);
+});
+
+test('absent choices are unavailable even in empty or short rankings', () => {
+  for (const ranking of [[], [{ id: 0, score: 10 }], [{ id: 0, score: 10 }, { id: 1, score: 9 }]]) {
+    for (const players of [3, 4, 5, 6]) {
+      const result = grade({ id: 9999, score: 99 }, ranking, players);
+      assert.equal(result.rank, ranking.length + 1);
+      assert.equal(result.tier, 'weak');
+      assert.equal(result.pct, 0);
+      assert.equal(result.gap, null);
+      assert.equal(result.label, 'Unavailable pick');
+      assert.match(result.why, /not in the current legal ranking/);
+    }
+  }
+});
+
+test('grading takes the selected corner score from its ranking, including when a copied pick is stale', () => {
+  const ranking = [{ id: 1, score: 10 }, { id: 2, score: 9 }];
+  const expected = grade(ranking[1], ranking, 4);
+  for (const score of [99, -1, NaN, undefined]) {
+    assert.deepEqual(grade({ id: 2, score }, ranking, 4), expected);
+  }
 });
 
 test('grade(): percentages preserve non-ties and do not round a pick across the 90 percent boundary', () => {
