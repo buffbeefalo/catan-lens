@@ -900,6 +900,75 @@ test('the help return link preserves the latest edited board, harbour choice and
   assert.equal(await page.locator('.piece.opp').count(), 0, 'Undo still reverses the last placement');
 });
 
+test('returning from help retains the private Drill return board after help refreshes', async t => {
+  for (const active of [false, true]) for (const refreshed of [false, true]) {
+    const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&me=43&opp=0&seq=m43,o0');
+    await page.locator('#custom').click();
+    await page.locator('#tool-number').click();
+    const original = page.url();
+    await page.locator('#drill').click();
+    if (active) await page.locator('#start-drill').click();
+    const exercise = page.url();
+    await page.getByRole('link', { name: 'How it works', exact: true }).click();
+    await page.waitForLoadState('domcontentloaded');
+    if (refreshed) await reloadInBrowser(page);
+    await page.locator('#back-to-app').click();
+    await page.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
+    assert.equal(page.url(), exercise);
+    assert.ok(await page.evaluate(() => history.state?.catanFreePlay), `same-tab help retains the private checkpoint (active=${active}, refreshed=${refreshed})`);
+    await page.locator('#drill').click();
+    assert.equal(page.url(), original);
+    assert.equal(await page.locator('#tool-number').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+    await page.locator('#undo').click();
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    assert.equal(await page.locator('.piece.opp').count(), 0);
+    await page.close();
+  }
+});
+
+test('help refresh retains the correct previous-board recovery entry', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&me=43&opp=0&seq=m43,o0');
+  await page.locator('#custom').click(); const original = page.url();
+  await page.locator('#blank-board').click(); const blank = page.url();
+  await page.getByRole('link', { name: 'How it works', exact: true }).click();
+  await page.waitForLoadState('domcontentloaded');
+  await reloadInBrowser(page);
+  await page.locator('#back-to-app').click();
+  await page.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
+  assert.equal(page.url(), blank);
+  await navigateHistory(page, () => page.locator('#restore-board').click());
+  assert.equal(page.url(), original);
+  assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
+});
+
+test('help opened in a new tab or directly returns only the shared board', async t => {
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&me=43&opp=0&seq=m43,o0');
+  await page.locator('#custom').click(); const original = page.url();
+  await page.locator('#drill').click(); await page.locator('#start-drill').click();
+  const exercise = page.url();
+  const help = page.getByRole('link', { name: 'How it works', exact: true });
+  const helpUrl = new URL(await help.getAttribute('href'), page.url()).href;
+  await help.evaluate(el => { el.target = '_blank'; });
+  const [popup] = await Promise.all([page.waitForEvent('popup'), help.click()]);
+  await popup.waitForLoadState('domcontentloaded');
+  await popup.locator('#back-to-app').click();
+  await popup.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
+  assert.equal(popup.url(), exercise);
+  assert.equal(await popup.evaluate(() => history.state?.catanFreePlay ?? null), null);
+  await popup.close();
+  const direct = await page.context().newPage();
+  await direct.goto(helpUrl); await reloadInBrowser(direct);
+  await direct.locator('#back-to-app').click();
+  await direct.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
+  assert.equal(direct.url(), exercise);
+  assert.equal(await direct.evaluate(() => history.state?.catanFreePlay ?? null), null);
+  await direct.close();
+  assert.equal(page.url(), exercise);
+  await page.locator('#drill').click();
+  assert.equal(page.url(), original, 'the original tab still owns its exploration checkpoint');
+});
+
 test('help preserves an unreadable link verbatim and its return stays within this app', async t => {
   const query = '?players=4&b=%ZZ%3Cscript%3E&h=5%3A3%2C5%3Aw&me=41&return=https%3A%2F%2Fexample.invalid%2F';
   const page = await open(t, { width: 1400, height: 900 }, query);

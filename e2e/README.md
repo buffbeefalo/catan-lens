@@ -27,7 +27,9 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   harbour exclusions and incomplete input, retain the C&K model boundary, and verify result focus
   and phone visibility without leaking hints into unanswered drills.
   Help navigation checks an edited board, harbour choice and Undo order across a help-page reload,
-  plus unreadable queries and the fixed same-app return destination.
+  plus unreadable queries and the fixed same-app return destination. Same-tab help retains the private
+  Drill return board in setup and active exercises, including after help refreshes, and preserves
+  the older previous-board recovery entry. Direct help links and new tabs carry no private checkpoint.
   Evidence-page checks keep original and fresh benchmark intervals distinct, fit both tables on a
   narrow phone and show a useful message when the results download fails.
   Drill-return checks retain generated/custom boards, table settings, placement tools and Undo order

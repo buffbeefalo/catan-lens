@@ -89,6 +89,9 @@ board and its settlement marks. Valid unfinished boards still open for editing. 
 blank tiles and duplicate harbours on the same edge are rejected instead of silently discarded.
 **How it works** carries your current board link into the help page. **Back to the app** reopens that
 board, table settings, harbour choice and placement order, including after refreshing the help page.
+When help was opened from the matching app link in this tab, returning uses the existing browser
+entry, retaining its private Drill return board and placement tool. Direct help links and new tabs
+open only the state carried in their link; they do not acquire another tab's private return board.
 Unreadable board data is also preserved so visiting help does not discard the link you need to repair.
 The help return link is ready before its theme control loads; a failed theme download does not block
 the transcripts or benchmark display either.

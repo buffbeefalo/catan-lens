@@ -110,8 +110,15 @@ and explicit research-document route apply before opening anything. See
    browser accounts for a magnified or panned visual viewport rather than the full layout height.
 10. The app's help link uses the current serialized board query; the explainer's return link copies its
     `location.search` onto a fixed relative destination. They preserve shareable state, including unreadable queries, without a
-    second storage record or a user-controlled return destination. The links work under both the local
-    dashboard prefix and GitHub Pages, and the help page can be refreshed before returning.
+    separate Web Storage record or a user-controlled return destination. The links work under both the local
+    dashboard prefix and GitHub Pages, and the help page can be refreshed before returning. A normal
+    same-tab return uses native Back when the same-origin app referrer matches that query and the
+    help location/history length are unchanged, preserving the original entry's private Drill and
+    recovery state. Direct loads, new tabs, modified clicks and changed help locations retain the
+    ordinary fixed link. A small marker in the help history entry retains the originating URL across
+    browser-specific referrer changes on reload; it contains no private board snapshot. A refused
+    marker write leaves the ordinary return link usable. The private snapshot stays in the original
+    app entry; it never enters the help URL or the help marker.
 11. Entering Drill stores the existing free-play state in versioned `history.state.catanFreePlay`.
     The snapshot and destination query are written together before changing modes. Reload reads that
     snapshot; exiting restores it and removes only that field, retaining older
