@@ -131,6 +131,10 @@ evaluation fails. It clears a partly rendered board and keeps app controls inert
 finishes. Retry uses native reload, retaining the history entry's Drill return snapshot. The handler
 does not suppress errors or replace a working board after startup. Without JavaScript, a written
 explanation links to the guide in a separate tab; this is recovery guidance, not offline caching.
+The help header preserves its return query immediately, without awaiting a module. Its transcript,
+video-fallback and benchmark handlers initialize separately from the theme module, so a delayed or
+failed theme download cannot strand the return link or leave that content uninitialized. The help
+theme control stays inert until its handler is installed.
 
 Keyboard or assistive activation of Your board focuses its first tool; activating a tool focuses the
 first editable hex or coast edge. These transitions use the button click's zero `detail`; pointer

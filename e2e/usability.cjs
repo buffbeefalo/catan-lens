@@ -84,6 +84,34 @@ test('a browser with JavaScript disabled gets a written explanation and guide', 
   assert.equal(await page.locator('.hex').count(), 0);
 });
 
+test('help return links are ready while the theme download is delayed or fails', async t => {
+  for (const delayed of [true, false]) for (const query of ['?seed=42&players=4&me=43&opp=0&seq=m43,o0', '?players=6&b=unreadable']) {
+    const page = await open(t, { width: 390, height: 844 }, query);
+    const original = page.url();
+    let release;
+    const pending = new Promise(resolve => { release = resolve; });
+    await page.route('**/theme.js', async route => { if (delayed) await pending; await route.abort(); });
+    try {
+      await Promise.all([
+        page.waitForURL(url => url.pathname.endsWith('/how-it-works.html'), { waitUntil: 'commit' }),
+        page.getByRole('link', { name: 'How it works', exact: true }).click({ noWaitAfter: true }),
+      ]);
+      const back = page.locator('#back-to-app'); await back.waitFor();
+      assert.equal(new URL(await back.getAttribute('href'), page.url()).search, new URL(original).search);
+      await page.waitForFunction(() => document.querySelector('#results tbody tr') && document.querySelector('[data-transcript="overview"]').textContent.trim().length > 20);
+      assert.equal(await page.locator('.header-actions').evaluate(el => el.inert), true, 'an unavailable theme switch stays inactive while the help content works');
+      await Promise.all([
+        page.waitForURL(url => !url.pathname.endsWith('/how-it-works.html'), { waitUntil: 'commit' }),
+        back.click({ noWaitAfter: true }),
+      ]);
+      assert.equal(page.url(), original);
+    } finally {
+      release(); await page.unrouteAll({ behavior: 'wait' });
+    }
+    await page.close();
+  }
+});
+
 test('generated board replacements retain the prior board and placement order through refresh and history', async t => {
   for (const width of [390, 1400]) for (const action of ['new', 'balanced', 'seed']) {
     const page = await open(t, { width, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
