@@ -44,6 +44,9 @@ video/.venv/bin/python video/readme_media.py
 
 `video/out/*.vtt`, `*.txt` and `*.jpg` go into `public/media/`. The MP4s are attached to a GitHub Release; the Pages
 workflow copies them into the published site, so they never enter git history.
+For local playback checks, also copy the MP4s into `public/media/`. The local server supports seeking;
+check playback, forward/backward seeking and enabled captions in a browser with H.264/AAC support.
+If a browser build lacks those codecs, verify the transcript fallback instead of calling playback a pass.
 
 What the checks cannot tell you: whether the voice sounds natural and the whole feels right. Watch the result.
 

@@ -115,7 +115,7 @@ Node 22 or newer. No install is needed to run the app:
 
 ```sh
 npm start          # http://127.0.0.1:8080/
-npm test           # unit tests (scoring, geometry, board generation, drill)
+npm test           # scoring, geometry, board, drill and local-server tests
 npm install        # once, for the browser tests
 npx playwright install chromium
 npm run e2e        # browser walkthroughs and interaction tests against the local server
@@ -123,6 +123,9 @@ npm run report     # the deterministic opening report
 ```
 
 Any static file host works: the app is plain HTML, CSS and JavaScript modules in [`public/`](public).
+The MP4s are attached to [GitHub Releases](https://github.com/buffbeefalo/catan-lens/releases/latest),
+not stored in git. Copy both into `public/media/` to watch them locally; captions and transcripts are
+already included. The local server supports video seeking and streams only the requested bytes.
 
 ## Build on it
 

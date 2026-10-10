@@ -38,6 +38,14 @@ serve.js            zero-dependency local server (npm start)
 
 ## Data flow
 
+The local server opens each file once, reports its length and streams it with backpressure. GET supports
+single byte ranges, open-ended ranges and suffix ranges; HEAD returns full-file metadata without a body.
+Unsatisfiable ranges return 416 and the file size. Unknown units, multipart and conditional ranges receive
+the whole file. Stream completion or cancellation closes the opened file. The existing public-tree boundary
+and explicit research-document route apply before opening anything. See
+[HTTP range requests](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Range_requests) and
+[RFC 9110, section 14](https://www.rfc-editor.org/rfc/rfc9110.html#section-14).
+
 1. `board.js` builds a board from a seed (or from the Your-board link): 19 or 30 hexes, each with a resource and
    number token, plus harbours keyed by coastal edge id. `geometry.js` supplies the graph (54 or 80 corners).
 2. `score.js` scores every legal corner. A score is the sum of named parts; each part carries the sentence the
