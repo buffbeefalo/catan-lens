@@ -137,6 +137,13 @@ first editable hex or coast edge. These transitions use the button click's zero 
 activation keeps the existing focus behavior. Escape returns from the SVG editor to its selected tool,
 while the number picker's Escape first returns to its hex. Native Tab order remains available, with
 no global letter shortcuts or focus trap.
+Intentional keyboard editor transitions and number selection explicitly scroll their focused target into
+view after rebuilding. This matters
+on the single-column layout when expanded guidance separates the palette from the board: WebKit's
+focus alone can leave the token above the viewport. Changing the missing-token count can also move the
+palette after selection. Number selection reveals the whole picker so touch users can see the other
+choices. Nearest scrolling leaves an already visible target in place, including on the picker-to-hex
+Escape path. Ordinary repaint focus restoration still uses `preventScroll`.
 
 URL serialization skips `replaceState` when the current query already matches. Choosing an editing
 tool, opening a number picker or repainting an identical value should not consume the browser's history

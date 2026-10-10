@@ -357,6 +357,11 @@ function setDrill(on) {
 }
 // ---- Your board (enter the board in front of you) -----------------------------
 const HARBOR_CYCLE = [null, '3:1', 'wood', 'brick', 'wheat', 'sheep', 'ore'];
+function focusEditorTarget(target, region = target) {
+  if (!target) return;
+  target.focus({ preventScroll: true });
+  region.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+}
 function setCustom(on, keyboard = false) {
   if (on && state.drill && !setDrill(false)) return;
   if (!on && !keepPreviousBoard()) return;
@@ -364,20 +369,28 @@ function setCustom(on, keyboard = false) {
   if (on) { state.portMode = 'check'; state.customHexes = board.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...board.harbors }; }   // start from the board on screen
   else { state.seed = randomSeed(); state.linkError = null; state.me = []; state.opp = []; state.history = []; }
   controls(); rebuild();
-  if (on && keyboard) $('#tool-wood')?.focus();
+  if (on && keyboard) focusEditorTarget($('#tool-wood'));
 }
 function setTool(t, keyboard = false) {
   state.tool = state.tool === t ? null : t; state.numHex = null; state.pick = null; controls(); rebuild();
-  if (keyboard && state.tool) $(state.tool === 'port' ? '#svg .coast-hit' : '#svg .hex[tabindex="0"]')?.focus();
+  if (keyboard && state.tool) focusEditorTarget($(state.tool === 'port' ? '#svg .coast-hit' : '#svg .hex[tabindex="0"]'));
 }
 function hexClick(i) {
   if (!state.tool || state.tool === 'port') return;
-  if (state.tool === 'number') { state.numHex = state.numHex === i ? null : i; rebuild(); $('.picker button[aria-pressed="true"]')?.focus(); return; }
+  if (state.tool === 'number') {
+    state.numHex = state.numHex === i ? null : i; rebuild();
+    focusNumberToken();
+    return;
+  }
   const h = state.customHexes[i] || (state.customHexes[i] = { resource: 'blank', number: null });
   h.resource = state.tool; if (state.tool === 'desert' || state.tool === 'blank') h.number = null;
   rebuild();
 }
-function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); }
+function focusNumberToken() {
+  const picker = $('.picker');
+  focusEditorTarget(picker?.querySelector('button[aria-pressed="true"]'), picker);
+}
+function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); focusNumberToken(); }
 function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; if (state.portMode === 'entered') state.portMode = 'check'; rebuild(); }
 function fillCustom(b) { if (!keepPreviousBoard()) return; state.linkError = null; state.portMode = 'check'; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
 function bindBoardActions() {
@@ -756,13 +769,13 @@ $('#settings').addEventListener('toggle', fitBoard);
 $('#panel').addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); }
-  else if (state.numHex !== null && e.target.closest('.picker')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); $(`.hex[data-hex="${id}"]`)?.focus(); }
+  else if (state.numHex !== null && e.target.closest('.picker')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); focusEditorTarget($(`.hex[data-hex="${id}"]`)); }
 });
 $('#svg').addEventListener('keydown', e => {
   if (e.key !== 'Escape' || !state.custom || !state.tool || !e.target.matches('.hex, .coast-hit')) return;
   e.preventDefault();
   if (state.numHex !== null) { state.numHex = null; rebuild(); }
-  $('#tool-' + state.tool)?.focus();
+  focusEditorTarget($('#tool-' + state.tool));
 });
 $('#new').onclick = () => { if (inLevel()) return newStageBoard(); if (state.custom) return fillCustom(generateBoard({ setup: state.setup, seed: randomSeed(), balanced: true })); if (!state.drill && !keepPreviousBoard()) return; state.seed = randomSeed(); if (state.randomSeat) rollSeat(); state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); };
 $('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.test(t) && Number(t) < 4294967296 && Number(t) !== state.seed) { if (!keepPreviousBoard()) return; state.seed = Number(t); state.answered = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); } else controls(); };

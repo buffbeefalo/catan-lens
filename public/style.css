@@ -172,7 +172,7 @@ details p{font-size:12px;color:var(--mut);margin:8px 0}
 .hex.editable:focus-visible{stroke:var(--piece-ink);stroke-width:.09;stroke-dasharray:.12 .08}
 .coast-hit:focus-visible{stroke:var(--piece-ink);stroke-width:.12;stroke-dasharray:none}
 .palette{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-.picker{display:inline-flex;flex-wrap:wrap}
+.picker{display:inline-flex;flex-wrap:wrap;scroll-margin-block:32px 12px}
 .check.ok{color:var(--accent)}
 
 @media (forced-colors:active){

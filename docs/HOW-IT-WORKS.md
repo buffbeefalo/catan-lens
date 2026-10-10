@@ -56,6 +56,7 @@ Opening **Your board** by keyboard focuses the first tool. Activate a tool with 
 focus the first hex or coastal edge; Tab moves through the board and Enter or Space edits it. Escape
 returns from the board to the selected tool. Opening a number picker focuses the current token; Tab
 chooses another token and Escape returns to its hex, then another Escape returns to Numbers.
+The number picker brings its choices into view, including when editing guidance is expanded.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
 When the device uses a high-contrast palette, selected controls use its highlight colours, the current
 Drill level keeps an outline, and focused board corners remain visible against the page.

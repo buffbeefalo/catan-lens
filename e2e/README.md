@@ -42,6 +42,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   then retry successfully with keyboard focus retained. Video errors open the corresponding transcript.
   Startup checks fail the app or a dependency download, preserve the board link through help, then
   reload successfully. They also retain the Drill return board and cover the JavaScript-off guide.
+  Short-screen editing checks expand guidance, open the number picker, change a token and return by
+  keyboard, verifying visible focus on both board sizes in phone and landscape layouts.
 
 Each walkthrough ends with an `... OK, zero page errors` line. Some write drill progress to the browser's
 localStorage; every run starts from a fresh browser context.

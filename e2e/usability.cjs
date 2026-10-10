@@ -352,6 +352,41 @@ test('keyboard users can paint and number a hex without losing their place', asy
   }
 });
 
+test('the number picker stays visible after expanded editing guidance on short screens', async t => {
+  for (const viewport of [{ width: 320, height: 480 }, { width: 844, height: 390 }]) for (const players of [4, 6]) {
+    const page = await open(t, viewport, '?seed=42&players=' + players);
+    const visible = () => page.evaluate(() => {
+      const r = document.activeElement.getBoundingClientRect();
+      return r.top >= -1 && r.bottom <= innerHeight + 1;
+    });
+    await page.locator('#custom').press('Enter');
+    await page.locator('#blank-board').click();
+    await page.locator('#tool-wood').press('Enter');
+    await page.keyboard.press('Space');
+    await page.keyboard.press('Escape');
+    await page.locator('[data-disclosure="inventory"] summary').click();
+    await page.locator('[data-disclosure="editor-help"] summary').click();
+    await page.locator('#tool-number').press('Enter');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '0');
+    await page.keyboard.press('Space');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.num), '0');
+    assert.ok(await visible(), 'opening the picker brings its focused token into view');
+    const picker = await page.locator('.picker').boundingBox();
+    assert.ok(picker.y >= -1 && picker.y + picker.height <= viewport.height + 1, 'all number choices are visible together');
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.num), '12');
+    assert.ok(await visible(), 'changing a token retains visible focus');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), '0');
+    assert.ok(await visible(), 'returning to the tile brings it into view');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-number');
+    assert.ok(await visible(), 'returning to the Numbers tool brings it into view');
+    await page.close();
+  }
+});
+
 test('harbour labels do not intercept mouse clicks when painting a coastal hex', async t => {
   const page = await open(t, { width: 1400, height: 900 });
   await page.locator('.vx.legal').first().click();
