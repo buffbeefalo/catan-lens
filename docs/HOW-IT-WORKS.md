@@ -152,6 +152,22 @@ trade rates from this summary. In Cities & Knights mode, the app labels the figu
 comparison and withholds base-game build planning: its weighting switch does not model the starting
 city or commodities.
 
+### Try the same corners in the opposite order
+
+These two base-game links store the same tiles, harbours and settlement locations. Only the order of
+your settlements changes. Both average 22 cards per 36 rolls, collect on 14 of the 36 dice outcomes,
+and lack wood production.
+
+| Starting hand and example | Road still needs | Development card still needs |
+| --- | --- | --- |
+| [Brick, wheat and sheep](https://buffbeefalo.github.io/catan-lens/?players=4&seat=1&cak=0&bal=1&best=1&rseat=0&b=b3s8b10w6o4h5o9s2o9s11w6w12h5db3w11h10h8s4&h=5%3A3%2C6%3Ab%2C19%3As%2C27%3Ah%2C46%3Ao%2C52%3A3%2C60%3A3%2C64%3A3%2C67%3Aw&me=9%2C44&seq=m9%2Cm44) | 1 wood | 1 ore |
+| [Ore, wheat and sheep](https://buffbeefalo.github.io/catan-lens/?players=4&seat=1&cak=0&bal=1&best=1&rseat=0&b=b3s8b10w6o4h5o9s2o9s11w6w12h5db3w11h10h8s4&h=5%3A3%2C6%3Ab%2C19%3As%2C27%3Ah%2C46%3Ao%2C52%3A3%2C60%3A3%2C64%3A3%2C67%3Aw&me=44%2C9&seq=m44%2Cm9) | 1 wood and 1 brick | Hand covers cost |
+
+Open **Plan your first builds** under Your opening to inspect the difference. Starting cards come from
+the second settlement; changing its order changes the immediate options without changing production.
+The comparison uses the starting hand before rolls or trades, and buying still needs your turn. In a
+real draft, mark opponents first to check which locations remain available.
+
 ## 4. Drill mode
 
 Sixteen levels, easy to hard, on a table you choose first (3–6 players, base game or Cities & Knights

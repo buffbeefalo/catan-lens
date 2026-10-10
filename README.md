@@ -76,6 +76,8 @@ no analysis backend: the app is plain HTML, CSS and JavaScript modules with zero
 - **Review with friends.** Copy a link from Your board to keep explicit tiles, harbours and placement
   order. Everyone can inspect the same opening and discuss its tradeoffs.
 
+[Try a worked example](https://buffbeefalo.github.io/catan-lens/how-it-works.html#worked-example): the same two corners can give the same income but different starting hands and first-build options.
+
 With a weak connection, load the app first and keep the tab open. Entry, scoring, Drill and restoring
 earlier boards work without further downloads. Fresh loads, refreshes, help and videos may need a connection.
 
