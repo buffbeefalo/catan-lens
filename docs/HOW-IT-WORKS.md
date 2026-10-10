@@ -2,9 +2,13 @@
 
 Catan Lens answers one question: **where should I put my first two settlements?** It looks at every
 legal corner on the board, scores each one with a small set of rules that strong players agree on, and
-explains the result in plain sentences. No machine learning, no server, no randomness in the scoring:
+explains the result in plain sentences. No machine learning, no analysis backend, no randomness in the scoring:
 the same board always gets the same answer, and every sentence in the "Why this corner?" panel is built
 from the numbers that produced the score.
+
+The web guide's demonstration videos have captions and text transcripts. A playback failure opens the
+matching transcript; a failed or empty transcript download offers **Retry transcript**. The written
+guide remains available below the videos.
 
 ## 1. The board
 

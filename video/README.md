@@ -2,8 +2,8 @@
 
 The two videos on the How it works page are built from the real app, so they can be regenerated after any change.
 Narration and on-screen actions live together in `scenes.mjs`; the corners the videos click are computed with the
-app's own scoring code, and each action waits for the words that describe it, so the picture cannot drift from what
-the app recommends or from what the narrator is saying.
+app's own scoring code. Key actions follow cues from the recognised narration timings. Timeline and finished-file
+checks verify framing, narration starts, captions and picture quality; review the demonstrated flow as well.
 
 Nothing is screen-recorded. `record.cjs` drives the app in a browser and saves a 4x screenshot at every step, with
 the cursor path, clicks and camera framings written to a timeline. `render.py` then draws every 60 fps frame from
@@ -19,7 +19,7 @@ python -m venv video/.venv && video/.venv/bin/pip install -r video/requirements.
 
 # 1. Narration: Qwen3-TTS speaks each line four times; faster-whisper transcribes every take and the one that
 #    matches the script word for word, at the most typical length, is kept (build/<id>/narration.json).
-video/.venv/bin/python video/narrate.py            # --model DIR for a local copy of the model
+video/.venv/bin/python video/narrate.py            # --model DIR and --asr DIR accept local model copies
 
 # 2. Cards and recording: the designed frames, then the app itself (npm start serves it locally).
 npm start &
@@ -46,3 +46,29 @@ video/.venv/bin/python video/readme_media.py
 workflow copies them into the published site, so they never enter git history.
 
 What the checks cannot tell you: whether the voice sounds natural and the whole feels right. Watch the result.
+
+The walkthrough includes the combined opening's resource income, starting hand and separate build costs,
+the explicit harbour choice for custom boards, and the fresh-seed benchmark with its limits. The results card
+reads the `holdout` section of the published results and stops if it is missing. Opening facts distinguish
+expected cards from the chance of any income; the Cities & Knights switch is described as weighting only.
+The recorder supports explicit scrolling for content below the fold and still rejects unplanned scrolling.
+Run the timeline check after recording to catch cropped content before spending time on the full render.
+README feature images follow named camera targets and chapters in that timeline, so changed narration
+lengths cannot silently select a different feature at an old timestamp. They wait for screen transitions
+to finish, avoiding double text in a still image taken during a cross-fade.
+
+For fully local narration and checking, pass existing model directories with `--model` and `--asr`, and set
+`HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1`. A cached snapshot can be passed directly even if its model-name
+lookup is unavailable offline. The acceptance checker also takes `--asr DIR`. All video generation uses
+local models; the application itself makes no model or account requests.
+Use `--resume` after repairing a script line to retain matching, previously approved takes. Failed lines
+still receive only four takes, are recorded for inspection and make narration exit unsuccessfully;
+assembly also refuses unchecked narration. The recorder normalises British/American spellings like
+harbour/harbor consistently with the speech checker when matching a camera cue to spoken words.
+
+The 2026-10-09 refresh is 71.3 seconds for the overview and 195.6 seconds for the walkthrough, both
+1080p at 60 fps. Finished-file checks passed format, streaming index, loudness, narration timing,
+picture fidelity and all 21/52 caption cues. The recogniser matched 173/173 overview words and
+477/478 walkthrough words; its one difference was spelling the brand "Katan" instead of "Catan".
+The script and captions retain the correct name. These checks do not establish natural-sounding speech
+or playback on every device.

@@ -149,6 +149,44 @@ test('high-contrast keyboard focus remains distinct from the page beside a coast
   assert.equal(await page.locator('#keep').getAttribute('data-corner'), '0');
 });
 
+test('a failed help transcript has an explicit retry and recovers without losing the board link', async t => {
+  for (const failure of ['network', 'http', 'empty']) {
+    const page = await open(t, { width: 390, height: 844 });
+    let available = false;
+    await page.route('**/media/overview.txt', route => available
+      ? route.fulfill({ status: 200, contentType: 'text/plain', body: 'The recovered transcript explains the opening.' })
+      : failure === 'network' ? route.abort('failed') : route.fulfill({ status: failure === 'http' ? 503 : 200, contentType: 'text/plain', body: failure === 'http' ? 'Unavailable' : '  ' }));
+    await page.goto(base + 'how-it-works.html?seed=42&players=4', { waitUntil: 'networkidle' });
+    const transcript = page.locator('[data-transcript="overview"]');
+    await page.waitForFunction(() => document.querySelector('[data-transcript-status="overview"]').textContent.includes('could not be loaded'), null, { timeout: 2500 });
+    const details = transcript.locator('..');
+    if (!await details.evaluate(el => el.open)) await details.locator('summary').click();
+    const retry = details.getByRole('button', { name: 'Retry transcript' });
+    assert.equal(await retry.isVisible(), true);
+    assert.ok((await page.locator('[data-transcript="walkthrough"]').innerText()).length > 20, 'one failed transcript must not suppress the other');
+    available = true;
+    await retry.focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => document.querySelector('[data-transcript="overview"]').textContent.includes('recovered transcript'), null, { timeout: 2500 });
+    assert.equal(await retry.isVisible(), false);
+    assert.equal(await details.locator('summary').evaluate(el => el === document.activeElement), true, 'successful retry must leave useful keyboard focus');
+    assert.equal(new URL(await page.locator('#back-to-app').getAttribute('href'), page.url()).search, '?seed=42&players=4');
+    await page.close();
+  }
+});
+
+test('help video failures reveal a readable fallback and open the matching transcript', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.goto(base + 'how-it-works.html', { waitUntil: 'networkidle' });
+  await page.locator('video').first().dispatchEvent('error');
+  const notice = page.locator('[data-video-status="overview"]');
+  assert.equal(await notice.count(), 1);
+  assert.equal(await notice.isVisible(), true);
+  assert.match(await notice.innerText(), /transcript|written guide/i);
+  assert.equal(await page.locator('[data-transcript="overview"]').locator('..').evaluate(el => el.open), true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+});
+
 test('nearby phone taps and desktop clicks preview the closest corner across both board sizes', async t => {
   for (const width of [320, 390, 1400]) for (const players of [4, 6]) {
     const page = await open(t, { width, height: 1000 }, `?players=${players}&seed=42`);

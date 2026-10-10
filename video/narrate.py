@@ -13,6 +13,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 
 import numpy as np
 import soundfile as sf
@@ -106,19 +107,34 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
     ap.add_argument("--asr", default="medium.en")
+    ap.add_argument("--resume", action="store_true", help="reuse matching lines whose existing takes passed every check")
     ap.add_argument("ids", nargs="*")
     a = ap.parse_args()
     from faster_whisper import WhisperModel
     from qwen_tts import Qwen3TTSModel
     tts = Qwen3TTSModel.from_pretrained(a.model, device_map="cuda:0", dtype=torch.bfloat16, attn_implementation="sdpa")
     asr = WhisperModel(a.asr, device="cpu", compute_type="int8", cpu_threads=8)
+    failed = []
     for v in script():
         if a.ids and v["id"] not in a.ids:
             continue
         out = os.path.join(HERE, "build", v["id"])
         os.makedirs(os.path.join(out, "voice"), exist_ok=True)
+        previous = []
+        metadata = os.path.join(out, "narration.json")
+        if a.resume and os.path.exists(metadata):
+            saved = json.load(open(metadata))
+            if not saved.get("dryRun"):
+                previous = saved.get("scenes", []) + [saved.get("outro", {})]
         lines = []
         for i, text in enumerate(v["lines"]):
+            old = previous[i] if i < len(previous) else {}
+            kept = old.get("kept", {})
+            if (a.resume and old.get("text") == text and os.path.isfile(os.path.join(out, old.get("file", "")))
+                    and kept.get("errors", MAX_ERRORS + 1) <= MAX_ERRORS and kept.get("gap", GAP_LIMIT + 1) <= GAP_LIMIT):
+                lines.append(old)
+                print(f"{v['id']} line {i}: reused verified take", flush=True)
+                continue
             ref, takes = words(text), []
             for k in range(TAKES):
                 torch.manual_seed(1000 * i + k + 1)
@@ -145,6 +161,8 @@ def main():
                           "words": [{"w": w["w"].strip(), "start": round(w["start"], 3), "end": round(w["end"], 3)} for w in best["words"]],
                           "kept": {"errors": best["errors"], "gap": round(best["gap"], 2), "heard": best["heard"]}})
             flag = "" if best["errors"] <= MAX_ERRORS and best["gap"] <= GAP_LIMIT else "   <-- CHECK"
+            if flag:
+                failed.append(f"{v['id']} line {i}")
             print(f"{v['id']} line {i}: {best['duration']:.1f} s, {best['errors']} word errors, longest pause {best['gap']:.2f} s "
                   f"(takes: {[t['errors'] for t in takes]}){flag}", flush=True)
         for f in os.listdir(os.path.join(out, "voice")):
@@ -153,6 +171,8 @@ def main():
         json.dump({"speaker": SPEAKER, "style": STYLE, "scenes": lines[:-1], "outro": lines[-1]},
                   open(os.path.join(out, "narration.json"), "w"), indent=1)
         print(f"{v['id']}: {len(lines)} lines, {sum(l['duration'] for l in lines):.1f} s of narration")
+    if failed:
+        sys.exit("Narration needs repair: " + ", ".join(failed))
 
 
 if __name__ == "__main__":

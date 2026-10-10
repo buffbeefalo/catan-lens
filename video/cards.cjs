@@ -11,7 +11,8 @@ const FPS = 60;
 (async () => {
   const { VIDEOS, SITE } = await import('./scenes.mjs');
   const want = process.argv.slice(2);
-  const results = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'media', 'results.json'), 'utf8'));
+  const results = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'public', 'media', 'results.json'), 'utf8')).holdout;
+  if (!results?.arms?.length) throw new Error('Fresh benchmark results are missing');
   const browser = await chromium.launch({ headless: true, args: ['--disable-gpu'], executablePath: process.env.CHROMIUM_PATH || undefined });
   const url = 'file://' + path.join(__dirname, 'cards.html');
   for (const v of VIDEOS.filter(v => !want.length || want.includes(v.id))) {

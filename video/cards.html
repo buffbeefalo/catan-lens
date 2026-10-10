@@ -43,11 +43,11 @@
   .bar{position:absolute;left:0;top:0;bottom:0;border-radius:10px;background:#6d7a6e}
   .row.lens .bar{background:linear-gradient(90deg,#3f8a5a,#5fa874)}
   .row .val{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:34px;font-weight:600;white-space:nowrap;padding-left:22px}
-  .val small{font-size:22px;color:var(--mut);font-weight:400;margin-left:10px}
+  .val small{font-size:28px;color:var(--mut);font-weight:400;margin-left:10px}
   #rows{position:relative}
   .fair{position:absolute;top:-14px;bottom:14px;width:0;border-left:3px dashed rgba(241,206,120,.85)}
   .fair span{position:absolute;top:-40px;left:-110px;width:220px;text-align:center;font-size:22px;color:var(--gold)}
-  #results .note{font-size:26px;color:var(--mut);margin-top:40px}
+  #results .note{font-size:28px;color:var(--mut);margin-top:40px}
 </style>
 </head>
 <body>
@@ -73,10 +73,10 @@
 </div>
 
 <div class="layer" id="results"><div class="wrap">
-  <h2>Does following it win?</h2>
+  <h2>Opening choices in bot games</h2>
   <div class="sub" id="r-sub"></div>
   <div id="rows"></div>
-  <div class="note">Only the opening differs. The rest of every game is played by the same bot.</div>
+  <div class="note">95% intervals across runs. Four-player base game; no personal win-rate prediction.</div>
 </div></div>
 
 <script>
@@ -95,7 +95,7 @@ window.__load = (data, which) => {
   if (which === 'outro') { $('#end').style.display = 'flex'; $('#e-title').textContent = D.outro.title; $('#e-line').textContent = D.outro.line; $('#e-url').textContent = D.site; }
   if (which === 'results') {
     $('#results').style.display = 'block';
-    $('#r-sub').textContent = `${(D.results.games * D.results.arms.length).toLocaleString('en-US')} complete four-player games between Catanatron's strong bots, in ${D.results.runs} independent runs. One seat's opening comes from each strategy. A fair seat wins 25%.`;
+    $('#r-sub').textContent = `Fresh-seed test · 9 October 2026 · ${(D.results.games * D.results.arms.length).toLocaleString('en-US')} complete games, ${D.results.runs} runs. Only one seat's opening differs; the same value-function bot plays on afterward.`;
     $('#rows').innerHTML = D.results.arms.map(a => `<div class="row${a.key.startsWith('lens') ? ' lens' : ''}"><div class="lab">${a.label}</div><div class="track"><div class="bar"></div><div class="val"><b>0.0%</b><small>± ${a.ci.toFixed(1)}</small></div></div></div>`).join('') + '<div class="fair"><span>fair seat, 25%</span></div>';
   }
 };

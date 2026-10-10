@@ -27,12 +27,12 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 
 <table>
 <tr>
-<td width="50%"><a href="https://buffbeefalo.github.io/catan-lens/how-it-works.html#overview"><img src="docs/media/video-overview.jpg" alt="Watch: Catan Lens in one minute"></a></td>
+<td width="50%"><a href="https://buffbeefalo.github.io/catan-lens/how-it-works.html#overview"><img src="docs/media/video-overview.jpg" alt="Watch: Catan Lens: plan your opening"></a></td>
 <td width="50%"><a href="https://buffbeefalo.github.io/catan-lens/how-it-works.html#walkthrough"><img src="docs/media/video-walkthrough.jpg" alt="Watch: How Catan Lens works"></a></td>
 </tr>
 <tr>
-<td><b>Catan Lens in one minute</b><br>The best corner, why it wins, and how your own pick compares.</td>
-<td><b>How Catan Lens works</b><br>The scoring, the snake draft, Drill mode and entering your own board.</td>
+<td><b>Catan Lens: plan your opening</b><br>Compare corners, see your resource income, and plan your first builds.</td>
+<td><b>How Catan Lens works</b><br>The scoring, opening resources, snake draft, Drill mode and entering your own board.</td>
 </tr>
 </table>
 
@@ -62,7 +62,7 @@ resources, your starting hand and the cards still needed for each first build. P
 before committing a second corner; blind practice keeps them hidden until you choose.
 
 Light and dark themes: it follows your device, or pick one with the switch in the header. No account, no tracking,
-no server: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
+no analysis backend: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
 
 <sub>Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio. CATAN is a trademark of Catan GmbH.</sub>
 

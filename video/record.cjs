@@ -1,5 +1,5 @@
 // Records each demo video from the live app as a timeline, not a screen capture: every step saves a sharp
-// 2x screenshot of the page, and the cursor path, clicks and camera moves are written down with their times.
+// 4x screenshot of the page, and the cursor path, clicks and camera moves are written down with their times.
 // render.py then draws the frames (camera zooms, cursor, cards) from that. Needs the narration timings
 // first (narrate.py), so each scene lasts at least as long as its narration.
 // Writes build/<id>/states/*.png and build/<id>/timeline.json.
@@ -26,10 +26,11 @@ const OUTRO_MIN = 5.5;  // the end card stays up at least this long
 // Words as narrate.py compares them: lower case, digits spelled out ("6" and "six" match), hyphens split.
 const ONES = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
 const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const SPELLING = { practise: 'practice', harbour: 'harbor', harbours: 'harbors' };
 const spell = n => n < 20 ? ONES[n] : n < 100 ? TENS[Math.floor(n / 10)] + (n % 10 ? ' ' + ONES[n % 10] : '')
   : n < 1000 ? ONES[Math.floor(n / 100)] + ' hundred' + (n % 100 ? ' ' + spell(n % 100) : '') : spell(Math.floor(n / 1000)) + ' thousand' + (n % 1000 ? ' ' + spell(n % 1000) : '');
 const norm = text => text.toLowerCase().replace(/’/g, "'").replace(/(\d),(\d)/g, '$1$2').replace(/\d+/g, d => ` ${spell(Number(d))} `)
-  .replace(/-/g, ' ').replace(/[^a-z' ]/g, ' ').split(/\s+/).map(w => w.replace(/^'+|'+$/g, '')).filter(Boolean);
+  .replace(/&/g, ' and ').replace(/-/g, ' ').replace(/[^a-z' ]/g, ' ').split(/\s+/).map(w => w.replace(/^'+|'+$/g, '')).filter(Boolean).map(w => SPELLING[w] || w);
 const moveTime = (a, b) => Math.min(1.05, 0.42 + Math.hypot(b[0] - a[0], b[1] - a[1]) / 1800);
 
 (async () => {
@@ -54,10 +55,11 @@ const moveTime = (a, b) => Math.min(1.05, 0.42 + Math.hypot(b[0] - a[0], b[1] - 
     await page.mouse.move(...cursor);
     const tl = { title: v.title, viewport: VIEW, dpr: DPR, layout: LAYOUT, margin: MARGIN, states: [], moves: [], clicks: [], camera: [], scenes: [], segments: [] };
     let voice = 0, words = [];   // the current scene's narration start and word timings, for u.at
+    let expectedScroll = 0;
     const seen = new Map();
     async function snap(at) {
       await page.waitForTimeout(120);          // let hover styles and re-renders land
-      if (await page.evaluate(() => scrollY) !== 0) throw new Error(`${v.id}: the page scrolled; frame a step that fits the window`);
+      if (await page.evaluate(() => scrollY) !== expectedScroll) throw new Error(`${v.id}: the page scrolled unexpectedly; use an explicit scroll step`);
       const buf = await page.screenshot({ type: 'png' });
       const key = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16);
       if (!seen.has(key)) { seen.set(key, `states/${key}.png`); fs.writeFileSync(path.join(dir, `states/${key}.png`), buf); }
@@ -87,6 +89,19 @@ const moveTime = (a, b) => Math.min(1.05, 0.42 + Math.hypot(b[0] - a[0], b[1] - 
       async expect(sel, text) {
         const got = await page.locator(sel).first().innerText();
         if (!got.includes(text)) throw new Error(`${v.id}: expected "${text}" in ${sel}, the page shows "${got.slice(0, 120)}"`);
+      },
+      async scrollTo(sel) {
+        const from = expectedScroll;
+        const rect = await rectOf(sel);
+        const max = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+        const to = sel === 'page' ? 0 : Math.max(0, Math.min(max, from + (rect[1] + rect[3] - VIEW.height) / 2));
+        for (let step = 1; step <= 6; step++) {
+          const p = step / 6, ease = p * p * (3 - 2 * p);
+          await page.evaluate(y => window.scrollTo({ top: y, behavior: 'instant' }), from + (to - from) * ease);
+          expectedScroll = await page.evaluate(() => scrollY);
+          T += 0.12;
+          await snap(T);
+        }
       },
       async focus(sel, opts = {}) {
         const [x0, y0, x1, y1] = await rectOf(sel), [W, H] = LAYOUT.out, [ox, oy] = LAYOUT.content;

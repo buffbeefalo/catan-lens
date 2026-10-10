@@ -36,6 +36,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   a new preview during Drill setup still preserves the original free-play return.
   High-contrast checks cover visible selected controls in light/dark palettes and a coastal keyboard
   focus ring against the page. These are browser emulations, not an assistive-technology certification.
+  Media fallback checks simulate network errors, unsuccessful HTTP responses and empty transcripts,
+  then retry successfully with keyboard focus retained. Video errors open the corresponding transcript.
 
 Each walkthrough ends with an `... OK, zero page errors` line. Some write drill progress to the browser's
 localStorage; every run starts from a fresh browser context.
