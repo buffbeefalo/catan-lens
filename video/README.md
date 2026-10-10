@@ -59,6 +59,8 @@ Run the timeline check after recording to catch cropped content before spending 
 README feature images follow named camera targets and chapters in that timeline, so changed narration
 lengths cannot silently select a different feature at an old timestamp. They wait for screen transitions
 to finish, avoiding double text in a still image taken during a cross-fade.
+The draft passage frames the actual road explanation, including the projection behind a skipped target.
+Readability checks measure text on the camera target itself as well as its children.
 
 For fully local narration and checking, pass existing model directories with `--model` and `--asr`, and set
 `HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1`. A cached snapshot can be passed directly even if its model-name
@@ -69,12 +71,12 @@ still receive only four takes, are recorded for inspection and make narration ex
 assembly also refuses unchecked narration. The recorder normalises British/American spellings like
 harbour/harbor consistently with the speech checker when matching a camera cue to spoken words.
 
-The 2026-10-09 refresh is 71.3 seconds for the overview and 195.6 seconds for the walkthrough, both
+The 2026-10-09 refresh is 71.3 seconds for the overview and 195.2 seconds for the walkthrough, both
 1080p at 60 fps. Finished-file checks passed format, streaming index, loudness, narration timing,
 picture fidelity and all 21/52 caption cues. The recogniser matched 173/173 overview words and
-477/478 walkthrough words; its one difference was spelling the brand "Katan" instead of "Catan".
-The script and captions retain the correct name. These checks do not establish natural-sounding speech
-or playback on every device.
+472/472 walkthrough words. The revised draft passage describes the model's opening choices and
+explains that a road destination is not guaranteed to remain available. These checks do not establish
+natural-sounding speech or playback on every device.
 
 The later owned-harbour correction was reviewed against these demonstrations: the seed-42 first/second
 choices, second ranking and both suggested roads are unchanged. The results card remains the dated

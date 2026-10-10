@@ -113,7 +113,7 @@ const moveTime = (a, b) => Math.min(1.05, 0.42 + Math.hypot(b[0] - a[0], b[1] - 
           if (opts.read) {
             font = await page.locator([sel].flat()[0]).first().evaluate(el => {
               let min = Infinity;
-              for (const n of el.querySelectorAll('*')) if ([...n.childNodes].some(c => c.nodeType === 3 && c.textContent.trim()) && n.getClientRects().length) min = Math.min(min, parseFloat(getComputedStyle(n).fontSize));
+              for (const n of [el, ...el.querySelectorAll('*')]) if ([...n.childNodes].some(c => c.nodeType === 3 && c.textContent.trim()) && n.getClientRects().length) min = Math.min(min, parseFloat(getComputedStyle(n).fontSize));
               return min;
             });
             const need = Math.ceil(READ_PX / font * 1e4) / 1e4;

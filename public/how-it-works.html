@@ -100,11 +100,13 @@
     <tr><td>Harbours</td><td>When included, 3:1 helps anyone; 2:1 helps most when you produce plenty of that resource. A harbour type you already own adds no duplicate bonus. A nearby harbour needs two roads and a new settlement before use.</td></tr>
     <tr><td>Room to grow</td><td>A strong open corner two roads away is worth something; a dead end is not.</td></tr>
     <tr><td>Second settlement</td><td>Credit for covering what the first one lacks, especially wheat and ore.</td></tr>
-    <tr><td>Starting road</td><td>Point it at the best corner two roads away that the other seats are not likely to take before your next turn.</td></tr>
+    <tr><td>Starting road</td><td>Prefer a direction with a useful two-road destination; the card explains conflicts in the projected setup.</td></tr>
   </table>
   <p>Every rule traces to a published source. The source table, the exact weights and what was left out are in
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/RESEARCH.md">RESEARCH.md</a>; the full explanation is in
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/HOW-IT-WORKS.md">HOW-IT-WORKS.md</a>.</p>
+
+  <p><b>Projected placements</b> shows this model's choices for each unmarked turn. People may choose differently. Road advice considers the remaining setup; if its target is also your projected second settlement, the card explains that the site would be occupied when setup ends. <b>Show best</b> reveals road hints in the map and verdicts.</p>
 
   <h2>Does following it win games?</h2>
   <p id="policy-version-note">The current version avoids rewarding a harbour type you already own. Its comparison is separate from the earlier scoring policy's results below; no weights were tuned on these outcomes.</p>
@@ -158,13 +160,17 @@
     load();
   }
   for (const video of document.querySelectorAll('[data-video]')) {
+    const status = document.querySelector(`[data-video-status="${video.dataset.video}"]`);
     const failed = () => {
-      document.querySelector(`[data-video-status="${video.dataset.video}"]`).hidden = false;
+      status.hidden = false;
       document.querySelector(`[data-transcript="${video.dataset.video}"]`).closest('details').open = true;
     };
     video.addEventListener('error', failed);
     video.querySelector('source').addEventListener('error', failed);
-    if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) failed();
+    video.addEventListener('loadeddata', () => { status.hidden = true; });
+    const check = () => { if (video.error || video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) failed(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check, { once: true });
+    else check();
   }
   const showResults = (id, data) => {
     if (!data?.arms?.length) throw new Error('Missing benchmark data');

@@ -114,6 +114,12 @@ copy. An absent choice is unavailable, retains the out-of-range rank sentinel, a
 including when the ranking is empty or has fewer entries than the stage target. Valid grades and
 complete-board scores are unchanged by these guards.
 
+Starting-road explanations use the same full opening projection as the target filter. They identify
+opponent conflicts as projected setup choices, and flag a target also assigned to the player's
+unplaced second settlement. This adds no score term or direction preference. `roadLine` shares the
+existing `reveal()` guard with road drawing, so a first-pick verdict cannot expose future road targets
+during blind second-pick practice. Committed-pick grading remains visible.
+
 `setupStage` reports `fitsDifficulty` from its actual top-two margin and the stage's inclusive band.
 It subtracts integer hundredths, matching the score precision so decimal noise cannot exclude a boundary.
 The bounded seed search and the UI use that same result. The notice therefore survives explicit seed
@@ -135,6 +141,9 @@ The help header preserves its return query immediately, without awaiting a modul
 video-fallback and benchmark handlers initialize separately from the theme module, so a delayed or
 failed theme download cannot strand the return link or leave that content uninitialized. The help
 theme control stays inert until its handler is installed.
+Video/source error events reveal the matching transcript. The initial retrospective media check waits
+until parsing completes, since `NETWORK_NO_SOURCE` can precede source selection in a healthy video.
+`loadeddata` clears an obsolete failure notice without collapsing a transcript the user may be reading.
 
 Keyboard or assistive activation of Your board focuses its first tool; activating a tool focuses the
 first editable hex or coast edge. These transitions use the button click's zero `detail`; pointer

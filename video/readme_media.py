@@ -18,7 +18,7 @@ OUT = os.path.join(HERE, "..", "docs", "media")
 SHOTS = [
     ("hero.jpg", "overview", "#svg + #panel", "first"),
     ("feature-why.jpg", "overview", ".best-card .why", None),
-    ("feature-draft.jpg", "walkthrough", "#svg", "The draft"),
+    ("feature-draft.jpg", "walkthrough", ".best-card .road", "The draft"),
     ("feature-drill.jpg", "walkthrough", ".card.drill", None),
     ("feature-board.jpg", "walkthrough", "#svg + #panel", "Your board"),
 ]

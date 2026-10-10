@@ -132,11 +132,15 @@ stays dominant.
   score cannot look like a 100% tie or cross the 90% grade boundary through display rounding.
 - **Opponents.** Switch to "Mark opponent" and click where others placed; the ranking only counts what is
   still open.
-- **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app plays
-  that draft out with the same rules for every seat, so you can see what is likely to be gone before your
-  turn comes back.
+- **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app fills
+  unmarked turns with its own highest-ranked legal choice for each seat. Actual players can choose
+  differently; this is an opening scenario, not a prediction of a particular opponent.
 - **Starting road.** For each settlement the app suggests which way to point the free road: toward the
-  best open corner two roads away, preferring a direction with more than one option.
+  best open corner two roads away, preferring a direction with more than one option. It considers the
+  other seats' remaining setup placements, including turns after your second settlement. The card
+  names projected conflicts and warns when its target is also your own projected second settlement:
+  following that opening would occupy the site during setup. With **Show best** off, road hints stay
+  hidden in both the map and earlier verdicts until you reveal them; committed-pick grades remain available.
 
 ### What your opening can produce and build
 

@@ -301,11 +301,12 @@ export function suggestRoad(board, settings, vid, { mine = [], occupied = [] } =
   const facts = boardFacts(board);
   const taken = new Set([...occupied, vid]);
   const mineAfter = mine.includes(vid) ? mine : [...mine, vid];
-  // A target the other seats will take (or block) before your next turn is not worth aiming at: play the
+  // A target the other seats take (or block) in the projected opening is not worth aiming at: play the
   // rest of the opening draft forward and keep only corners that survive it. Over the same 400 simulated openings
   // (bench/catanatron/road_deadends.py) the first road ended in a dead end after setup 52% of the time without this
   // filter and 22% with it. If nothing survives, fall back to what is open now.
-  const projected = simulateDraft(board, settings, { me: mineAfter, opp: occupied.filter(x => !mineAfter.includes(x)) }).filter(d => !d.you && !d.actual).map(d => d.id);
+  const projection = simulateDraft(board, settings, { me: mineAfter, opp: occupied.filter(x => !mineAfter.includes(x)) });
+  const projected = projection.filter(d => !d.you && !d.actual).map(d => d.id);
   const now = new Set(legalVertices(g, [...taken]));
   const safe = new Set(legalVertices(g, [...taken, ...projected]));
   const reachable = set => v.neighbors.some(n => !taken.has(n) && g.vertices[n].neighbors.some(nn => nn !== vid && set.has(nn)));
@@ -327,11 +328,12 @@ export function suggestRoad(board, settings, vid, { mine = [], occupied = [] } =
   const t = pick.target;
   const port = portsAt(board, t.id)[0];
   const describeCorner = c => `${c.pips}-pip corner (${Object.entries(c.prod).map(([r, p]) => `${p} ${NAMES[r].toLowerCase()}`).join(', ') || 'no production'})`;
-  // Say why a better-looking corner within reach was skipped: it will probably be gone by your next turn.
+  // Explain the projected placements behind a skipped corner and a target used for the own second pick.
   const twoAway = new Set(v.neighbors.filter(n => !taken.has(n)).flatMap(n => g.vertices[n].neighbors).filter(nn => nn !== vid));
   const lost = contested ? null : [...twoAway].filter(x => now.has(x) && !safe.has(x))
     .map(x => scoreVertex(board, settings, x, { mine: mineAfter, occupied: [...taken], facts, maxPips })).filter(x => x.score > t.score)
     .sort((a, b) => b.score - a.score || a.id - b.id)[0];
-  const text = `Road: point it toward the ${describeCorner(t)}${port !== undefined ? `, which sits on the ${port === '3:1' ? '3:1' : '2:1 ' + NAMES[port].toLowerCase()} port` : ''}. ${contested ? 'Every direction is contested: the other seats are likely to take or block it before your next turn.' : pick.options > 1 ? `${pick.options} open corners lie that way, so the direction stays flexible.` : 'It is the only open corner that way, so take it before someone else does.'}${lost ? ` The ${describeCorner(lost)} nearby is likely to be taken or blocked before your next turn.` : ''}`;
+  const ownSecond = projection.find(d => d.you && d.round === 2 && !d.actual);
+  const text = `Road: point it toward the ${describeCorner(t)}${port !== undefined ? `, which sits on the ${port === '3:1' ? '3:1' : '2:1 ' + NAMES[port].toLowerCase()} port` : ''}. ${contested ? 'Every direction is contested in the projected opening: the other seats take or block the two-road targets.' : pick.options > 1 ? `${pick.options} open corners lie that way, so the direction stays flexible.` : 'It is the only open corner that way, so take it before someone else does.'}${lost ? ` The ${describeCorner(lost)} nearby is taken or blocked by another seat in the projected opening.` : ''}${ownSecond?.id === t.id ? ' The opening projection also uses this target for your second settlement, so it would already be occupied when setup ends.' : ''}`;
   return { edge, via: pick.via, target: { id: t.id, score: t.score, pips: t.pips, prod: t.prod, numbers: t.numbers }, options: pick.options, text };
 }

@@ -397,7 +397,7 @@ test('starting road points along an edge of the settlement toward the best legal
   }
 });
 
-test('starting road avoids a corner the other seats are projected to take before your next turn (R13)', () => {
+test('starting road avoids a corner the other seats take in the projected opening (R13)', () => {
   const b = generateBoard({ seed: 1 });   // seat 1's best corner is 43; the old road aimed at 33, seat 2's projected first pick
   const r = suggestRoad(b, S(), 43);
   const projected = simulateDraft(b, S(), { me: [43] }).filter(d => !d.you && !d.actual).map(d => d.id);
@@ -405,7 +405,29 @@ test('starting road avoids a corner the other seats are projected to take before
   assert.ok(!legalVertices(b.graph, [43, ...projected]).includes(33));
   assert.notEqual(r.target.id, 33);
   assert.ok(legalVertices(b.graph, [43, ...projected]).includes(r.target.id), 'the new target survives the projected draft');
-  assert.match(r.text, /The \d+-pip corner .* is likely to be taken or blocked before your next turn/, 'the card says why the road skips the better-looking corner');
+  assert.match(r.text, /The \d+-pip corner .* is taken or blocked by another seat in the projected opening/, 'the card identifies the projection behind the skipped corner');
+  assert.doesNotMatch(r.text, /before your next turn|likely|probably/);
+});
+
+test('a starting-road explanation identifies a target used by the projected own second settlement', () => {
+  const b = generateBoard({ seed: 10 }), settings = S({ players: 3, seat: 2 });
+  const draft = simulateDraft(b, settings, { me: [44], opp: [24] });
+  assert.equal(draft.find(d => d.you && d.round === 2).id, 46);
+  const r = suggestRoad(b, settings, 44, { occupied: [24] });
+  assert.equal(r.edge, 57);
+  assert.equal(r.target.id, 46);
+  assert.match(r.text, /also uses this target for your second settlement/);
+  assert.match(r.text, /occupied when setup ends/);
+  const other = suggestRoad(generateBoard({ seed: 1 }), S(), 43);
+  assert.doesNotMatch(other.text, /also uses this target for your second settlement/);
+});
+
+test('the last seat gets projected setup guidance without a false intervening-turn claim', () => {
+  const b = generateBoard({ seed: 1 });
+  const r = suggestRoad(b, S({ players: 4, seat: 4 }), 2, { occupied: [43, 33, 41] });
+  assert.equal(r.target.id, 8);
+  assert.match(r.text, /in the projected opening/);
+  assert.doesNotMatch(r.text, /before your next turn|likely|probably/);
 });
 
 test('starting road for the last pick of the draft is unchanged: nobody places after it (R13)', () => {

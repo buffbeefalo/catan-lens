@@ -276,7 +276,7 @@ function drawMarks() {
 }
 // R13 starting road for a settlement, against the pieces on the board right now.
 const roadHint = id => suggestRoad(analysisBoard, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
-const roadLine = id => { const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No road makes progress from here: every corner two roads away is already taken.')}</p>`; };
+const roadLine = id => { if (!reveal()) return ''; const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No road makes progress from here: every corner two roads away is already taken.')}</p>`; };
 // Can a click on the board do anything right now?
 const canPlace = () => !state.linkError && (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
 const house = (x, y) => `M${x - 0.2},${y + 0.18} L${x - 0.2},${y - 0.05} L${x},${y - 0.24} L${x + 0.2},${y - 0.05} L${x + 0.2},${y + 0.18} Z`;
@@ -668,7 +668,7 @@ function render() {
   if (reveal() && draft.length) {
     const canPick = d => !d.actual && state.mode === 'me' && stage !== 'done' && !(state.drill && state.answered !== null);
     out += html`<div class="card"><details class="draft-details" data-disclosure="draft"><summary>Projected placements</summary>
-      <p class="sub">Seats pick 1 to ${state.players}, then back from ${state.players} to 1. Solid badges are first settlements, dashed are second. Your settlements and any opponent marks are counted in turn order; the rest is projected.</p>
+      <p class="sub">Seats pick 1 to ${state.players}, then back from ${state.players} to 1. Solid badges are first settlements, dashed are second. Your settlements and opponent marks are counted in turn order; the rest shows this model’s choices. Players may choose differently.</p>
       <ol class="rank draft">${draft.map(d => `<li data-id="${canPick(d) ? d.id : ''}" class="${d.you ? 'you' : ''}${canPick(d) ? '' : ' fixed'}" aria-current="${state.pick === d.id}" >${canPick(d) ? '<button class="draft-choice">' : ''}<span class="n">${d.seat}${d.round === 2 ? '′' : ''}</span><span>${d.you ? '<b>You</b> · ' : ''}${esc(cornerDesc(d.id))}</span><span class="s">${d.actual ? 'placed' : d.score.toFixed(2)}</span>${canPick(d) ? '</button>' : ''}</li>`).join('')}</ol></details></div>`;
   }
 

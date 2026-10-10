@@ -112,6 +112,19 @@ test('help return links and content work while the theme download is delayed or 
   }
 });
 
+test('first-pick feedback keeps future road hints hidden during blind practice', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?seed=10&players=3&seat=2&best=0&me=44&opp=24&seq=o24,m44');
+  assert.equal(await page.locator('.verdict').count(), 1, 'the committed first pick still gets feedback');
+  assert.equal(await page.locator('.verdict .road, #svg .road').count(), 0, 'future road destinations stay hidden before the blind second pick');
+  await page.locator('.vx.legal[aria-label="Corner 46"]').press('Enter');
+  await page.locator('#keep').click();
+  assert.equal(await page.locator('.piece.me').count(), 2);
+  assert.equal(await page.locator('.verdict .road, #svg .road').count(), 0);
+  await page.locator('#showbest').click();
+  assert.equal(await page.locator('.verdict .road').count(), 2, 'Show best restores the road explanations');
+  assert.equal(await page.locator('#svg .road.me').count(), 2);
+});
+
 test('generated board replacements retain the prior board and placement order through refresh and history', async t => {
   for (const width of [390, 1400]) for (const action of ['new', 'balanced', 'seed']) {
     const page = await open(t, { width, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');
@@ -269,6 +282,37 @@ test('help video failures reveal a readable fallback and open the matching trans
   assert.match(await notice.innerText(), /transcript|written guide/i);
   assert.equal(await page.locator('[data-transcript="overview"]').locator('..').evaluate(el => el.open), true);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+});
+
+test('help media waits for source selection and clears a failure after playable data returns', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  const wav = Buffer.alloc(844); wav.fill(128, 44);
+  wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8);
+  wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(8000, 28); wav.writeUInt16LE(1, 32);
+  wav.writeUInt16LE(8, 34); wav.write('data', 36); wav.writeUInt32LE(800, 40);
+  await page.route('**/how-it-works.html', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: (await response.text()).replaceAll('type="video/mp4"', 'type="audio/wav"') });
+  });
+  let available = true;
+  await page.route('**/media/*.mp4', route => available
+    ? route.fulfill({ contentType: 'audio/wav', body: wav }) : route.abort());
+  await page.goto(base + 'how-it-works.html', { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => [...document.querySelectorAll('video')].every(v => v.readyState >= 2));
+  for (const id of ['overview', 'walkthrough']) {
+    assert.equal(await page.locator(`[data-video-status="${id}"]`).isVisible(), false, 'source selection is not a playback failure');
+    assert.equal(await page.locator(`[data-transcript="${id}"]`).locator('..').evaluate(el => el.open), false);
+  }
+  const video = page.locator('[data-video="overview"]'), notice = page.locator('[data-video-status="overview"]');
+  available = false; await video.evaluate(v => v.load());
+  await page.waitForFunction(() => !document.querySelector('[data-video-status="overview"]').hidden);
+  assert.equal(await notice.isVisible(), true);
+  assert.equal(await page.locator('[data-transcript="overview"]').locator('..').evaluate(el => el.open), true);
+  available = true; await video.evaluate(v => v.load());
+  await page.waitForFunction(() => document.querySelector('[data-video="overview"]').readyState >= 2);
+  assert.equal(await notice.isVisible(), false, 'a recovered playable source must not retain a failure notice');
+  assert.equal(await page.locator('[data-transcript="overview"]').locator('..').evaluate(el => el.open), true, 'recovery keeps a readable transcript open');
 });
 
 test('nearby phone taps and desktop clicks preview the closest corner across both board sizes', async t => {
