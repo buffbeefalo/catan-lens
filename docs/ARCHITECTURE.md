@@ -142,6 +142,9 @@ opponent conflicts as projected setup choices, and flag a target also assigned t
 unplaced second settlement. This adds no score term or direction preference. `roadLine` shares the
 existing `reveal()` guard with road drawing, so a first-pick verdict cannot expose future road targets
 during blind second-pick practice. Committed-pick grading remains visible.
+Both the expansion factor and road hint check destinations exactly two edges away. A missing destination
+can mean a corner is blocked by the settlement distance rule, not occupied. Their messages state that
+limit; neither infers that longer routes are impossible.
 
 `setupStage` reports `fitsDifficulty` from its actual top-two margin and the stage's inclusive band.
 It subtracts integer hundredths, matching the score precision so decimal noise cannot exclude a boundary.

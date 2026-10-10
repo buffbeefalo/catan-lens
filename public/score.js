@@ -173,7 +173,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   const expansion = best ? best.pips * EXPANSION : 0;
   if (best && best.pips >= 8) parts.push({ k: 'expansion', v: round(expansion), text: `Room to grow: ${best.pips === 8 || best.pips === 11 || best.pips === 18 ? 'an' : 'a'} ${best.pips}-pip corner (${list(Object.entries(best.prod).map(([r, p]) => `${p} ${NAMES[r]}`))}) sits two roads away.` });
   else if (best) parts.push({ k: 'expansion', v: round(expansion), text: `Room to grow is thin: the best open corner two roads away has only ${best.pips} pip${best.pips === 1 ? '' : 's'}.` });
-  else parts.push({ k: 'expansion', v: 0, text: 'Boxed in: no open corner two roads away — a dead end.' });
+  else parts.push({ k: 'expansion', v: 0, text: 'No open settlement site two roads away. Longer routes are not included in this expansion bonus.' });
 
   // R9 second-settlement complement
   let complement = 0;
@@ -300,16 +300,18 @@ export function simulateDraft(board, settings, { me = [], opp = [] } = {}) {
 // you can actually reach (two roads away), preferring a direction that keeps more than one option
 // open. Targets are scored with the same ranking as everything else (so a fed port or a resource
 // you lack counts, as the guides say), and a corner is only a target if it stays legal once this
-// settlement is placed. Returns null when every corner two roads away is taken (a dead end).
+// settlement is placed. Returns null when every two-road destination is occupied or blocked;
+// longer routes are outside this search.
 export function suggestRoad(board, settings, vid, { mine = [], occupied = [] } = {}) {
   const g = board.graph, v = g.vertices[vid];
   const facts = boardFacts(board);
   const taken = new Set([...occupied, vid]);
   const mineAfter = mine.includes(vid) ? mine : [...mine, vid];
   // A target the other seats take (or block) in the projected opening is not worth aiming at: play the
-  // rest of the opening draft forward and keep only corners that survive it. Over the same 400 simulated openings
-  // (bench/catanatron/road_deadends.py) the first road ended in a dead end after setup 52% of the time without this
-  // filter and 22% with it. If nothing survives, fall back to what is open now.
+  // rest of the opening draft forward and keep only corners that survive it. In the original 2026-09-29
+  // comparison of 400 openings (bench/catanatron/road_deadends.py), the first road lacked a legal settlement
+  // site one further road away after setup 52% of the time before this filter and 22% after. Those are historical
+  // policy measurements. If nothing survives, fall back to what is open now.
   const projection = simulateDraft(board, settings, { me: mineAfter, opp: occupied.filter(x => !mineAfter.includes(x)) });
   const projected = projection.filter(d => !d.you && !d.actual).map(d => d.id);
   const now = new Set(legalVertices(g, [...taken]));

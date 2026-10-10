@@ -111,7 +111,7 @@ corner with lower raw production; the explanation and opening summary show that 
 | Pairs | Wood with brick (roads) or wheat with ore (cities) from the same corner earns a small bonus. |
 | Repeated numbers | Extra production on the same number does not add another paying roll; a small penalty. |
 | Harbours | When included, a 3:1 harbour helps anyone; a 2:1 harbour helps most when you produce plenty of that resource. A nearby harbour needs two roads and a new settlement before you can use it, including when those roads approach from inland. A type you already own adds no bonus. Useful direct access takes priority; otherwise only the best reachable new harbour counts. |
-| Room to grow | A strong open corner two roads away is worth something; a dead end is not. |
+| Room to grow | Adds value for an open settlement site exactly two roads away. Longer routes are outside this factor. |
 | Second settlement | Your second pick gets credit for covering resources your first one lacks, especially wheat and ore. |
 
 Each rule traces to a published source (King of Catan's expert group, Colonist.io champion interviews,
@@ -148,6 +148,7 @@ stays dominant.
   names projected conflicts and warns when its target is also your own projected second settlement:
   following that opening would occupy the site during setup. With **Show best** off, road hints stay
   hidden in both the map and earlier verdicts until you reveal them; committed-pick grades remain available.
+  When no two-road destination is legal, the card states that limit. The hint does not check longer routes.
 
 ### What your opening can produce and build
 

@@ -279,7 +279,7 @@ function drawMarks() {
 }
 // R13 starting road for a settlement, against the pieces on the board right now.
 const roadHint = id => suggestRoad(analysisBoard, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
-const roadLine = id => { if (!reveal()) return ''; const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No road makes progress from here: every corner two roads away is already taken.')}</p>`; };
+const roadLine = id => { if (!reveal()) return ''; const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No legal settlement site is open two roads away. This road hint does not check longer routes.')}</p>`; };
 // Can a click on the board do anything right now?
 const canPlace = () => !state.linkError && (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
 const house = (x, y) => `M${x - 0.2},${y + 0.18} L${x - 0.2},${y - 0.05} L${x},${y - 0.24} L${x + 0.2},${y - 0.05} L${x + 0.2},${y + 0.18} Z`;

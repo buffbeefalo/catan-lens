@@ -125,6 +125,17 @@ test('first-pick feedback keeps future road hints hidden during blind practice',
   assert.equal(await page.locator('#svg .road.me').count(), 2);
 });
 
+test('an unavailable two-road hint explains its search limit', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?players=4&seed=4&seat=4&me=8,32&opp=2,44,42,33,18,30&seq=o2,o44,o42,m8,m32,o33,o18,o30');
+  const text = await page.locator('.verdict .road').last().innerText();
+  assert.match(text, /No legal settlement site is open two roads away/);
+  assert.match(text, /does not check longer routes/);
+  assert.doesNotMatch(text, /No road makes progress|already taken|dead end/i);
+  assert.equal(await page.locator('#svg .road.me').count(), 1, 'the other settlement retains its road hint');
+  await page.locator('#showbest').click();
+  assert.equal(await page.locator('.verdict .road, #svg .road').count(), 0, 'the explanation remains subject to the hint switch');
+});
+
 test('custom signed scores show a point gap in previews and verdicts without changing the score', async t => {
   const page = await open(t, { width: 390, height: 844 }, '?players=3&seat=1&cak=1&b=' + 'b2'.repeat(19) + '&ports=ignore&me=0&opp=6,10,17,22&seq=m0,o6,o10,o17,o22');
   await page.locator('.vx.legal[aria-label="Corner 44"]').press('Enter');

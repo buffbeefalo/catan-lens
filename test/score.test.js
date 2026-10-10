@@ -501,7 +501,7 @@ test('starting road for the last pick of the draft is unchanged: nobody places a
   assert.equal(r.target.score, Math.max(...scores));
 });
 
-test('starting road is null when every corner two roads away is taken (R13 dead end)', () => {
+test('starting road is null when all two-road destinations are occupied', () => {
   const b = generateBoard({ seed: 3 });
   const vid = 0;
   const twoAway = new Set();
@@ -511,4 +511,24 @@ test('starting road is null when every corner two roads away is taken (R13 dead 
   const n0 = b.graph.vertices[vid].neighbors[0];
   const r = suggestRoad(b, S(), vid, { occupied: [n0] });
   if (r) assert.notEqual(r.via, n0);
+});
+
+test('two-road expansion feedback does not rule out a longer legal route', () => {
+  const b = generateBoard({ seed: 4 }), settings = S({ players: 4, seat: 4 });
+  const mine = [8, 32], occupied = [...mine, 2, 44, 42, 33, 18, 30];
+  const route = [32, 31, 21, 20];
+  for (let i = 1; i < route.length; i++) {
+    assert.ok(b.graph.vertices[route[i - 1]].neighbors.includes(route[i]));
+    assert.ok(!occupied.includes(route[i]), 'the route does not cross another settlement');
+  }
+  const legal = new Set(legalVertices(b.graph, occupied));
+  assert.ok(!legal.has(21), 'the two-road corner is blocked by the distance rule, not occupied');
+  assert.ok(legal.has(20), 'a three-road destination is legal under the entered settlement marks');
+  assert.equal(suggestRoad(b, settings, 32, { mine, occupied }), null);
+  const r = scoreVertex(b, settings, 32, { mine: [8], occupied: occupied.filter(id => id !== 32) });
+  const expansion = r.parts.find(p => p.k === 'expansion');
+  assert.equal(expansion.v, 0);
+  assert.match(expansion.text, /two roads away/);
+  assert.match(expansion.text, /[Ll]onger routes.*not included/);
+  assert.doesNotMatch(expansion.text, /boxed in|dead end/i);
 });
