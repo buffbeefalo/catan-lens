@@ -138,6 +138,9 @@ Sixteen levels, easy to hard, on a table you choose first (3–6 players, base g
 weighting). Hints stay hidden until you commit. Early levels accept any of the top three corners on boards
 with an obvious winner; later levels demand the exact best corner on near-ties, from any seat, for the
 first or the second settlement. Miss, and you get a new board at the same level.
+The app searches up to 120 seeds for the usual difficulty. A shared seed or an exhausted search can
+produce a board outside that range; a notice says so without revealing the answer. The notice follows
+the actual board through refreshes, and the same pass rule still applies. **New board** tries again.
 After a miss, the result shows the point gap to the top score. A pick within 1% of the best score is
 identified as a close model comparison; it can remain a good real-game choice even though the exercise
 requires the app's exact top rank. Neither the score share nor a small gap measures winning chances.

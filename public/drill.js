@@ -89,18 +89,18 @@ export function setupStage(stage, seed) {
     }
   }
   const ranking = rankSpots(board, settings, { mine: me, occupied: [...me, ...opp] });
-  const margin = ranking.length > 1 ? ranking[0].score - ranking[1].score : Infinity;
-  return { board, settings, me, opp, ranking, margin };
+  const margin = ranking.length > 1 ? (Math.round(ranking[0].score * 100) - Math.round(ranking[1].score * 100)) / 100 : Infinity;
+  const { minMargin = -Infinity, maxMargin = Infinity } = stage.board;
+  const fitsDifficulty = ranking.length > 1 && margin >= minMargin && margin <= maxMargin;
+  return { board, settings, me, opp, ranking, margin, fitsDifficulty };
 }
 
 // Search seeds (from `next()`, a 32-bit source) for a board inside the stage's margin band.
 export function findSeed(stage, next, maxTries = 120) {
-  const { minMargin = -Infinity, maxMargin = Infinity } = stage.board;
   let seed = 0, tries = 0;
   for (; tries < maxTries; ) {
     seed = next() >>> 0; tries++;
-    const { margin, ranking } = setupStage(stage, seed);
-    if (ranking.length > 1 && margin >= minMargin && margin <= maxMargin) return { seed, tries, fallback: false };
+    if (setupStage(stage, seed).fitsDifficulty) return { seed, tries, fallback: false };
   }
   return { seed, tries, fallback: true };
 }

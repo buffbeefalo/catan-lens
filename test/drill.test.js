@@ -103,6 +103,33 @@ test('findSeed: returns a seed whose board meets the stage margin band (or says 
   }
 });
 
+test('a stage reports whether its actual board fits the intended difficulty, including inclusive boundaries', () => {
+  assert.equal(setupStage(stageFor(1), 42).fitsDifficulty, false, 'a small gap does not fit clear-favourite practice');
+  assert.equal(setupStage(stageFor(15), 74).fitsDifficulty, false, 'a 3.02-point gap is outside a 0.3-point near-tie band');
+  assert.equal(setupStage(stageFor(15), 1).fitsDifficulty, true);
+  assert.equal(setupStage(stageFor(10), 74).fitsDifficulty, true, 'an unconstrained stage accepts the board');
+  const stage = stageFor(15), { margin } = setupStage(stage, 1);
+  assert.equal(setupStage({ ...stage, board: { minMargin: margin, maxMargin: margin } }, 1).fitsDifficulty, true);
+});
+
+test('exhausting the bounded seed search returns an honestly classified board without extra attempts', () => {
+  let calls = 0;
+  const stage = stageFor(15);
+  const result = findSeed(stage, () => { calls++; return 74; }, 3);
+  assert.deepEqual(result, { seed: 74, tries: 3, fallback: true });
+  assert.equal(calls, 3);
+  assert.equal(setupStage(stage, result.seed).fitsDifficulty, false);
+});
+
+test('a displayed 0.30-point gap belongs to the inclusive near-tie band despite binary decimal noise', () => {
+  const stage = stageFor(15), result = setupStage(stage, 157);
+  assert.equal(result.ranking[0].score, 11.57);
+  assert.equal(result.ranking[1].score, 11.27);
+  assert.equal(result.margin, 0.3);
+  assert.equal(result.fitsDifficulty, true);
+  assert.deepEqual(findSeed(stage, () => 157, 1), { seed: 157, tries: 1, fallback: false });
+});
+
 test('judge: pass when the pick ranks within the stage rule, fail otherwise, and says why', () => {
   const st = stageFor(1, { players: 4, cak: false });   // top 3
   const r = setupStage(st, 7);

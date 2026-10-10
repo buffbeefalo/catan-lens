@@ -111,6 +111,12 @@ copy. An absent choice is unavailable, retains the out-of-range rank sentinel, a
 including when the ranking is empty or has fewer entries than the stage target. Valid grades and
 complete-board scores are unchanged by these guards.
 
+`setupStage` reports `fitsDifficulty` from its actual top-two margin and the stage's inclusive band.
+It subtracts integer hundredths, matching the score precision so decimal noise cannot exclude a boundary.
+The bounded seed search and the UI use that same result. The notice therefore survives explicit seed
+links, seedless-link search exhaustion and refresh; it does not depend on a transient fallback flag.
+It reveals no corner or score, changes no pass rule, and does not expand the 120-seed search budget.
+
 URL serialization skips `replaceState` when the current query already matches. Choosing an editing
 tool, opening a number picker or repainting an identical value should not consume the browser's history
 update allowance. Changed board data still updates the link synchronously. A refused history write

@@ -7,6 +7,7 @@ import { setupThemeSwitch } from './theme.js';
 const $ = s => document.querySelector(s);
 const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check' };
 let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
+let stageFitsDifficulty = true;
 const HEUR = 'opening heuristic v1';
 
 // ---- URL state -------------------------------------------------------------
@@ -97,10 +98,12 @@ const table = () => ({ players: state.players, cak: state.cak });   // the drill
 const inLevel = () => state.drill && !state.drillSetup;
 function rollSeat() { state.seat = 1 + Math.floor(Math.random() * state.players); }
 function rebuild() {
+  stageFitsDifficulty = true;
   if (inLevel()) {
     const st = stageFor(state.stage, table());
     const r = setupStage(st, state.seed);
     board = r.board;
+    stageFitsDifficulty = r.fitsDifficulty;
     state.seat = st.seat; state.setup = st.players >= 5 ? 'ext56' : 'base'; state.balanced = true;
     state.me = r.me; state.opp = r.opp;
     controls();   // the bar mirrors the stage's scenario
@@ -321,7 +324,7 @@ let freePlay = history.state?.catanFreePlay?.version === 1 ? history.state.catan
 function newStageBoard() {
   const st = stageFor(state.stage, table());
   const f = findSeed(st, randomSeed);
-  state.seed = f.seed; state.seedFallback = f.fallback;
+  state.seed = f.seed;
   state.answered = null; state.pick = null; state.mode = 'me';
   controls(); rebuild();
 }
@@ -573,7 +576,8 @@ function render() {
     const before = st.task === 'first' ? (st.seat === 1 ? 'You pick first.' : `${st.seat - 1} ${st.seat === 2 ? 'opponent has' : 'opponents have'} already placed (white squares).`) : st.seat === st.players ? 'Every first settlement is down and, as last seat, you pick your second first.' : 'Every first settlement is down and the seats after you have taken their second.';
     const a = state.answered;
     out += html`<div class="card drill ${a ? (a.pass ? 'pass' : 'fail') : ''}"><h2>Level ${state.stage}${state.stage <= STAGES.length ? ` of ${STAGES.length}` : ' · bonus'} <span>${esc(st.title)}${state.stage > STAGES.length ? ' · the hardest level repeats with new boards' : ''}</span></h2>
-      <p class="sub">${st.players} players · you are seat ${st.seat}${st.cak ? ' · Cities &amp; Knights weighting' : ''}. ${before} Place your <b>${st.task}</b> settlement. To clear it: land on ${st.pass.top === 1 ? '<b>the best corner</b>' : `<b>one of the top ${st.pass.top} corners</b>`}.${state.attempts ? ` Attempt ${state.attempts + (a ? 0 : 1)}.` : ''}${state.seedFallback ? ' (No board in this level\u2019s usual difficulty band was found; this one is close.)' : ''}</p>
+      <p class="sub">${st.players} players · you are seat ${st.seat}${st.cak ? ' · Cities &amp; Knights weighting' : ''}. ${before} Place your <b>${st.task}</b> settlement. To clear it: land on ${st.pass.top === 1 ? '<b>the best corner</b>' : `<b>one of the top ${st.pass.top} corners</b>`}.${state.attempts ? ` Attempt ${state.attempts + (a ? 0 : 1)}.` : ''}</p>
+      ${stageFitsDifficulty ? '' : '<p class="sub" id="difficulty-note" role="status">This board is outside the level’s usual difficulty band. The pass rule above is unchanged. Choose New board for another try at the usual difficulty.</p>'}
       ${a ? `<p class="grade" id="drill-result" tabindex="-1"><b>${a.pass ? 'Level cleared' : 'Not this time'}</b> — ${esc(a.text)}</p><p style="margin:10px 0 0">${a.pass ? `<button class="btn" id="next-stage">${state.stage === STAGES.length ? 'All 16 cleared — bonus level' : state.stage >= MAX_LEVEL ? 'Another board at the top' : 'Next level'}</button>` : '<button class="btn" id="scramble">New board, same level</button>'}</p>` : '<p class="sub" style="margin:0">Hints are hidden until you commit. Click a corner, then Keep.</p>'}</div>`;
     const top = Math.min(MAX_LEVEL, Math.max(STAGES.length, state.stage, maxCleared()));
     const cl0 = cleared();

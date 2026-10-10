@@ -879,6 +879,36 @@ test('refused Drill history writes leave the mode unchanged and preserve the ret
   assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
 });
 
+test('Drill difficulty notices follow the actual seed through links, refresh and bounded search without revealing answers', async t => {
+  const { setupStage, stageFor } = await import('../public/drill.js');
+  const page = await open(t, { width: 390, height: 900 });
+  await page.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '4-base': Array.from({ length: 14 }, (_, i) => i + 1) } })));
+  await page.addInitScript(() => { Math.random = () => 74.5 / 0xffffffff; });
+  for (const seed of ['&seed=74', '']) {
+    await page.goto(base + '?players=4&drill=1&level=15' + seed, { waitUntil: 'networkidle' });
+    assert.equal(new URL(page.url()).searchParams.get('seed'), '74');
+    assert.match(await page.locator('#difficulty-note').innerText(), /outside.*usual difficulty band/i);
+    assert.doesNotMatch(await page.locator('#difficulty-note').innerText(), /this one is close|3\.02|corner \d/i);
+    assert.equal(await page.locator('.best-ring, #preview-best, [data-disclosure="draft"], .opening-preview').count(), 0);
+    await reloadInBrowser(page);
+    assert.equal(await page.locator('#difficulty-note').count(), 1);
+  }
+  for (const seed of [1, 157]) {
+    await page.goto(base + '?players=4&drill=1&level=15&seed=' + seed, { waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#difficulty-note').count(), 0, 'a fitting seed, including the exact boundary, clears the notice');
+  }
+  await page.locator('.track button[data-level="15"]').click();
+  assert.equal(await page.locator('#difficulty-note').count(), 1, 'exhausting the search uses the same honest notice');
+  const best = setupStage(stageFor(15), 74).ranking[0].id;
+  await page.locator(`.vx[aria-label="Corner ${best}"]`).focus();
+  await page.keyboard.press('Enter'); await page.locator('#keep').click();
+  assert.match(await page.locator('#drill-result').innerText(), /Level cleared/, 'the pass rule is unchanged');
+  await page.locator('#drill').click();
+  assert.equal(await page.locator('#difficulty-note').count(), 0);
+  await page.goto(base + '?players=4&drill=1&level=10&seed=74', { waitUntil: 'networkidle' });
+  assert.equal(await page.locator('#difficulty-note').count(), 0, 'an unconstrained stage needs no warning');
+});
+
 test('phone blank-board entry keeps its first tile visible alongside the tools', async t => {
   const page = await open(t, { width: 390, height: 844 });
   await page.locator('#custom').tap();
