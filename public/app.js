@@ -5,7 +5,8 @@ import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, ta
 import { setupThemeSwitch } from './theme.js';
 
 const $ = s => document.querySelector(s);
-const state = { setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check' };
+const initialState = () => ({ setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], seq: null, mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check' });
+const state = initialState();
 let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
 let stageFitsDifficulty = true;
 const HEUR = 'opening heuristic v1';
@@ -90,7 +91,11 @@ function keepPreviousBoard(kind = state.linkError ? 'link' : 'board') {
   if (!writeUrl() || !writeHistory('pushState', { catanRecovery: kind }, location.href, 'blocked')) return historyActionBlocked();
   return true;
 }
-addEventListener('popstate', () => location.reload());
+addEventListener('popstate', () => {
+  restoreLocation();
+  const heading = $('#panel h2');
+  if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+});
 
 // ---- Model -----------------------------------------------------------------
 function settings() { return { players: state.players, seat: state.seat, cak: state.cak }; }
@@ -320,7 +325,7 @@ const unlocked = n => n <= maxCleared() + 1;
 function gotoLevel(n) { state.stage = n; state.attempts = 0; newStageBoard(); }
 
 // ---- Drill (stages) -----------------------------------------------------------
-let freePlay = history.state?.catanFreePlay?.version === 1 ? history.state.catanFreePlay.state : null;
+let freePlay = null;
 function newStageBoard() {
   const st = stageFor(state.stage, table());
   const f = findSeed(st, randomSeed);
@@ -598,7 +603,7 @@ function render() {
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
         ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         ${notes.length || !board.balanced ? `<details data-disclosure="inventory"><summary>Check board inventory</summary><p class="sub check">${notes.map(esc).join(' ')}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p></details>` : '<p class="sub check ok">Matches the official box.</p>'}
-        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. You can also Tab to a hex or coastal edge and press Enter or Space. Escape returns from the number picker to its hex.</p></details>
+        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. You can also Tab to a hex or coastal edge and press Enter or Space. Escape returns from the number picker to its hex.</p><p class="sub">Once loaded, this tab can edit, score, practise and restore earlier boards without a connection. Keep it open; refreshing, opening help or watching videos may need a connection.</p></details>
         <p style="margin:8px 0 0"><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
     }
     out += html`<div class="card"><div class="modes">
@@ -754,4 +759,12 @@ $('#seed').onchange = e => { const t = e.target.value.trim(); if (/^\d{1,10}$/.t
 setupThemeSwitch($('#theme'));
 $('#share').onclick = async () => { const link = new URL(location.href); link.search = currentQuery(); try { await navigator.clipboard.writeText(link.href); $('#share').textContent = 'Copied'; setTimeout(() => { $('#share').textContent = 'Copy link'; }, 1500); } catch { prompt('Copy this link', link.href); } };
 
-readUrl(); controls(); rebuild();
+function restoreLocation() {
+  Object.assign(state, initialState());
+  historyIssue = null;
+  const saved = history.state?.catanFreePlay;
+  freePlay = saved?.version === 1 ? saved.state : null;
+  disclosures.clear(); $('#panel').replaceChildren();
+  readUrl(); controls(); rebuild();
+}
+restoreLocation();

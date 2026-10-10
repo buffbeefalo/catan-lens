@@ -66,6 +66,19 @@ no analysis backend: the app is plain HTML, CSS and JavaScript modules with zero
 
 <sub>Unofficial fan tool, not affiliated with or endorsed by Catan GmbH or Catan Studio. CATAN is a trademark of Catan GmbH.</sub>
 
+## Ways to use it
+
+- **Plan an opening at the table.** Set the player count and your seat, enter the real board, and mark
+  opponents as they place. Compare second-settlement candidates before committing. For the base game,
+  the opening summary answers what you cannot produce and which first build needs the fewest new cards.
+- **Practise before the next game.** Drill hides the answer until you commit, explains the result and
+  lets you replay the same kind of decision on another board.
+- **Review with friends.** Copy a link from Your board to keep explicit tiles, harbours and placement
+  order. Everyone can inspect the same opening and discuss its tradeoffs.
+
+With a weak connection, load the app first and keep the tab open. Entry, scoring, Drill and restoring
+earlier boards work without further downloads. Fresh loads, refreshes, help and videos may need a connection.
+
 ## How it works
 
 The score for a corner starts with **production** (the dots on the surrounding number tokens: the ways, out of 36,

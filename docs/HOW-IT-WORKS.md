@@ -3,19 +3,39 @@
 Catan Lens answers one question: **where should I put my first two settlements?** It looks at every
 legal corner on the board, scores each one with a small set of rules that strong players agree on, and
 explains the result in plain sentences. No machine learning, no analysis backend, no randomness in the scoring:
-the same board always gets the same answer, and every sentence in the "Why this corner?" panel is built
+the same position and settings give the same answer in the same app version, and every sentence in the "Why this corner?" panel is built
 from the numbers that produced the score.
 
 The web guide's demonstration videos have captions and text transcripts. A playback failure opens the
 matching transcript; a failed or empty transcript download offers **Retry transcript**. The written
 guide remains available below the videos.
 
+## Put it to use
+
+- **Plan a real opening together.** Set Players and Your seat before entering tiles. Open **Your board**
+  and **Start blank**, paint the resources, add numbers, then finish or explicitly exclude harbours.
+  Mark opponents in placement order and use **Keep** for your own settlement when your turn comes.
+  Before keeping your second corner, compare alternatives. On a base-game table, ask which resource
+  you cannot produce and which first build needs the fewest new cards.
+- **Practise a decision.** Choose **Drill**, set the table and start. Commit before seeing the answer,
+  then read why the model preferred another corner. Replay a cleared level to practise the same
+  situation on another board; a close score is a prompt to compare tradeoffs, not a predicted win rate.
+- **Review an opening with friends.** Use **Copy link** to share the entered position and settings.
+  Copy from **Your board** when you want explicit tiles and harbours in the saved link. Generated links
+  use a seed and the app's current setup rules; scoring can change when the app is updated.
+
+**Weak connection at the table?** Load the app while connected and keep that tab open. Board entry,
+scoring, Drill, Undo, Restore and Back/Forward within the app work without further downloads. Fresh
+loads, refreshing, opening the separate help page and watching videos may need a connection. Copying
+a link preserves the current position; opening it on another device still needs the app to load there.
+
 ## 1. The board
 
 The app draws the standard 19-hex board (or the 30-hex 5–6 player board), following the official
 "variable setup": shuffle the land tiles, lay the number tokens in the official spiral order, deal the
 harbours around the coast. With **Balanced setup** on, it keeps red numbers (6 and 8) from touching, as the
-rulebook asks. Every board comes from a seed, so a link always reopens the exact same board.
+rulebook asks. A generated-board link reopens its seed using the app's current setup rules; a Your board
+link stores the entered tiles and harbours explicitly.
 
 You can also enter the real board in front of you with **Your board**: paint the resources, set the
 number tokens, tap the coast to place harbours. Settlement advice starts once all resources and number

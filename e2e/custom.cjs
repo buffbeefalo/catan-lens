@@ -1,4 +1,4 @@
-const { showSettings, BASE } = require('./helpers.cjs');
+const { showSettings, BASE, navigateHistory } = require('./helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 (async () => {
@@ -71,7 +71,7 @@ const assert = require('node:assert/strict');
   // players 6 → a fresh board of the new shape; the old layout stays recoverable
   await showSettings(page); await page.click('#players button:nth-child(4)');
   assert.equal(await page.$$eval('#svg .hex', a => a.length), 30); assert.equal(q().players, '6'); assert.equal(q().b, '-'.repeat(30));
-  await Promise.all([page.waitForEvent('domcontentloaded'), page.click('#restore-board')]);
+  await navigateHistory(page, () => page.click('#restore-board'));
   assert.equal(q().players, '4'); assert.match(q().b, /h6/);
   // drill temporarily leaves Your board; returning restores the entered board
   const savedBoard = q().b;

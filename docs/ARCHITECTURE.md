@@ -64,7 +64,10 @@ and explicit research-document route apply before opening anything. See
    Clearing placements creates a `pieces` recovery marker; clearing nothing or reentering the current
    seed creates no checkpoint. The previous URL contains both ownership and placement order.
    Ordinary edits still use `replaceState`, preserving the recovery marker. Restore uses browser Back;
-   a `popstate` reload rebuilds the board from that history entry's URL, so recovery also survives refresh.
+   `popstate` resets board state and rebuilds from that entry's URL inside the existing document. It
+   restores the matching Drill return snapshot without fetching the page or discarding pending progress
+   saves. The restored panel heading receives focus. A normal refresh can still rebuild from the URL
+   and browser history metadata, but needs the app's files to remain available.
    Tiles and coastal edge ids are never carried between the 19- and 30-hex graphs. Same-shape player-count
    changes retain the board and placement order.
 5. `decodeBoard` returns `null` for unreadable tile or harbour data. The UI retains the original query in
@@ -116,6 +119,11 @@ It subtracts integer hundredths, matching the score precision so decimal noise c
 The bounded seed search and the UI use that same result. The notice therefore survives explicit seed
 links, seedless-link search exhaustion and refresh; it does not depend on a transient fallback flag.
 It reveals no corner or score, changes no pass rule, and does not expand the 120-seed search budget.
+
+An already-loaded app supports entry, scoring, Drill and history recovery without further network
+requests. It has no service worker or offline installation cache: first loads, refreshes, the separate
+help page and videos can still need a connection. History navigation clears per-board editing and
+answer state, while keeping pending local progress actions available for Retry saving.
 
 URL serialization skips `replaceState` when the current query already matches. Choosing an editing
 tool, opening a number picker or repainting an identical value should not consume the browser's history

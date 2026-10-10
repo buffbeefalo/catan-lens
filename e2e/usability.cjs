@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { test, before, after } = require('node:test');
 const { chromium, firefox, webkit } = require('playwright');
 
-const base = require('./helpers.cjs').BASE;
+const { BASE: base, navigateHistory } = require('./helpers.cjs');
 let browser;
 before(async () => {
   const name = process.env.CATAN_BROWSER || 'chromium';
@@ -27,7 +27,7 @@ async function reloadInBrowser(page) {
 }
 
 async function moveInBrowserHistory(page, delta) {
-  await Promise.all([page.waitForEvent('domcontentloaded'), page.evaluate(n => history.go(n), delta)]);
+  await navigateHistory(page, () => page.evaluate(n => history.go(n), delta));
 }
 
 test('generated board replacements retain the prior board and placement order through refresh and history', async t => {
@@ -42,7 +42,7 @@ test('generated board replacements retain the prior board and placement order th
     const replacement = page.url();
     assert.notEqual(replacement, original);
     await reloadInBrowser(page);
-    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    await navigateHistory(page, () => page.locator('#restore-board').click());
     assert.equal(page.url(), original);
     assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
     await moveInBrowserHistory(page, 1);
@@ -70,7 +70,7 @@ test('cleared pieces can be restored on generated and custom boards without chan
     await page.locator('#reset').click();
     assert.equal(await page.evaluate(() => history.length), entries, 'clearing an empty board keeps the meaningful recovery point');
     await reloadInBrowser(page);
-    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    await navigateHistory(page, () => page.locator('#restore-board').click());
     assert.equal(page.url(), original);
     assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
     await page.close();
@@ -879,6 +879,75 @@ test('refused Drill history writes leave the mode unchanged and preserve the ret
   assert.equal(await page.locator('.piece.me, .piece.opp').count(), 2);
 });
 
+test('offline recovery restores both board layouts and ordered pieces inside the already-open page', async t => {
+  for (const [from, to, count] of [[4, 6, 30], [6, 4, 19]]) {
+    const page = await open(t, { width: 390, height: 900 }, `?players=${from}&seed=42&seat=1`);
+    await page.locator('.vx.legal').first().click(); await page.locator('#keep').click();
+    await page.locator('#mode-opp').click(); await page.locator('.vx.legal').first().click();
+    await page.locator('#custom').click(); await page.locator('#port-mode').click();
+    const original = page.url();
+    await page.evaluate(() => { window.sameDocument = true; });
+    const requests = []; page.on('request', r => requests.push(r.url()));
+    await page.context().setOffline(true);
+    await page.locator('#settings summary').click();
+    await page.locator('#players button').filter({ hasText: String(to) }).click();
+    const replacement = page.url();
+    assert.equal(await page.locator('.hex.blank').count(), count);
+    await page.locator('#restore-board').click();
+    await page.waitForFunction(url => location.href === url && document.querySelectorAll('.piece.me, .piece.opp').length === 2, original, { timeout: 2500 });
+    assert.equal(await page.locator('#port-mode').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
+    await page.evaluate(() => history.forward());
+    await page.waitForFunction(({ url, count }) => location.href === url && document.querySelectorAll('.hex.blank').length === count, { url: replacement, count }, { timeout: 2500 });
+    await page.evaluate(() => history.back());
+    await page.waitForFunction(url => location.href === url && document.querySelectorAll('.piece.me, .piece.opp').length === 2, original, { timeout: 2500 });
+    await page.locator('#undo').click();
+    assert.equal(await page.locator('.piece.me').count(), 1);
+    assert.equal(await page.locator('.piece.opp').count(), 0, 'Undo still follows the restored placement order');
+    assert.equal(await page.evaluate(() => window.sameDocument), true);
+    assert.deepEqual(requests, [], 'history recovery needs no navigation or resource fetch');
+    await page.close();
+  }
+});
+
+test('history navigation retains unsaved Drill progress and reloads the correct return snapshot without a connection', async t => {
+  const { stageFor, setupStage } = await import('../public/drill.js');
+  const page = await open(t, { width: 1400, height: 900 }, '?players=4&seed=42&seat=1&me=43&opp=0&seq=m43,o0');
+  await page.locator('#custom').click(); const original = page.url();
+  await page.locator('#reset').click(); const cleared = page.url();
+  await page.evaluate(() => {
+    window.sameDocument = true; window.allowProgressWrites = false;
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+      if (key === 'catan-lens.levels' && !window.allowProgressWrites) throw new DOMException('Simulated blocked save', 'SecurityError');
+      return setItem.call(this, key, value);
+    };
+  });
+  const requests = []; page.on('request', r => requests.push(r.url()));
+  await page.context().setOffline(true);
+  await page.locator('#drill').click(); await page.locator('#start-drill').click();
+  const drill = page.url(), seed = Number(new URL(drill).searchParams.get('seed'));
+  const best = setupStage(stageFor(1), seed).ranking[0].id;
+  await page.locator(`.vx[aria-label="Corner ${best}"]`).click(); await page.locator('#keep').click();
+  assert.equal(await page.locator('.progress-warning').count(), 1);
+  await page.evaluate(() => history.back());
+  await page.waitForFunction(url => location.href === url && document.querySelectorAll('.piece.me, .piece.opp').length === 2, original, { timeout: 2500 });
+  assert.equal(await page.locator('#drill').getAttribute('aria-pressed'), 'false');
+  await page.evaluate(() => history.forward());
+  await page.waitForFunction(url => location.href === url && document.querySelector('.track [data-level="1"].cleared'), drill, { timeout: 2500 });
+  assert.equal(await page.locator('.progress-warning').count(), 1, 'the unsaved action remains available for retry');
+  assert.equal(await page.locator('#drill-result, .best-ring, #preview-best').count(), 0, 'returning to a shared exercise does not reveal its answer');
+  await page.evaluate(() => { window.allowProgressWrites = true; });
+  await page.locator('#retry-progress').click();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('catan-lens.levels'))), { ladders: { '4-base': [1] } });
+  await page.locator('#drill').click();
+  assert.equal(page.url(), cleared);
+  assert.equal(await page.locator('.piece.me, .piece.opp').count(), 0);
+  assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.evaluate(() => window.sameDocument), true);
+  assert.deepEqual(requests, []);
+});
+
 test('Drill difficulty notices follow the actual seed through links, refresh and bounded search without revealing answers', async t => {
   const { setupStage, stageFor } = await import('../public/drill.js');
   const page = await open(t, { width: 390, height: 900 });
@@ -939,7 +1008,7 @@ test('changing board size starts the correct blank layout and preserves the old 
     const changed = page.url();
     await reloadInBrowser(page);
     assert.equal(await page.locator('.hex.blank').count(), count);
-    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    await navigateHistory(page, () => page.locator('#restore-board').click());
     assert.equal(page.url(), original);
     assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
     assert.equal(await page.locator('.hex').count(), from === 4 ? 19 : 30);
@@ -969,7 +1038,7 @@ test('replacing an entered board or leaving its editor can be undone after a ref
     assert.equal(await page.locator('#restore-board').count(), 1, `${action} keeps a recovery action`);
     assert.equal(await page.locator('.piece.me').count(), 0, 'settlements on the previous board must not move onto its replacement');
     await reloadInBrowser(page);
-    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    await navigateHistory(page, () => page.locator('#restore-board').click());
     assert.equal(page.url(), original);
     assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'true');
     assert.match(await page.locator('.hex').first().getAttribute('class'), /wheat/);
@@ -1021,7 +1090,7 @@ test('malformed board links keep their original data and show no advice until an
     assert.equal(await page.locator('.link-error').count(), 0);
     assert.equal(await page.locator('.hex.blank').count(), 19);
     assert.match(await page.locator('#restore-board').innerText(), /Restore original link/);
-    await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+    await navigateHistory(page, () => page.locator('#restore-board').click());
     assert.equal(new URL(page.url()).search, query);
     assert.equal(await page.locator('.link-error').count(), 1);
     await page.locator('#rand-board').click();
@@ -1078,7 +1147,7 @@ test('leaving an unreadable link for Drill or Explore preserves the original err
   assert.equal(await page.locator('.link-error').count(), 0);
   assert.equal(await page.locator('#custom').getAttribute('aria-pressed'), 'false');
   assert.equal(await page.locator('#showbest').getAttribute('aria-pressed'), 'false');
-  await Promise.all([page.waitForEvent('domcontentloaded'), page.locator('#restore-board').click()]);
+  await navigateHistory(page, () => page.locator('#restore-board').click());
   assert.equal(new URL(page.url()).search, query);
   assert.equal(await page.locator('.link-error').count(), 1);
 });
