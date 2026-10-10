@@ -57,6 +57,8 @@ focus the first hex or coastal edge; Tab moves through the board and Enter or Sp
 returns from the board to the selected tool. Opening a number picker focuses the current token; Tab
 chooses another token and Escape returns to its hex, then another Escape returns to Numbers.
 The number picker brings its choices into view, including when editing guidance is expanded.
+Choosing a blank or desert hex brings its explanation into view instead: paint a resource before
+numbering a blank hex, while a desert has no token. Escape returns from this message to its hex.
 Painted tiles, changed harbours and selected tokens keep keyboard focus as the board redraws.
 Choosing Players or Your seat also keeps focus on that button, so Tab continues from the choice
 you just made instead of restarting the group.

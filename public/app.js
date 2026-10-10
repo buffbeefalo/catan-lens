@@ -382,18 +382,19 @@ function hexClick(i) {
   if (!state.tool || state.tool === 'port') return;
   if (state.tool === 'number') {
     state.numHex = state.numHex === i ? null : i; rebuild();
-    focusNumberToken();
+    focusNumberFeedback();
     return;
   }
   const h = state.customHexes[i] || (state.customHexes[i] = { resource: 'blank', number: null });
   h.resource = state.tool; if (state.tool === 'desert' || state.tool === 'blank') h.number = null;
   rebuild();
 }
-function focusNumberToken() {
+function focusNumberFeedback() {
   const picker = $('.picker');
-  focusEditorTarget(picker?.querySelector('button[aria-pressed="true"]'), picker);
+  const target = picker?.querySelector('button[aria-pressed="true"]') || $('#number-help');
+  focusEditorTarget(target, picker || target);
 }
-function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); focusNumberToken(); }
+function setNumber(n) { const h = state.customHexes[state.numHex]; if (!h) return; h.number = n; rebuild(); focusNumberFeedback(); }
 function cycleHarbor(eid) { const cur = state.customHarbors[eid] || null; const next = HARBOR_CYCLE[(HARBOR_CYCLE.indexOf(cur) + 1) % HARBOR_CYCLE.length]; if (next) state.customHarbors[eid] = next; else delete state.customHarbors[eid]; if (state.portMode === 'entered') state.portMode = 'check'; rebuild(); }
 function fillCustom(b) { if (!keepPreviousBoard()) return; state.linkError = null; state.portMode = 'check'; state.customHexes = b.hexes.map(h => ({ resource: h.resource, number: h.number })); state.customHarbors = { ...b.harbors }; state.numHex = null; state.me = []; state.opp = []; state.history = []; state.pick = null; controls(); rebuild(); }
 function bindBoardActions() {
@@ -632,9 +633,9 @@ function render() {
         ${harborControls()}
         <p class="sub">Choose a resource and paint its hexes. <b>Numbers</b> sets tokens; <b>Ports</b> edits the coast. The link updates as you work.</p>
         <div class="palette">${tools.map(([k, l]) => `<button class="toggle" id="tool-${k}" aria-pressed="${state.tool === k}">${l}</button>`).join('')}</div>
-        ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub">That hex is ${sel.resource}; paint a resource on it first.</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
+        ${state.tool === 'number' ? (sel ? (sel.resource === 'blank' || sel.resource === 'desert' ? `<p class="sub" id="number-help" tabindex="-1">${sel.resource === 'desert' ? 'Desert hexes have no number token. Choose a resource hex.' : 'This hex is blank. Paint a resource before choosing its number.'}</p>` : `<p class="sub" style="margin:0 0 4px">Token for the ${esc(NAMES[sel.resource].toLowerCase())} hex:</p><span class="seg picker" role="group" aria-label="Number token">${[2, 3, 4, 5, 6, 8, 9, 10, 11, 12].map(n => `<button data-num="${n}" aria-pressed="${sel.number === n}">${n}</button>`).join('')}<button data-num="0" aria-pressed="${!sel.number}">none</button></span>`) : '<p class="sub">Tap a hex to set its number.</p>') : ''}
         ${notes.length || !board.balanced ? `<details data-disclosure="inventory"><summary>Check board inventory</summary><p class="sub check">${notes.map(esc).join(' ')}${board.balanced ? '' : ' 6 and 8 share an edge.'}</p></details>` : '<p class="sub check ok">Matches the official box.</p>'}
-        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. By keyboard, activate a tool with Enter or Space to reach the first hex or coastal edge. Tab moves through the board; Enter or Space edits it. Escape returns from the number picker to its hex, and from the board to the selected tool.</p><p class="sub">Once loaded, this tab can edit, score, practise and restore earlier boards without a connection. Keep it open; refreshing, opening help or watching videos may need a connection.</p></details>
+        <details data-disclosure="editor-help"><summary>Editing help</summary><p class="sub">Pick a resource, then tap its hexes. With Numbers selected, tap a hex and choose its token. Ports cycles each coastal edge through 3:1, wood, brick, wheat, sheep, ore and none. By keyboard, activate a tool with Enter or Space to reach the first hex or coastal edge. Tab moves through the board; Enter or Space edits it. Escape returns from the number picker or its blank/desert guidance to the hex, and from the board to the selected tool.</p><p class="sub">Once loaded, this tab can edit, score, practise and restore earlier boards without a connection. Keep it open; refreshing, opening help or watching videos may need a connection.</p></details>
         <p style="margin:8px 0 0"><button class="btn ghost" id="blank-board">Start blank</button> <button class="btn ghost" id="rand-board">Random board</button> ${restore}</p></div>`;
     }
     out += html`<div class="card"><div class="modes">
@@ -787,7 +788,7 @@ $('#settings').addEventListener('toggle', fitBoard);
 $('#panel').addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
   if (state.pick !== null && e.target.closest('.pick-card')) { e.preventDefault(); cancelPick(); }
-  else if (state.numHex !== null && e.target.closest('.picker')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); focusEditorTarget($(`.hex[data-hex="${id}"]`)); }
+  else if (state.numHex !== null && e.target.closest('.picker, #number-help')) { e.preventDefault(); const id = state.numHex; state.numHex = null; rebuild(); focusEditorTarget($(`.hex[data-hex="${id}"]`)); }
 });
 $('#svg').addEventListener('keydown', e => {
   if (e.key !== 'Escape' || !state.custom || !state.tool || !e.target.matches('.hex, .coast-hit')) return;

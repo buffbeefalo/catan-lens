@@ -466,6 +466,36 @@ test('painting a custom hex works when the tap lands on its number token', async
   assert.equal(tiles[1], 'o5', 'the number token must not intercept the paint tap');
 });
 
+test('numbering blank or desert tiles brings guidance into view and returns to the tile with Escape', async t => {
+  for (const [width, height, players] of [[320, 480, 6], [700, 390, 4]]) for (const terrain of ['blank', 'desert']) for (const method of ['touch', 'keyboard']) {
+    const page = await open(t, { width, height }, '?seed=42&players=' + players);
+    await page.locator('#custom').click();
+    if (terrain === 'blank') await page.locator('#blank-board').click();
+    await page.locator('#tool-number').click();
+    const tile = page.locator('.hex.' + terrain).last();
+    const id = await tile.getAttribute('data-hex'), before = page.url();
+    await tile.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    if (method === 'touch') {
+      const box = await tile.boundingBox();
+      await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+    } else await tile.press('Enter');
+    const help = page.getByText(terrain === 'blank' ? /(?:That|This) hex is blank/ : /(?:That hex is desert|Desert hexes)/);
+    assert.ok(await help.evaluate(el => {
+      const r = el.getBoundingClientRect();
+      return el === document.activeElement && r.top >= 0 && r.bottom <= innerHeight;
+    }), 'the explanation receives focus and is visible after selecting a tile without a number token');
+    assert.match(await help.innerText(), terrain === 'blank' ? /[Pp]aint a resource/ : /no number token/);
+    assert.equal(await page.locator('.picker').count(), 0);
+    assert.equal(page.url(), before, 'asking for an unavailable number does not edit the board');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.activeElement.dataset.hex), id);
+    assert.equal(await page.locator('#number-help').count(), 0);
+    await page.keyboard.press('Escape');
+    assert.equal(await page.evaluate(() => document.activeElement.id), 'tool-number');
+    await page.close();
+  }
+});
+
 test('keyboard users can paint and number a hex without losing their place', async t => {
   for (const viewport of [{ width: 1400, height: 900 }, { width: 390, height: 844 }]) {
     const page = await open(t, viewport);
