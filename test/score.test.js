@@ -343,6 +343,29 @@ test('grade(): percentages preserve non-ties and do not round a pick across the 
   }
 });
 
+test('grade(): signed scores retain rank and point gaps without a misleading percentage', () => {
+  for (const [scores, gap] of [
+    [[.03, .02, .01, -.51], .54],
+    [[0, -.05, -.1, -.2], .2],
+    [[-.2, -.21, -.22, -.51], .31],
+  ]) {
+    const ranking = scores.map((score, id) => ({ id, score }));
+    const result = grade(ranking[3], ranking, 3);
+    assert.equal(result.pct, null);
+    assert.equal(result.rank, 4);
+    assert.equal(result.gap, gap);
+    assert.equal(result.tier, 'weak');
+    assert.match(result.why, new RegExp(gap.toFixed(2) + ' points'));
+    assert.doesNotMatch(result.why, /%/);
+  }
+  for (const score of [0, -.5]) {
+    const ranking = [{ id: 0, score }, { id: 1, score }], result = grade(ranking[1], ranking, 3);
+    assert.deepEqual([result.rank, result.gap, result.pct, result.tier], [1, 0, null, 'great']);
+  }
+  const ordinary = [{ id: 0, score: 10 }, { id: 1, score: 0 }];
+  assert.equal(grade(ordinary[1], ordinary, 3).pct, 0);
+});
+
 test('R7: a nearby harbour explanation names the roads and settlement needed without changing its score', () => {
   const board = generateBoard({ seed: 129 });
   const result = scoreVertex(board, { players: 4, seat: 3, cak: false }, 43, { mine: [9], occupied: [9] });

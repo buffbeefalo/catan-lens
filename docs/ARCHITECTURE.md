@@ -121,6 +121,13 @@ copy. An absent choice is unavailable, retains the out-of-range rank sentinel, a
 including when the ranking is empty or has fewer entries than the stage target. Valid grades and
 complete-board scores are unchanged by these guards.
 
+`grade.pct` is null for a negative pick score or a nonpositive best score. Rank and the hundredth-point
+gap remain available; previews and committed verdicts share `gradePosition`, which substitutes that
+gap for the percentage. `judge` omits the percentage and percentage-based close-score note in this
+case, without changing its rank-based pass rule. Ordinary nonnegative scores beneath a positive best
+retain the existing percentage and grade boundaries. Negative-score choices outside the top N remain
+Weak; exact ties still share rank 1, including ties at zero or below.
+
 Starting-road explanations use the same full opening projection as the target filter. They identify
 opponent conflicts as projected setup choices, and flag a target also assigned to the player's
 unplaced second settlement. This adds no score term or direction preference. `roadLine` shares the

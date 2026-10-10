@@ -134,18 +134,26 @@ the *weights* are ours.
 **The pick grade (added 2026-09-14) is presentation, not a rule.** After a settlement is placed the app
 grades it against the corners that were open at the time: *Great* = the #1 corner; *Good* = one of the top
 N where N is the player count (the corners an N-player table fights over — the same reason the top list
-shows N entries); *Fair* = outside the top N but still ≥ 90% of the best corner's score; *Weak* = below 90%.
+shows N entries); *Fair* = outside the top N but still ≥ 90% of a positive best corner's score; *Weak* =
+the remaining choices, including negative scores outside the top N.
 The N-per-player idea follows the seat-based advice in R10 (what is left when your turn comes depends on how
 many players pick before you); the 90% line is the author's choice. The percentage is the pick's score as a
 share of the best open corner's score, not a win probability.
 
 **Grade-display correction, 2026-10-09.** Whole-percent rounding previously displayed some lower-ranked
 picks as 100% and promoted scores just below 90% into the Fair grade. Percentages now round down to
-hundredths using the scorer's existing hundredth-point units. Exact score ties still share rank 1 and
-100%; the grade boundary uses the actual score share. Cards show scores to two decimal places, and
+hundredths using the scorer's existing hundredth-point units. Exact score ties still share rank 1 and,
+when positive, 100%; the grade boundary uses the actual score share. Cards show scores to two decimal places, and
 failed drills show their point gap. A miss within 1% of the top score is labelled a close model comparison
 (an author-chosen presentation threshold), without changing the drill target or implying a measured
 difference in winning chances. Rankings and scoring weights are unchanged.
+
+**Signed-score display, 2026-10-09.** A custom all-brick, number-2 board under C&K weights exposed a
+−0.51 pick against a 0.03 best score: the former −1700% label is replaced by its 0.54-point gap.
+Percentages are omitted when the pick is negative or the best is nonpositive, retaining the actual
+scores and ranks. An audit of 2,400 standard generated second-pick scenarios found no negative scores;
+this is a custom-board presentation edge case, not evidence of a common standard-board defect.
+Across the corresponding first and second rankings, 264,230 ordinary grades were unchanged.
 
 **Drill mode (added 2026-09-14 late) is a ladder over the same heuristic.** You set the TABLE before you start
 (2026-09-15: players 3–6 and the Cities & Knights weighting are chosen on a setup card; every level runs on that
@@ -184,7 +192,7 @@ measured from the entered numbers. Every existing rule then applies unchanged �
 | R3 | **Scarcity.** A resource with few strong numbers on THIS board is worth more — you can trade it at a premium and nobody can block you out of it. The C&K guide counts "marquee" numbers (5, 6, 8, 9) per resource; King of Catan reasons from the resource's total production. | 1, 2, 4, 6 | The app uses total pips (a finer version of the marquee count): each resource's weight is scaled by (expected pip share for its tile count ÷ actual pip share on this board), clamped to 0.8–1.25. The cap matters: at 1.4, two ore tiles on 3 and 11 outranked a 13-pip corner, which no source supports; at 1.3 a 7-pip ore/wheat port corner outranked a 13-pip corner for a second settlement on one 6-player board (2026-09-15 audit), so it came down to 1.25. |
 | R4 | **Complementary pairs.** Wood+brick are always spent together (roads); wheat+ore build cities. Getting both halves of a pair from one spot is worth more than the sum. | 2 | Up to +0.6 for wood+brick and +0.9 for wheat+ore, scaled by the weaker half (full value once the weaker resource has 3+ pips, so 1 pip of ore next to 5 wheat earns a third). |
 | R5 | **Don't fear the robber on 6/8.** Data from ~400 online games: realized production matches theoretical pips; do not discount red numbers for fear of being robbed. | 3 | No robber penalty. (An earlier draft had one; removed on this evidence.) |
-| R6 | **Spread your numbers.** Duplicated numbers mean feast-or-famine and more 7-roll discards. But doubling up is fine when the spot is clearly the strongest, so this is a nudge, not a veto. | 2, 4, 5 | −0.75 per number repeated within a spot or between your first and second settlement. |
+| R6 | **Spread your numbers.** Extra production on the same number does not add another paying roll. Doubling up is fine when the spot is clearly the strongest, so this is a nudge, not a veto. The app does not predict discard frequency: that depends on the cards held, spending and trades as well as production. | 2, 4, 5 | −0.75 per number repeated within a spot or between your first and second settlement. |
 | R7 | **3:1 ports are the ones top players value most; 2:1 ports only pay when you already overproduce that resource.** Ports on a coastal corner cost production (two hexes instead of three), so a port must earn its keep. | 1, 2, 6, 7 | Port on the corner: 3:1 +1.0; 2:1 +1.5 when you hold ≥5 pips of that resource (this corner plus your other settlement), else +0.25. Only the single best new port counts (never stacked); a type already owned earns no duplicate credit. A potential harbour settlement two roads away scores half, only while that destination remains legal. Its explanation names the two roads and new settlement needed; the port is not usable merely because a road reaches it. |
 | R8 | **Leave yourself room to grow.** A strong open corner two roads away is worth more than a slightly better isolated spot; avoid dead ends and single-hex corners; don't rely on the crowded middle. | 5, 7, 6 | +10% of the pips of the best legal corner exactly two roads away (still legal after you settle, i.e. not blocked by the distance rule). |
 | R9 | **The second settlement patches the first.** Cover the resources you are missing (especially wheat and ore), keep pips high, avoid repeating numbers, and remember it hands you one card per adjacent hex. | 1, 5, 6 | In "second settlement" mode: +1.0 per resource the first settlement lacks (+1.5 if it is wheat or ore); number-repeat penalty applies across both; the panel lists the starting cards. |

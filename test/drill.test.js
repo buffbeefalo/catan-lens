@@ -165,3 +165,12 @@ test('near-tie drill feedback reports the real gap and distinguishes the model t
   assert.match(result.text, /close model score/i);
   assert.doesNotMatch(result.text, /100%/);
 });
+
+test('drill feedback can explain a signed score using its point gap without inventing a share', () => {
+  const ranking = [{ id: 0, score: 0 }, { id: 1, score: -.2 }];
+  const result = judge(stageFor(5, { players: 4, cak: false }), grade(ranking[1], ranking, 4));
+  assert.equal(result.pass, false);
+  assert.match(result.text, /Rank 2 of 2/);
+  assert.match(result.text, /0\.20 points below/);
+  assert.doesNotMatch(result.text, /%|null|close model/);
+});

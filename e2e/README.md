@@ -54,6 +54,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   loading transcripts and benchmark figures independently.
   Blind-practice checks retain committed-pick grades while hiding future road targets in earlier
   verdicts as well as on the map, then restore both through Show best.
+  A custom C&K board with a negative-scoring choice checks point-gap feedback in the preview,
+  committed verdict and reload, while blind practice still hides the uncommitted comparison.
   Chromium page-scale emulation checks confirmation and result focus at 2×/3× magnification in phone
   and desktop layouts. It checks the visual viewport's vertical bounds; a wide control can still
   require horizontal panning. Other engines skip this CDP-only check, not the ordinary focus tests.

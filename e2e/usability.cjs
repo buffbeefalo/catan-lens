@@ -125,6 +125,23 @@ test('first-pick feedback keeps future road hints hidden during blind practice',
   assert.equal(await page.locator('#svg .road.me').count(), 2);
 });
 
+test('custom signed scores show a point gap in previews and verdicts without changing the score', async t => {
+  const page = await open(t, { width: 390, height: 844 }, '?players=3&seat=1&cak=1&b=' + 'b2'.repeat(19) + '&ports=ignore&me=0&opp=6,10,17,22&seq=m0,o6,o10,o17,o22');
+  await page.locator('.vx.legal[aria-label="Corner 44"]').press('Enter');
+  assert.match(await page.locator('.pick-card h2').innerText(), /0\.54 point gap/);
+  assert.doesNotMatch(await page.locator('.pick-card h2, .pick-card .grade').allTextContents().then(xs => xs.join(' ')), /%|null/);
+  await page.locator('.pick-card summary').first().click();
+  assert.match(await page.locator('.pick-card .stat').first().innerText(), /Score\s*-0\.51/);
+  await page.locator('#showbest').click();
+  assert.match(await page.locator('.pick-card h2').innerText(), /preview/);
+  assert.doesNotMatch(await page.locator('.pick-card').innerText(), /0\.54 point gap/);
+  await page.locator('#keep').click();
+  assert.match(await page.locator('.verdict').last().locator('h2').innerText(), /0\.54 point gap/);
+  await reloadInBrowser(page);
+  assert.match(await page.locator('.verdict').last().locator('h2').innerText(), /0\.54 point gap/);
+  assert.equal(await page.locator('.piece.me').count(), 2);
+});
+
 test('magnified pages keep confirmation and result focus inside the visual viewport', async t => {
   if ((process.env.CATAN_BROWSER || 'chromium') !== 'chromium') return t.skip('page-scale emulation uses Chromium CDP');
   for (const width of [390, 1400]) for (const scale of [2, 3]) for (const choice of ['first', 'last']) {

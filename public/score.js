@@ -133,7 +133,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   for (const n of numbers) { if (held.has(n) || seenHere.has(n)) repeated.push(n); seenHere.add(n); }
   const repeats = repeated.length;
   const repeatPen = repeats * REPEAT_PENALTY;
-  if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: `Repeats ${list([...new Set(repeated)].map(String))} — doubling up means feast-or-famine rolls and more 7-discards. A nudge, not a veto.` });
+  if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: `Repeats ${list([...new Set(repeated)].map(String))} — extra production on the same number does not add another paying roll. A nudge, not a veto.` });
 
   // R7 ports (on the corner, or a potential settlement two roads away at half value)
   const minePips = mine.reduce((acc, m) => { const p = vertexProduction(board, m).prod; for (const r in p) acc[r] = (acc[r] || 0) + p[r]; return acc; }, {});
@@ -251,15 +251,15 @@ export function grade(pick, ranking, players) {
   if (!ranked) return { rank: total + 1, total, pct: 0, gap: null, tier: 'weak', label: 'Unavailable pick', why: 'this corner is not in the current legal ranking.' };
   const rank = 1 + ranking.filter(r => r.score > ranked.score).length;   // ties share the higher rank
   const bestUnits = Math.round(ranking[0].score * 100), pickUnits = Math.round(ranked.score * 100);
-  const pct = bestUnits > 0 ? Math.floor(pickUnits * 10000 / bestUnits) / 100 : 100;
+  const pct = bestUnits > 0 && pickUnits >= 0 ? Math.floor(pickUnits * 10000 / bestUnits) / 100 : null;
   const gap = (bestUnits - pickUnits) / 100;
-  const tier = rank === 1 ? 'great' : rank <= players ? 'good' : pct >= 90 ? 'fair' : 'weak';
+  const tier = rank === 1 ? 'great' : rank <= players ? 'good' : pct !== null && pct >= 90 ? 'fair' : 'weak';
   const label = { great: 'Great pick', good: 'Good pick', fair: 'Fair pick', weak: 'Weak pick' }[tier];
   const why = {
     great: 'the best open corner on the board.',
     good: `one of the top ${players} open corners, the ones a ${players}-player table fights over.`,
     fair: `not in the top ${players}, but it still scores ${pct}% of the best corner.`,
-    weak: `outside the top ${players} and only ${pct}% of the best corner.`,
+    weak: pct === null ? `outside the top ${players} and ${gap.toFixed(2)} points below the best corner.` : `outside the top ${players} and only ${pct}% of the best corner.`,
   }[tier];
   return { rank, total, pct, gap, tier, label, why };
 }

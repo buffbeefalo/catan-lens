@@ -499,7 +499,8 @@ function placedVerdicts() {
   }
   return out;
 }
-const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>#${g.rank} of ${g.total} · ${g.pct}% of best</span></h2>
+const gradePosition = g => `#${g.rank} of ${g.total} · ${g.pct === null ? `${g.gap.toFixed(2)} point gap` : `${g.pct}% of best`}`;
+const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>${gradePosition(g)}</span></h2>
       <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
       ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
@@ -659,7 +660,7 @@ function render() {
     const idx = ranking.indexOf(r) + 1;
     const diff = compare(best, r);
     const g = grade(r, ranking, state.players);
-    out += html`<div class="card pick-card"><h2>Your pick <span>${reveal() ? `#${g.rank} of ${total} · ${g.pct}% of best` : 'preview'}</span></h2>
+    out += html`<div class="card pick-card"><h2>Your pick <span>${reveal() ? gradePosition(g) : 'preview'}</span></h2>
       ${reveal() ? `<p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>` : ''}
       <p class="sub" id="pick-resources">${esc(describe(r))}</p>
       <div class="pick-actions"><button class="btn" id="keep" data-corner="${r.id}" aria-describedby="pick-resources">Keep as ${stage} settlement</button><button class="btn ghost" id="cancel-pick">Cancel</button></div>

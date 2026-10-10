@@ -107,7 +107,7 @@ corner with lower raw production; the explanation and opening summary show that 
 | Resource value | Wheat and ore build cities and development cards, so they count a little more; sheep a little less. Later seats lean toward wood and brick (a road-building plan). |
 | Scarcity | A resource that is rare on *this* board is worth more: it trades at a premium and is hard to get elsewhere. |
 | Pairs | Wood with brick (roads) or wheat with ore (cities) from the same corner earns a small bonus. |
-| Repeated numbers | Two hexes with the same number means feast-or-famine rolls; a small penalty. |
+| Repeated numbers | Extra production on the same number does not add another paying roll; a small penalty. |
 | Harbours | When included, a 3:1 harbour helps anyone; a 2:1 harbour helps most when you produce plenty of that resource. A nearby harbour needs two roads and a new settlement before you can use it. |
 | Room to grow | A strong open corner two roads away is worth something; a dead end is not. |
 | Second settlement | Your second pick gets credit for covering resources your first one lacks, especially wheat and ore. |
@@ -123,7 +123,7 @@ stays dominant.
 - **Ranking.** Every legal corner (the distance rule: no settlement next to another) is scored and
   sorted. The best one gets a gold ring on the map and a "Best settlement" card.
 - **Your pick.** Click any corner to preview it: the app grades it (Great / Good / Fair / Weak), shows
-  its rank and its score as a percentage of the best, and explains why a higher-ranked corner scores
+  its rank and its score share (or point gap when a percentage is unsuitable), and explains why a higher-ranked corner scores
   better. When the choice comes down to small differences between the same kinds of bonuses, it compares
   the actual score terms. A corner can produce more raw cards yet score lower because of its resources;
   the explanation acknowledges that tradeoff. Equal scores share the top rank without a claim that one
@@ -131,6 +131,8 @@ stays dominant.
   penalty; both corners can repeat the same number, but one may repeat it more often.
   Scores show hundredths. Percentages are rounded down to at most two decimal places, so a lower
   score cannot look like a 100% tie or cross the 90% grade boundary through display rounding.
+  A negative pick score or a nonpositive best score uses the point gap instead: these heuristic scores
+  can cross zero on unusual custom boards, where a percentage is not a useful comparison.
 - **Opponents.** Switch to "Mark opponent" and click where others placed; the ranking only counts what is
   still open.
 - **Projected placements.** Placement is a snake draft (seats 1 to N, then N back to 1). The app fills
