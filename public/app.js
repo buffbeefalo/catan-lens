@@ -95,7 +95,12 @@ function keepPreviousBoard(kind = state.linkError ? 'link' : 'board') {
 addEventListener('popstate', () => {
   restoreLocation();
   const heading = $('#panel h2');
-  if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+  if (heading) {
+    heading.tabIndex = -1; heading.focus({ preventScroll: true });
+    requestAnimationFrame(() => {
+      if (heading.isConnected && document.activeElement === heading) heading.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    });
+  }
 });
 
 // ---- Model -----------------------------------------------------------------

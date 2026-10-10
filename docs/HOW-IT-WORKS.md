@@ -77,6 +77,7 @@ the placement marks and offers **Restore cleared pieces**, including their origi
 Clearing an empty board or entering the same seed does not discard that recovery point. A shared link contains
 only the current board; recovery history belongs to the original tab. Changing 3↔4 or 5↔6 players
 keeps the entered board and placements because its shape has not changed.
+Recovery focuses the restored panel heading and brings it into view, including on short screens.
 If the browser temporarily refuses link updates, a warning appears and editing still works. **Copy
 link** uses the board currently shown, even if the address bar is behind. Keep the tab open, wait a
 moment and choose **Retry link update** before refreshing. If a recovery checkpoint or a Drill mode

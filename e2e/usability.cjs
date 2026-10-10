@@ -1234,6 +1234,37 @@ test('offline recovery restores both board layouts and ordered pieces inside the
   }
 });
 
+test('board recovery keeps its heading visible after native history scroll restoration', async t => {
+  for (const viewport of [{ width: 320, height: 480 }, { width: 700, height: 390 }]) for (const action of ['size', 'blank']) {
+    const page = await open(t, viewport, '?players=6&seed=42');
+    await page.locator('#custom').click();
+    if (action === 'size') await page.locator('#settings summary').click();
+    else await page.locator('[data-disclosure="editor-help"] summary').click();
+    const original = page.url();
+    if (action === 'size') await page.locator('#players').getByRole('button', { name: '4', exact: true }).click();
+    else await page.locator('#blank-board').click();
+    const replacement = page.url();
+    await page.context().setOffline(true);
+    const visibleHeading = async () => {
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      assert.ok(await page.locator('#panel h2').first().evaluate(el => {
+        const r = el.getBoundingClientRect(), viewport = visualViewport;
+        return el === document.activeElement && r.top >= viewport.offsetTop && r.bottom <= viewport.offsetTop + viewport.height;
+      }), 'the focused recovery heading stays visible after native scroll restoration');
+    };
+    await navigateHistory(page, () => page.locator('#restore-board').click());
+    assert.equal(page.url(), original);
+    await visibleHeading();
+    await moveInBrowserHistory(page, 1);
+    assert.equal(page.url(), replacement);
+    await visibleHeading();
+    await moveInBrowserHistory(page, -1);
+    assert.equal(page.url(), original);
+    await visibleHeading();
+    await page.close();
+  }
+});
+
 test('history navigation retains unsaved Drill progress and reloads the correct return snapshot without a connection', async t => {
   const { stageFor, setupStage } = await import('../public/drill.js');
   const page = await open(t, { width: 1400, height: 900 }, '?players=4&seed=42&seat=1&me=43&opp=0&seq=m43,o0');

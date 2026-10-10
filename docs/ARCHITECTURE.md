@@ -69,7 +69,9 @@ and explicit research-document route apply before opening anything. See
    Ordinary edits still use `replaceState`, preserving the recovery marker. Restore uses browser Back;
    `popstate` resets board state and rebuilds from that entry's URL inside the existing document. It
    restores the matching Drill return snapshot without fetching the page or discarding pending progress
-   saves. The restored panel heading receives focus. A normal refresh can still rebuild from the URL
+   saves. The restored panel heading receives focus and scrolls into view on the next animation frame,
+   after native history scroll restoration. The queued scroll checks that this heading is still connected
+   and focused, so a later navigation or focus change wins. A normal refresh can still rebuild from the URL
    and browser history metadata, but needs the app's files to remain available.
    Tiles and coastal edge ids are never carried between the 19- and 30-hex graphs. Same-shape player-count
    changes retain the board and placement order.

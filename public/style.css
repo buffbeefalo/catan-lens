@@ -129,8 +129,8 @@ button:focus-visible,summary:focus-visible,a:focus-visible,.seed:focus-visible{o
 .opening-facts details,.opening-preview{margin-top:12px}
 .opening-facts details>summary,.opening-preview>summary{min-height:44px;padding:10px 0}
 .opening-builds th[scope="row"]{width:42%}
-.opening-card h2,.verdict h2,#drill-result,#number-help{scroll-margin-block:16px}
-.opening-card h2:focus-visible,.verdict h2:focus-visible,#drill-result:focus-visible,#number-help:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+#panel h2[tabindex="-1"],#drill-result,#number-help{scroll-margin-block:16px}
+#panel h2[tabindex="-1"]:focus-visible,#drill-result:focus-visible,#number-help:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .modes{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .rank{list-style:none;margin:8px 0 0;padding:0}
 .rank li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-top:1px solid var(--line);cursor:pointer}
