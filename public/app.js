@@ -430,8 +430,7 @@ function previewPick(id) {
     const keep = $('#keep');
     if (state.pick !== id || !keep || Number(keep.dataset.corner) !== id) return;
     keep.focus({ preventScroll: true });
-    const rect = keep.getBoundingClientRect();
-    if (rect.top < 12 || rect.bottom > innerHeight - 12) keep.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    keep.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   });
 }
 function cancelPick() {
@@ -452,9 +451,8 @@ function keepPick() {
   const result = $('#history-warning h2') || $('.progress-warning h2') || (state.drill ? $('#drill-result') : state.me.length === 2 ? $('#opening-heading') : $('.verdict h2'));
   if (result) {
     result.tabIndex = -1; result.focus({ preventScroll: true });
-    const rect = result.getBoundingClientRect();
     if (matchMedia('(max-width:1023px)').matches) result.scrollIntoView({ block: 'start', behavior: 'instant' });
-    else if (rect.top < 12 || rect.bottom > innerHeight - 12) result.scrollIntoView({ block: 'nearest', behavior: 'instant' });
+    else result.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   }
 }
 // Undo reverses the LAST action, whichever kind it was (a pending preview first).

@@ -125,6 +125,33 @@ test('first-pick feedback keeps future road hints hidden during blind practice',
   assert.equal(await page.locator('#svg .road.me').count(), 2);
 });
 
+test('magnified pages keep confirmation and result focus inside the visual viewport', async t => {
+  if ((process.env.CATAN_BROWSER || 'chromium') !== 'chromium') return t.skip('page-scale emulation uses Chromium CDP');
+  for (const width of [390, 1400]) for (const scale of [2, 3]) for (const choice of ['first', 'last']) {
+    const page = await open(t, { width, height: 844 });
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setPageScaleFactor', { pageScaleFactor: scale });
+    assert.equal(await page.evaluate(() => visualViewport.scale), scale);
+    const checkFocus = async id => {
+      await page.waitForFunction(id => document.activeElement.id === id, id);
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const visible = await page.evaluate(() => {
+        const rect = document.activeElement.getBoundingClientRect(), view = visualViewport;
+        return rect.top >= view.offsetTop - 1 && rect.bottom <= view.offsetTop + view.height + 1;
+      });
+      assert.ok(visible, `${id} stays vertically visible at ${width}px, ${scale}x, ${choice} corner`);
+    };
+    for (const pick of [1, 2]) {
+      const corner = page.locator('.vx.legal')[choice]();
+      await corner.focus(); await corner.press('Enter');
+      await checkFocus('keep'); await page.keyboard.press('Enter');
+      await checkFocus(pick === 1 ? 'verdict-1' : 'opening-heading');
+    }
+    assert.equal(await page.locator('.piece.me').count(), 2);
+    await page.close();
+  }
+});
+
 test('generated board replacements retain the prior board and placement order through refresh and history', async t => {
   for (const width of [390, 1400]) for (const action of ['new', 'balanced', 'seed']) {
     const page = await open(t, { width, height: 900 }, '?seed=42&players=4&seat=1&me=43&opp=0&seq=m43,o0');

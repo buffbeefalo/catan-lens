@@ -96,6 +96,8 @@ and explicit research-document route apply before opening anything. See
    facts do not change scores or rankings. The UI hides previews before blind/drill answers and labels
    C&K as a two-settlement comparison without base-game income or build projections. Confirmation moves
    focus to the result (or a saving warning), and the single-column layout scrolls the result into view.
+   Preview confirmation and desktop result focus always request native nearest scrolling, so the
+   browser accounts for a magnified or panned visual viewport rather than the full layout height.
 10. The app's help link uses the current serialized board query; the explainer's return link copies its
     `location.search` onto a fixed relative destination. They preserve shareable state, including unreadable queries, without a
     second storage record or a user-controlled return destination. The links work under both the local
