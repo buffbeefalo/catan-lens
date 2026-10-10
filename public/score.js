@@ -154,11 +154,12 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     }
     const c = portValue(t, plan.portMul, 'Sits on'); if (!port || c.v > port.v) port = c;
   }
-  if (!port) for (const n of v.neighbors) for (const e of board.graph.vertices[n].edges) {
-    const t = board.harbors[e]; if (t === undefined || ownedPorts.has(t)) continue;
-    const far = board.graph.edges[e].v.find(x => x !== n);   // the port edge's other end: the only corner you could still settle on
-    if (far === undefined || far === vid || !after.has(far)) continue;
-    const c = portValue(t, plan.portMul * PORT.farMul, 'Two roads and a new settlement would reach'); if (!port || c.v > port.v) port = c;
+  if (!port) for (const n of v.neighbors) for (const target of board.graph.vertices[n].neighbors) {
+    if (!after.has(target)) continue;
+    for (const t of portsAt(board, target)) {
+      if (ownedPorts.has(t)) continue;
+      const c = portValue(t, plan.portMul * PORT.farMul, 'Two roads and a new settlement would reach'); if (!port || c.v > port.v) port = c;
+    }
   }
   if (port) parts.push({ k: 'port', v: round(port.v), text: port.text });
 

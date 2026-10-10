@@ -122,12 +122,13 @@ test('exhausting the bounded seed search returns an honestly classified board wi
 });
 
 test('a displayed 0.30-point gap belongs to the inclusive near-tie band despite binary decimal noise', () => {
-  const stage = stageFor(15), result = setupStage(stage, 157);
-  assert.equal(result.ranking[0].score, 11.57);
-  assert.equal(result.ranking[1].score, 11.27);
+  const stage = stageFor(15), result = setupStage(stage, 25);
+  assert.equal(result.ranking[0].score, 12.13);
+  assert.equal(result.ranking[1].score, 11.83);
+  assert.ok(result.ranking[0].score - result.ranking[1].score > .3, 'the raw subtraction still exposes the rounding edge case');
   assert.equal(result.margin, 0.3);
   assert.equal(result.fitsDifficulty, true);
-  assert.deepEqual(findSeed(stage, () => 157, 1), { seed: 157, tries: 1, fallback: false });
+  assert.deepEqual(findSeed(stage, () => 25, 1), { seed: 25, tries: 1, fallback: false });
 });
 
 test('judge: pass when the pick ranks within the stage rule, fail otherwise, and says why', () => {
@@ -155,13 +156,14 @@ test('an unavailable corner never clears a drill stage, including empty and shor
 
 test('near-tie drill feedback reports the real gap and distinguishes the model target from playing strength', () => {
   const stage = stageFor(15, { players: 4, cak: false });
-  const { ranking } = setupStage(stage, 1);
-  const pick = ranking.find(r => r.id === 31);
-  assert.equal(ranking[0].score, 12.04);
-  assert.equal(pick.score, 11.98);
+  const { ranking } = setupStage(stage, 57);
+  const pick = ranking.find(r => r.id === 30);
+  assert.equal(ranking[0].score, 11.84);
+  assert.equal(pick.score, 11.82);
+  assert.equal(Math.round(pick.score / ranking[0].score * 100), 100, 'whole-percent rounding would hide this non-tie');
   const result = judge(stage, grade(pick, ranking, 4));
   assert.equal(result.pass, false, 'the exact-best exercise keeps its stated target');
-  assert.match(result.text, /0\.06 points/);
+  assert.match(result.text, /0\.02 points/);
   assert.match(result.text, /close model score/i);
   assert.doesNotMatch(result.text, /100%/);
 });

@@ -705,17 +705,17 @@ test('unreadable saved progress is left untouched until an explicit saving actio
 test('near-tie drill feedback shows the point gap and precise score only after committing', async t => {
   const page = await open(t, { width: 390, height: 844 });
   await page.evaluate(() => localStorage.setItem('catan-lens.levels', JSON.stringify({ ladders: { '4-base': Array.from({ length: 14 }, (_, i) => i + 1) } })));
-  await page.goto(base + '?players=4&drill=1&level=15&seed=1', { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: 'Corner 31', exact: true }).press('Enter');
-  assert.doesNotMatch(await page.locator('.pick-card').innerText(), /99\.5%|11\.98|0\.06 points/);
+  await page.goto(base + '?players=4&drill=1&level=15&seed=57', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Corner 30', exact: true }).press('Enter');
+  assert.doesNotMatch(await page.locator('.pick-card').innerText(), /99\.83%|11\.82|0\.02 points/);
   assert.equal(await page.locator('.opening-preview, .opening-facts').count(), 0, 'an unanswered second-settlement drill must not reveal the opening analysis');
   await page.locator('#keep').click();
   const result = await page.locator('.card.drill.fail .grade').innerText();
-  assert.match(result, /99\.5%/);
-  assert.match(result, /0\.06 points/);
+  assert.match(result, /99\.83%/);
+  assert.match(result, /0\.02 points/);
   assert.match(result, /close model score/i);
   assert.doesNotMatch(result, /100%/);
-  assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score 11.98');
+  assert.equal(await page.locator('.verdict .stat span').first().innerText(), 'Score 11.82');
   assert.match(await page.locator('.verdict .grade').innerText(), /Good pick/);
   assert.equal(await page.locator('#next-stage').count(), 0);
   assert.equal(await page.locator('.opening-card').count(), 1, 'opening facts are available once the drill answer is committed');
@@ -1611,9 +1611,9 @@ test('the best open corner is ringed on the map exactly when the best card is sh
 });
 
 test('tied best corners are all ringed and the best card says it is a tie', async t => {
-  const page = await open(t, { width: 1400, height: 900 }, '?seed=16&players=5&seat=1');   // corners 25 and 30 score the same
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=120&players=5&seat=1');   // corners 30 and 42 score the same
   const rings = await page.locator('#svg .best-ring').evaluateAll(els => els.map(e => e.getAttribute('data-corner')).sort());
-  assert.deepEqual(rings, ['25', '30']);
+  assert.deepEqual(rings, ['30', '42']);
   assert.match(await page.locator('.best-card h2').innerText(), /tied with 1 other/);
 });
 

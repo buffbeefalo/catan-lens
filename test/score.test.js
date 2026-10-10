@@ -411,18 +411,17 @@ test('R7: a nearby harbour explanation names the roads and settlement needed wit
   assert.equal(result.score, 15.28);
 });
 
-test('R7: a nearby port is credited only if its far end can still be settled (sweep finding)', () => {
+test('R7: an isolated nearby port loses credit when its legal endpoint is blocked', () => {
   let credited = 0, blocked = 0;
   for (let seed = 1; seed <= 40; seed++) {
-    const b = generateBoard({ seed });
-    for (const [eid] of Object.entries(b.harbors)) {
+    const full = generateBoard({ seed });
+    for (const [eid, type] of Object.entries(full.harbors)) {
+      const b = { ...full, harbors: { [eid]: type } };
       const [a, c] = b.graph.edges[eid].v;
       for (const [near, far] of [[a, c], [c, a]]) {
         // a corner exactly one road from `near` that is not itself on the port edge
         const vid = b.graph.vertices[near].neighbors.find(n => n !== far && !b.graph.vertices[n].edges.some(e => b.harbors[e] !== undefined));
         if (vid === undefined) continue;
-        const portEdgesNearby = new Set(b.graph.vertices[vid].neighbors.flatMap(n => b.graph.vertices[n].edges.filter(e => b.harbors[e] !== undefined)));
-        if (portEdgesNearby.size !== 1) continue;   // a second port nearby could legitimately keep the credit
         const free = scoreVertex(b, S(), vid, { occupied: [] });
         const blocker = b.graph.vertices[far].neighbors.find(n => n !== near && n !== vid && !b.graph.vertices[vid].neighbors.includes(n));
         if (blocker === undefined) continue;
@@ -469,15 +468,15 @@ test('starting road avoids a corner the other seats take in the projected openin
 });
 
 test('a starting-road explanation identifies a target used by the projected own second settlement', () => {
-  const b = generateBoard({ seed: 10 }), settings = S({ players: 3, seat: 2 });
-  const draft = simulateDraft(b, settings, { me: [44], opp: [24] });
-  assert.equal(draft.find(d => d.you && d.round === 2).id, 46);
-  const r = suggestRoad(b, settings, 44, { occupied: [24] });
-  assert.equal(r.edge, 57);
-  assert.equal(r.target.id, 46);
+  const b = generateBoard({ seed: 8 }), settings = S({ players: 3, seat: 2 });
+  const draft = simulateDraft(b, settings, { me: [34], opp: [44] });
+  assert.equal(draft.find(d => d.you && d.round === 2).id, 32);
+  const r = suggestRoad(b, settings, 34, { occupied: [44] });
+  assert.equal(r.edge, 44);
+  assert.equal(r.target.id, 32);
   assert.match(r.text, /also uses this target for your second settlement/);
   assert.match(r.text, /occupied when setup ends/);
-  const other = suggestRoad(generateBoard({ seed: 1 }), S(), 43);
+  const other = suggestRoad(generateBoard({ seed: 1 }), settings, 33, { occupied: [43] });
   assert.doesNotMatch(other.text, /also uses this target for your second settlement/);
 });
 

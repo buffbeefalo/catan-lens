@@ -17,6 +17,36 @@ function boardWith(harbors) {
   return board;
 }
 
+test('a two-road harbour approach can reach the port from inland', () => {
+  const board = { ...generateBoard({ seed: 1 }), harbors: { 60: '3:1' } };
+  assert.ok(board.graph.vertices[33].neighbors.includes(37));
+  assert.ok(board.graph.vertices[37].neighbors.includes(45));
+  assert.ok(board.graph.edges[60].v.includes(45));
+  assert.ok(!board.graph.edges[60].v.includes(37), 'the approach road is not the harbour edge');
+  assert.ok(legalVertices(board.graph, [33]).includes(45));
+  const before = scoreVertex({ ...board, harbors: {} }, settings, 33);
+  const result = scoreVertex(board, settings, 33);
+  assert.equal(port(result)?.v, .5);
+  assert.match(port(result).text, /Two roads and a new settlement would reach the 3:1 port/);
+  assert.equal(result.score, before.score + .5);
+  assert.equal(openingFacts(board, [33, 45]).tradeRates.ore, 3);
+  assert.equal(port(scoreVertex(board, settings, 33, { occupied: [46] })), undefined, 'a neighbouring opponent blocks that harbour settlement');
+});
+
+test('reachable harbour credit considers both endpoints and keeps the best new access', () => {
+  const board = { ...generateBoard({ seed: 1 }), harbors: { 5: 'wood', 6: 'sheep' } };
+  assert.ok(legalVertices(board.graph, [2]).includes(6));
+  const result = scoreVertex(board, settings, 2);
+  assert.equal(result.prod.sheep, 5);
+  assert.equal(port(result)?.v, .75);
+  assert.match(port(result).text, /2:1 sheep port/);
+  const withOwnedCopy = { ...board, harbors: { ...board.harbors, 19: 'sheep' } };
+  const owned = scoreVertex(withOwnedCopy, settings, 2, { mine: [16], occupied: [16] });
+  assert.ok(legalVertices(board.graph, [16]).includes(2));
+  assert.ok(legalVertices(board.graph, [16, 2]).includes(6), 'the new harbour site itself remains legal');
+  assert.doesNotMatch(port(owned)?.text || '', /2:1 sheep port/, 'owned types stay excluded from every approach');
+});
+
 test('owned harbour types earn no duplicate credit at the second settlement', () => {
   for (const type of types) for (const plan of plans) {
     const firstOnly = boardWith({ 5: type });
