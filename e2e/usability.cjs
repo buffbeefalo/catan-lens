@@ -501,6 +501,60 @@ test('a drill roundtrip restores the entered or generated board and its placemen
   }
 });
 
+test('reloading an active drill keeps the custom-board return point and the previous-board recovery', async t => {
+  const page = await open(t, { width: 390, height: 844 });
+  await page.locator('#custom').click();
+  const original = new URL(page.url()).search;
+  await page.locator('#rand-board').click();
+  await page.locator('#preview-best').click();
+  await page.locator('#keep').click();
+  await page.locator('#mode-opp').click();
+  await page.locator('.vx.legal').first().press('Enter');
+  const before = new URL(page.url()).search;
+  await page.locator('#drill').click();
+  await page.locator('#settings summary').click();
+  await page.locator('#players button').last().click();
+  await page.locator('#cak').click();
+  await page.locator('#start-drill').click();
+  const exercise = new URL(page.url()).search;
+  await reloadInBrowser(page);
+  assert.equal(new URL(page.url()).search, exercise);
+  await page.locator('#practice').click();
+  assert.equal(new URL(page.url()).search, before, 'reload must retain the board, table and placement order from before Drill');
+  assert.equal(await page.locator('#mode-opp').getAttribute('aria-pressed'), 'true');
+  await page.locator('#undo').click();
+  assert.equal(await page.locator('.piece.me').count(), 1);
+  assert.equal(await page.locator('.piece.opp').count(), 0);
+  await page.locator('#restore-board').click();
+  await page.waitForLoadState('networkidle');
+  assert.equal(new URL(page.url()).search, original, 'Drill does not overwrite the older recovery checkpoint');
+});
+
+test('drill setup survives reload and a copied drill link contains only its own table', async t => {
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=3&seat=2&me=41&opp=0&seq=m41,o0&best=0');
+  const before = new URL(page.url()).search;
+  await page.locator('#drill').click();
+  await page.locator('#settings summary').click();
+  await page.locator('#players button').last().click();
+  await page.locator('#cak').click();
+  const setupLink = page.url();
+  await reloadInBrowser(page);
+  assert.equal(await page.locator('#drill').getAttribute('aria-pressed'), 'true');
+  assert.equal(await page.locator('#start-drill').count(), 1, 'refresh stays on the table-selection screen');
+  assert.equal(new URL(page.url()).searchParams.get('players'), '6');
+  const other = await open(t, { width: 390, height: 844 }, new URL(setupLink).search);
+  assert.equal(await other.locator('#start-drill').count(), 1, 'a setup link opens setup');
+  await other.locator('#practice').click();
+  assert.equal(new URL(other.url()).searchParams.get('players'), '6', 'a fresh tab cannot restore another tab\'s old table');
+  assert.equal(await other.locator('.piece.me, .piece.opp').count(), 0);
+  await page.locator('#practice').click();
+  assert.equal(new URL(page.url()).search, before);
+  await reloadInBrowser(page);
+  await page.locator('#drill').click();
+  await page.locator('#practice').click();
+  assert.equal(new URL(page.url()).search, before, 'later drill visits use the current board as their return point');
+});
+
 test('blank and partially entered boards do not offer settlement advice', async t => {
   const page = await open(t, { width: 390, height: 844 });
   await page.locator('#custom').click();

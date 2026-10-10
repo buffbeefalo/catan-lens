@@ -27,6 +27,8 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   plus unreadable queries and the fixed same-app return destination.
   Evidence-page checks keep original and fresh benchmark intervals distinct, fit both tables on a
   narrow phone and show a useful message when the results download fails.
+  Drill-return checks retain generated/custom boards, table settings, placement tools and Undo order
+  across setup/exercise reloads, preserve older recovery checkpoints and keep fresh-tab links separate.
   Set `CATAN_BROWSER=firefox` or `CATAN_BROWSER=webkit` to run this suite in another engine.
   Recovery checks use in-page reload and history navigation to exercise the browser's native behavior.
 

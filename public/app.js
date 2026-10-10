@@ -24,10 +24,11 @@ function readUrl() {
   state.portMode = ['ignore', 'entered'].includes(q.get('ports')) ? q.get('ports') : 'check';
   state.randomSeat = q.get('rseat') === '1';
   state.drill = q.get('drill') === '1';
+  state.drillSetup = state.drill && q.get('setup') === '1';
   state.stage = Math.min(MAX_LEVEL, Math.max(1, Math.floor(n('level', 1))));
   if (state.drill) {
     state.stage = Math.min(state.stage, maxCleared() + 1);   // a link cannot skip ahead of your progress
-    if (!seedOk) state.seed = findSeed(stageFor(state.stage, table()), randomSeed).seed;   // the level picks its board
+    if (!seedOk && !state.drillSetup) state.seed = findSeed(stageFor(state.stage, table()), randomSeed).seed;   // the level picks its board
   }
   if (!state.drill && (q.has('b') || q.get('h'))) {
     state.custom = true;
@@ -48,7 +49,11 @@ function readUrl() {
 function writeUrl() {
   if (state.linkError) { history.replaceState(history.state, '', state.linkError.query); return; }
   const q = new URLSearchParams({ players: state.players, seed: state.seed, seat: state.seat, cak: state.cak ? 1 : 0, bal: state.balanced ? 1 : 0, best: state.showBest ? 1 : 0, rseat: state.randomSeat ? 1 : 0 });
-  if (state.drill && !state.drillSetup) { q.set('drill', 1); q.set('level', state.stage); }   // the level defines its pieces; none are written
+  if (state.drill) {
+    q.set('drill', 1);
+    if (state.drillSetup) q.set('setup', 1);
+    else q.set('level', state.stage);   // the level defines its pieces; none are written
+  }
   else {
     if (state.custom) { const enc = encodeBoard(board); q.delete('seed'); q.set('b', enc.b); if (enc.h) q.set('h', enc.h); if (state.portMode !== 'check') q.set('ports', state.portMode); }
     if (state.me.length) q.set('me', state.me.join(','));
@@ -286,7 +291,7 @@ const unlocked = n => n <= maxCleared() + 1;
 function gotoLevel(n) { state.stage = n; state.attempts = 0; newStageBoard(); }
 
 // ---- Drill (stages) -----------------------------------------------------------
-let freePlay = null;   // the board, settings and action history before entering the drill
+let freePlay = history.state?.catanFreePlay?.version === 1 ? history.state.catanFreePlay.state : null;
 function newStageBoard() {
   const st = stageFor(state.stage, table());
   const f = findSeed(st, randomSeed);
@@ -297,10 +302,19 @@ function newStageBoard() {
 // Drill on = set your table first (players + C&K stay live in the bar, everything else locks); Start begins
 // the ladder at the next open level for that table. A drill=1&level=N link skips the setup and uses its table.
 function setDrill(on) {
-  if (on) { freePlay = structuredClone(state); state.custom = false; state.linkError = null; state.tool = null; state.numHex = null; }
+  if (on) {
+    freePlay = structuredClone(state);
+    history.replaceState({ ...history.state, catanFreePlay: { version: 1, state: freePlay } }, '', location.href);
+    state.custom = false; state.linkError = null; state.tool = null; state.numHex = null;
+  }
   state.drill = on; state.drillSetup = on; state.answered = null; state.attempts = 0; state.pick = null; state.mode = 'me';
   state.me = []; state.opp = []; state.history = [];
-  if (!on) { if (freePlay) Object.assign(state, freePlay); else state.seed = randomSeed(); freePlay = null; }
+  if (!on) {
+    if (freePlay) Object.assign(state, freePlay); else state.seed = randomSeed();
+    freePlay = null;
+    const entry = { ...history.state }; delete entry.catanFreePlay;
+    history.replaceState(entry, '', location.href);
+  }
   controls(); rebuild();
 }
 // ---- Your board (enter the board in front of you) -----------------------------

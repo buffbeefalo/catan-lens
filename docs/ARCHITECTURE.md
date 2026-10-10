@@ -83,6 +83,11 @@ serve.js            zero-dependency local server (npm start)
     destinations. They preserve the current shareable state, including unreadable queries, without a
     second storage record or a user-controlled return destination. The links work under both the local
     dashboard prefix and GitHub Pages, and the help page can be refreshed before returning.
+11. Entering Drill stores the existing free-play state in versioned `history.state.catanFreePlay`.
+    Reload reads that snapshot; exiting restores it and removes only that field, retaining older
+    recovery metadata. `drill=1&setup=1` shares the table-selection screen, while an active exercise
+    uses `drill=1&level=N`. The return snapshot stays out of the URL and belongs to the current history
+    entry, so a fresh tab's drill link contains no earlier exploration board.
 
 ## Where to change things
 

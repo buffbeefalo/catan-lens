@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
   await page.goto(BASE + '?seed=42&players=4&seat=1', { waitUntil: 'networkidle' });
   await page.click('#drill');
   // setup step: no level yet, Players + C&K live, everything else locked, no hints, no placing
-  let p = q(); assert.equal(p.drill, undefined); assert.equal(p.level, undefined);
+  let p = q(); assert.equal(p.drill, '1'); assert.equal(p.setup, '1'); assert.equal(p.level, undefined);
   let t = await text(); assert.match(t, /set your table first[\s\S]*4 players, base game[\s\S]*fresh ladder, you start at level 1/); assert.doesNotMatch(t, /Level 1 of|Best first settlement|Projected placements|Mark opponent/);
   assert.ok(!(await disabled('#players button'))); assert.ok(!(await disabled('#cak'))); assert.ok(await disabled('#seat button')); assert.ok(await disabled('#showbest')); assert.ok(await disabled('#seed'));
   assert.deepEqual(await counts(), { badges: 0, opp: 0, me: 0 });
@@ -29,7 +29,7 @@ const assert = require('node:assert/strict');
   await showSettings(page); await page.click('#players button:nth-child(2)'); await showSettings(page); await page.click('#cak');
   assert.match(await text(), /4 players, base game/);
   await page.click('#start-drill');
-  p = q(); assert.equal(p.drill, '1'); assert.equal(p.level, '1'); assert.equal(p.players, '4'); assert.equal(p.cak, '0');
+  p = q(); assert.equal(p.drill, '1'); assert.equal(p.setup, undefined); assert.equal(p.level, '1'); assert.equal(p.players, '4'); assert.equal(p.cak, '0');
   t = await text(); assert.match(t, /Level 1 of 16[\s\S]*Clear favourite[\s\S]*4 players · you are seat 1[\s\S]*top 3 corners/); assert.doesNotMatch(t, /Best first settlement|Projected placements|Mark opponent|set your table/);
   assert.deepEqual(await counts(), { badges: 0, opp: 0, me: 0 });
   assert.ok(await disabled('#players button')); assert.ok(await disabled('#cak')); assert.ok(await disabled('#showbest'));

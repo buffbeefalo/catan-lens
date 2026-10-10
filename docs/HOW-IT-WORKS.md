@@ -131,8 +131,11 @@ lost on reload or closing. A retry preserves the latest saved progress for other
 is also retried as a reset. Clearing browser storage in another tab updates the displayed flags. Saved
 levels are checked for valid table names, duplicates and the supported level range before being used.
 Leaving Drill restores the board, table settings and settlement order you were exploring before entering
-it, including a hand-entered board. This return point lasts for the current page session; a drill link
-contains the drill itself, not the earlier exploration board.
+it, including a hand-entered board and the selected placement tool. The current tab's history entry
+keeps that return point through a refresh, both during table setup and in an active exercise. Setup
+links reopen table selection; exercise links reopen their level. Neither link contains the earlier
+exploration board, so opening one in a fresh tab cannot restore another tab's board. An older
+**Restore previous board** checkpoint remains available after the Drill visit.
 
 ## 5. Does following it actually win games?
 
