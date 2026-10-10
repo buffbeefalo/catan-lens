@@ -41,6 +41,9 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   focus ring against the page. These are browser emulations, not an assistive-technology certification.
   Owned-harbour checks explain duplicate access without improving trade rates, survive reload and
   keep that explanation hidden before a blind-practice commitment.
+  Evidence-page checks separate both harbour-policy comparisons from the earlier benchmark, retain
+  exact win counts and uncertainty, and fit the tables at phone width. Failed data loads give a
+  useful explanation and leave the methods link available.
   Media fallback checks simulate network errors, unsuccessful HTTP responses and empty transcripts,
   then retry successfully with keyboard focus retained. Video errors open the corresponding transcript.
   A tiny generated WAV exercises real media source selection and failed/recovered downloads in the

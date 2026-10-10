@@ -1,8 +1,81 @@
 # Benchmark results
 
-The current app also corrects tiny arithmetic errors at half-cent scoring boundaries. The game tests
-below predate that rounding repair and continue to describe their exact frozen source commits.
-No new win-rate test is attributed to the rounding change, and none of these outcomes tuned it.
+Every comparison below records its frozen policy. The newest test isolates complete harbour
+reachability; both versions already contain the owned-harbour and rounding corrections. It does not
+measure those earlier changes separately. No test outcomes tuned the policies, and the tests are not pooled.
+
+## Harbour reachability correction, 2026-10-09
+
+Policy `r7-reachable-ports-2026-10-09` counts every legal harbour settlement two roads away, including
+inland approaches to either endpoint. Useful direct access retains priority, already-owned types stay
+excluded, and bonus sizes and all non-port terms are unchanged. This repairs graph reachability;
+winning outcomes do not determine whether a route is legal.
+
+The [plan](evidence/reachable-harbour-plan-2026-10-09.json) was recorded at **2026-10-10T05:16:22Z**
+(9 October in Pacific time). The baseline was frozen then at
+[`94838bc`](https://github.com/buffbeefalo/catan-lens/tree/94838bc0b9db863384dc8ed678211b789ff02b94).
+The corrected policy was frozen at **05:26:04Z**, before its games, at
+[`cfa7f48`](https://github.com/buffbeefalo/catan-lens/tree/cfa7f484a61be5983572ad689431014d8b562984).
+Only the scoring input differs among the nine frozen source files. Python dependencies, Catanatron
+and its opponent policy match the preceding test. Both policies contain the half-cent rounding repair.
+
+Hash seeds **301–320** and board seeds **3,000,000–3,007,999** are separate from every earlier test.
+Each arm plays 8,000 matched boards and subject seats, in 20 clusters of 400 boards. All **24,000 games
+finished**; the records were independently checked at **05:42:35Z**. There were no outcome-based retries.
+
+| Opening chosen by | Wins / games | Win rate (95% interval) |
+|---|---|---|
+| Lens with complete harbour reachability | 1,981 / 8,000 | 24.8% ± 1.1 |
+| Lens before the reachability correction | 1,980 / 8,000 | 24.8% ± 1.0 |
+| The bot's own opening | 2,015 / 8,000 | 25.2% ± 1.1 |
+
+The exact Lens rates are 24.7625% and 24.7500%. The predeclared primary comparison subtracts the
+baseline from the correction within each cluster, then uses a two-sided approximate 95% Student t
+interval over the 20 differences (19 degrees of freedom). The value-bot comparison is descriptive.
+
+| Comparison | Difference in percentage points | Approximate 95% interval |
+|---|---|---|
+| Corrected Lens minus previous Lens (primary) | +0.0125 | −0.7705 to +0.7955 |
+| Corrected Lens minus bot's own opening (descriptive) | −0.4250 | −1.7202 to +0.8702 |
+
+One additional win does not establish an advantage or prove equivalent performance. There are **975
+changed win/loss pairs**: 488 losses become wins and 487 wins become losses. In total, 3,445 paired
+records differ in win, victory points or turns. The archive does not contain every move, so matching
+result fields do not prove identical game histories.
+
+Subject seats are **2,022 / 1,995 / 1,972 / 2,011** for seats 1–4, identically in each arm. This is a
+four-player base-game bot experiment, not an estimate of human improvement or evidence for other
+player counts or Cities & Knights. Both paired intervals include a disadvantage and an advantage.
+
+### Check the reachability comparison
+
+- [All 24,000 games, compressed JSON Lines](evidence/reachable-harbour-2026-10-09.jsonl.gz)
+- [Frozen source hashes, clusters and exact comparisons](evidence/reachable-harbour-2026-10-09.json)
+- [Standard-library verifier](verify_reachable_harbours.py)
+- [Frozen Python dependencies](evidence/requirements-2026-10-09.txt)
+
+```sh
+python3 bench/catanatron/verify_reachable_harbours.py
+python3 bench/catanatron/verify_reachable_harbours.py --sources
+```
+
+The verifier checks both archive hashes, all finished paired games, subject seats, each cluster's
+counts, exact wins, changed outcomes, intervals and public figures. The source option also compares
+all nine inputs with the recorded commits and needs full git history. Continuous integration checks
+this archive alongside the two earlier experiments. Fault checks reject missing/wrong public counts,
+wrong cluster counts, duplicate games, mismatched seats, unfinished games and a wrong paired interval.
+
+### Reproduce the reachability comparison
+
+Use separate checkouts at the two commits above and the frozen Python dependencies. For runs 1–20,
+use `arms=value,lens` in the baseline checkout and `arms=lens` in the corrected checkout, with separate
+output directories. The environment setup follows the fresh-seed instructions below.
+
+```sh
+PYTHONHASHSEED=$((300 + run)) .venv/bin/python bench/catanatron/catanatron_bench.py \
+  --games 400 --start $((3000000 + (run - 1) * 400)) --jobs 4 \
+  --arms "$arms" --out "comparison-output/run-$run.jsonl"
+```
 
 ## Owned-harbour correction, 2026-10-09
 
@@ -178,6 +251,7 @@ seat's opening differs. Intervals are 95% t-intervals across the 20 run means (e
 The 2026-10-09 audit reran these same seeds and reproduced all five win counts and rounded intervals.
 This is a replication of the original observations. It is not pooled with the fresh-seed test above.
 
-Starting roads (`road_deadends.py`, seeds 0-399, deterministic): the first road ends in a dead end after setup
-22% of the time with Catan Lens's road and 42% with the bot's own. Before the 2026-09-29 road change, Catan Lens's
-first road was a dead end 52% of the time.
+Historical starting-road comparison (`road_deadends.py`, seeds 0–399, 2026-09-29 policies): the first
+road had no legal settlement site one road farther away after setup in 22% of openings with Lens's
+road and 42% with the bot's. Before that road-rule change, the Lens figure was 52%. These percentages
+are not new measurements of the later scoring policies.

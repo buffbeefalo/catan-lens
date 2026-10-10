@@ -184,5 +184,71 @@
    "winChanged": 4,
    "recordedOutcomeChanged": 13
   }
- }
+ },
+  "reachableHarbour": {
+    "date": "2026-10-09",
+    "policy": "r7-reachable-ports-2026-10-09",
+    "baselineCommit": "94838bc0b9db863384dc8ed678211b789ff02b94",
+    "sourceCommit": "cfa7f484a61be5983572ad689431014d8b562984",
+    "engineCommit": "ecf931181b9a65bb4116a2153fb78c16f1438e00",
+    "hashSeeds": [
+      301,
+      320
+    ],
+    "boardSeeds": [
+      3000000,
+      3007999
+    ],
+    "games": 8000,
+    "runs": 20,
+    "totalGames": 24000,
+    "unfinished": 0,
+    "arms": [
+      {
+        "key": "lens-corrected",
+        "label": "Lens with complete harbour reachability",
+        "win": 24.8,
+        "ci": 1.1,
+        "wins": 1981,
+        "games": 8000,
+        "runs": 20
+      },
+      {
+        "key": "lens-before",
+        "label": "Lens before the reachability correction",
+        "win": 24.8,
+        "ci": 1.0,
+        "wins": 1980,
+        "games": 8000,
+        "runs": 20
+      },
+      {
+        "key": "value",
+        "label": "The bot's own opening",
+        "win": 25.2,
+        "ci": 1.1,
+        "wins": 2015,
+        "games": 8000,
+        "runs": 20
+      }
+    ],
+    "pairedDifferences": {
+      "corrected-minus-lens-before": {
+        "differencePP": 0.01250000000000015,
+        "lower95PP": -0.7705228779646537,
+        "upper95PP": 0.795522877964654
+      },
+      "corrected-minus-value": {
+        "differencePP": -0.4249999999999999,
+        "lower95PP": -1.720187285385686,
+        "upper95PP": 0.8701872853856865
+      }
+    },
+    "recordChanges": {
+      "changedToWin": 488,
+      "changedToLoss": 487,
+      "winChanged": 975,
+      "recordedOutcomeChanged": 3445
+    }
+  }
 }

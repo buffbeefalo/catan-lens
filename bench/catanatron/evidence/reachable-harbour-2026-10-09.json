@@ -1,0 +1,382 @@
+{
+  "date": "2026-10-09",
+  "policy": "r7-reachable-ports-2026-10-09",
+  "predeclaredAt": "2026-10-10T05:16:22.775242+00:00",
+  "verifiedAt": "2026-10-10T05:42:35.978380+00:00",
+  "baselineCommit": "94838bc0b9db863384dc8ed678211b789ff02b94",
+  "sourceCommit": "cfa7f484a61be5983572ad689431014d8b562984",
+  "engineCommit": "ecf931181b9a65bb4116a2153fb78c16f1438e00",
+  "hashSeeds": [
+    301,
+    320
+  ],
+  "boardSeeds": [
+    3000000,
+    3007999
+  ],
+  "games": 8000,
+  "runs": 20,
+  "totalGames": 24000,
+  "unfinished": 0,
+  "subjectSeatCounts": {
+    "1": 2022,
+    "2": 1995,
+    "3": 1972,
+    "4": 2011
+  },
+  "method": "Predeclared two-sided approximate 95% Student t intervals over 20 cluster means, df19, t=2.093024054408263. Paired differences subtract policies within each cluster; units are percentage points.",
+  "primaryComparison": "corrected-minus-lens-before",
+  "descriptiveComparison": "corrected-minus-value",
+  "arms": [
+    {
+      "key": "lens-corrected",
+      "label": "Lens with complete harbour reachability",
+      "win": 24.8,
+      "ci": 1.1,
+      "wins": 1981,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "lens-before",
+      "label": "Lens before the reachability correction",
+      "win": 24.8,
+      "ci": 1.0,
+      "wins": 1980,
+      "games": 8000,
+      "runs": 20
+    },
+    {
+      "key": "value",
+      "label": "The bot's own opening",
+      "win": 25.2,
+      "ci": 1.1,
+      "wins": 2015,
+      "games": 8000,
+      "runs": 20
+    }
+  ],
+  "pairedDifferences": {
+    "corrected-minus-lens-before": {
+      "differencePP": 0.01250000000000015,
+      "lower95PP": -0.7705228779646537,
+      "upper95PP": 0.795522877964654
+    },
+    "corrected-minus-value": {
+      "differencePP": -0.4249999999999999,
+      "lower95PP": -1.720187285385686,
+      "upper95PP": 0.8701872853856865
+    }
+  },
+  "unroundedSummary": {
+    "lens-before": {
+      "meanPercent": 24.75,
+      "ci95HalfWidthPP": 0.9957071984808715,
+      "ci95Lower": 23.754292801519128,
+      "ci95Upper": 25.745707198480872,
+      "wins": 1980,
+      "games": 8000,
+      "runs": 20
+    },
+    "lens-corrected": {
+      "meanPercent": 24.762500000000003,
+      "ci95HalfWidthPP": 1.092640091185834,
+      "ci95Lower": 23.669859908814168,
+      "ci95Upper": 25.855140091185838,
+      "wins": 1981,
+      "games": 8000,
+      "runs": 20
+    },
+    "value": {
+      "meanPercent": 25.1875,
+      "ci95HalfWidthPP": 1.075626257183084,
+      "ci95Lower": 24.111873742816915,
+      "ci95Upper": 26.263126257183085,
+      "wins": 2015,
+      "games": 8000,
+      "runs": 20
+    }
+  },
+  "recordChanges": {
+    "changedToWin": 488,
+    "changedToLoss": 487,
+    "winChanged": 975,
+    "recordedOutcomeChanged": 3445
+  },
+  "inputSnapshots": {
+    "baseline": {
+      "createdAt": "2026-10-10T05:16:22.775059+00:00",
+      "purpose": "Frozen published policy before repairing inland two-road harbour reachability; includes preceding duplicate-port and half-cent-rounding corrections",
+      "sourceCommit": "94838bc0b9db863384dc8ed678211b789ff02b94",
+      "files": {
+        "package.json": "ba0a95ed53574257491acf0b39ed37f6cc60ae8e92f624282d0254ce45a74dd9",
+        "public/board.js": "59ebeac9ff77d97e8ca8fbf7f017fd7ce7d1777177cc5fc79fec346d896f4693",
+        "public/score.js": "77c1e88dd05e40ec0eb9e97518b491f80de9298045806d2f13abcfd6d0a920ee",
+        "public/geometry.js": "79cd75931fdc1238513995063bfa7566c32c051f35d1bb52f64a427eb36f0935",
+        "bench/lens-bridge.mjs": "ab7bc94731b9ead48404fee2d415a4df4b27fd766ebe9c7c9539e11e764a6f93",
+        "bench/catanatron/catanatron_bench.py": "536244e9fd88f969f194f1b300a8545e629f73cc1f0a0cafc3766a563188cf8e",
+        "bench/catanatron/road_deadends.py": "2522c05f3e7ceae516357c3b23f4ee18eb2c46008e27eeea176e13948895abd9",
+        "bench/catanatron/requirements.txt": "b4afebd40f8c2e620c0db5589ae87b0662de7b5fc032b8bbdca8cbb7382df3ce",
+        "bench/catanatron/summarize.py": "77c3f7e00db6579f1589df7c6519af3d804eaa7ebb57adfe844b4859e3c43c83"
+      }
+    },
+    "candidate": {
+      "createdAt": "2026-10-10T05:26:04.384443+00:00",
+      "purpose": "Frozen harbour reachability correction after 108 unit checks, 8 walkthroughs, 75 Chromium interactions and 5 focused tests each in Firefox and WebKit passed",
+      "sourceCommit": "cfa7f484a61be5983572ad689431014d8b562984",
+      "files": {
+        "package.json": "ba0a95ed53574257491acf0b39ed37f6cc60ae8e92f624282d0254ce45a74dd9",
+        "public/board.js": "59ebeac9ff77d97e8ca8fbf7f017fd7ce7d1777177cc5fc79fec346d896f4693",
+        "public/score.js": "c1789aeffcd89f8bbfa2b8ee288fef0b51c74173856f076787021ea242b3dc43",
+        "public/geometry.js": "79cd75931fdc1238513995063bfa7566c32c051f35d1bb52f64a427eb36f0935",
+        "bench/lens-bridge.mjs": "ab7bc94731b9ead48404fee2d415a4df4b27fd766ebe9c7c9539e11e764a6f93",
+        "bench/catanatron/catanatron_bench.py": "536244e9fd88f969f194f1b300a8545e629f73cc1f0a0cafc3766a563188cf8e",
+        "bench/catanatron/road_deadends.py": "2522c05f3e7ceae516357c3b23f4ee18eb2c46008e27eeea176e13948895abd9",
+        "bench/catanatron/requirements.txt": "b4afebd40f8c2e620c0db5589ae87b0662de7b5fc032b8bbdca8cbb7382df3ce",
+        "bench/catanatron/summarize.py": "77c3f7e00db6579f1589df7c6519af3d804eaa7ebb57adfe844b4859e3c43c83"
+      }
+    }
+  },
+  "originalRunHashes": {
+    "baseline": [
+      "a3005abfe1c4573d367b02394e3e236c41be95d3905f96623513abc8d42f70a7",
+      "79f4eac80fffdddc4e3f382c8b37c5f9594a68b63ac86b3ac49c72c7b45e978a",
+      "04ecfac1624ebab7370d4ca445fb6ce9a59266f75fb5c54a9fe4607d7fcda544",
+      "6c4089372e30d6b9febf34f48eebda7c80d353fa56552d810c9395ee4a4e8701",
+      "ede97da7169f08028807eb88a2c16aa21b0c740ba2a784da0835ae6f45a19a63",
+      "c455ad96984ab8ccbed411c8917209d0b4a12e7164fb72dc3b9d2c8589e25788",
+      "71ea48a9e1b212808ca05c671d1bae17a91e1ebb0ae428eff0b24bb595b91427",
+      "8ea3642dd2558cbd8f9ddb6c9e840f677f9b610bd3e81d4aae1920840e7d73ee",
+      "f901c0503f32dc67d3add20cfd4c34d1efcabe9dae7d90a8bf77a56f3dd987e3",
+      "bae18c0342bbc6463fbf64efff5fd79d8dd81b1ea01209cfab9262556d5dd425",
+      "80f70dae7263535af7faa112bf52d2d58eaabfc1c14b6be4f3e00aac96edd1d2",
+      "389433d46f1dd5ef69385dcac593bb7c192b2879aa6df5b58bd4988b2262f082",
+      "32ae4e27f1d7912eab660061d72f4e52f7cedadfe033cc6e6b5f19fc3d0cdf9a",
+      "0dea73363a3a2448c5c5907e6ba29c446b66f01a7d637e1ca3525810bd5b1fb8",
+      "b4ff69d907b729a58e069c20df37396a068261a7737626c102734d47e3ec2d3a",
+      "d6300b981527651ad58cdc5a572442a0c878f549a016441615e7912e3324a974",
+      "79b9beacfdc205f70b48df6ec31782bdc311edc075950f4075f5eb9da6344fd1",
+      "6fcca544594ad763dc2dbba9876a53fb5c56d5b39c3485e0cb637713cf55650b",
+      "d8a7ea3022718c6000ec2215ad8a3dd2e73869791c05bac7daf7429d5c98217c",
+      "b603cea827a486a5d8fe3c288635fa3ce6cbf6d0ce048823ec9f7eb8df12890a"
+    ],
+    "candidate": [
+      "da0628bf5ddd0f723dba0dc6d102d61c180cbced6eb78eb5f0985d56be6bc5b6",
+      "05b9cee61d60c664d09024a58cc2e98933edcb52c4b71de61053c20ac418e6b5",
+      "63d26fcbba7de69b10bfa57fe0caebb3028fe9aa0361ad382f7872e197747737",
+      "2677cbc9cffdba4ed17fa1196cbfc78fd202359d5d1ddb35a23d6215533d14d3",
+      "47771f742ca63a76d50bbccfcde23b0d188c64dac74c9d705ca53b85195685a0",
+      "4efe8d6d617d30c05ec4fe758339c927817579196c3c92fac756680f6c1bd66f",
+      "ce7aadf68c957cfc4026fa84f3936c6f908a32153c3955e4c552d8c3ac83db07",
+      "d1b573b8dd6c705b167a5eca068b81d37bdb3a48850fb59936a1df6e8b6b7c54",
+      "2e5c9004219f7f1f4f23a1bb0a8f707f7de4a2154ea0e45d2d8fd3c1b7e463e5",
+      "5b9a83d4f36d094a15ee8c1ee6af50c5069c3a1fd857d8f47e071b94297bad70",
+      "3d749e89dae936e788c0ad9e668a4a607c98ef8d39d6ac168e878d1537daebda",
+      "5dc21d82ed2e1f72369bbb4bb29b406a63d3dace7ad044c160c2aa887470fb5e",
+      "415da5f8a3eabe3e15e4057e1c5071f18f269ad02e25b294556061ff70547b58",
+      "17e3637e8948b0020199336208a18a04f414c663079449bcd873748b364e3794",
+      "e3c6383c98540feb1ae9ac1b23f5b29b6ca0eb92c80167c12ea22949fd573d00",
+      "5b1e99ecc741cdb34980e2c2a37532001d96d26d2b0b1329272fe24ed5578752",
+      "1b9a28924dc8671c094d393e847631e308cf40541016dfd58988a5d021f7959a",
+      "792725ec02adf4debfbddb5a1b9642321ed9f50a393ba6ad2f496d39eda8e7da",
+      "cff42acf9dc6413697e9601b1b1a9373989551e2385c7c73a69788bbf96a09b9",
+      "e3caaf9ea4ed9069f420d0c50647009d122dd548e36b09506a223267c4ada696"
+    ]
+  },
+  "clusters": [
+    {
+      "hashseed": "301",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 115,
+        "lens-corrected": 113,
+        "value": 105
+      }
+    },
+    {
+      "hashseed": "302",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 92,
+        "lens-corrected": 91,
+        "value": 115
+      }
+    },
+    {
+      "hashseed": "303",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 90,
+        "lens-corrected": 86,
+        "value": 97
+      }
+    },
+    {
+      "hashseed": "304",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 105,
+        "lens-corrected": 107,
+        "value": 98
+      }
+    },
+    {
+      "hashseed": "305",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 98,
+        "lens-corrected": 95,
+        "value": 84
+      }
+    },
+    {
+      "hashseed": "306",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 103,
+        "lens-corrected": 97,
+        "value": 110
+      }
+    },
+    {
+      "hashseed": "307",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 91,
+        "lens-corrected": 87,
+        "value": 91
+      }
+    },
+    {
+      "hashseed": "308",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 109,
+        "lens-corrected": 102,
+        "value": 99
+      }
+    },
+    {
+      "hashseed": "309",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 96,
+        "lens-corrected": 103,
+        "value": 95
+      }
+    },
+    {
+      "hashseed": "310",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 103,
+        "lens-corrected": 108,
+        "value": 114
+      }
+    },
+    {
+      "hashseed": "311",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 86,
+        "lens-corrected": 107,
+        "value": 87
+      }
+    },
+    {
+      "hashseed": "312",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 89,
+        "lens-corrected": 79,
+        "value": 99
+      }
+    },
+    {
+      "hashseed": "313",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 91,
+        "lens-corrected": 95,
+        "value": 100
+      }
+    },
+    {
+      "hashseed": "314",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 109,
+        "lens-corrected": 110,
+        "value": 106
+      }
+    },
+    {
+      "hashseed": "315",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 100,
+        "lens-corrected": 98,
+        "value": 105
+      }
+    },
+    {
+      "hashseed": "316",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 98,
+        "lens-corrected": 99,
+        "value": 95
+      }
+    },
+    {
+      "hashseed": "317",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 97,
+        "lens-corrected": 96,
+        "value": 110
+      }
+    },
+    {
+      "hashseed": "318",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 101,
+        "lens-corrected": 108,
+        "value": 111
+      }
+    },
+    {
+      "hashseed": "319",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 92,
+        "lens-corrected": 90,
+        "value": 87
+      }
+    },
+    {
+      "hashseed": "320",
+      "gamesPerArm": 400,
+      "wins": {
+        "lens-before": 115,
+        "lens-corrected": 110,
+        "value": 107
+      }
+    }
+  ],
+  "rawData": {
+    "file": "reachable-harbour-2026-10-09.jsonl.gz",
+    "gzipSha256": "dfd1971fe8c191b6068cc1e0eece434c239d9e72c0796faf79e193afd81e7638",
+    "jsonlSha256": "f460e69525ce241eae2171993b78c32c36bea5f80f2530520be2799eedbe878f",
+    "records": 24000,
+    "normalization": "Only the arm label changes: baseline lens becomes lens-before; candidate lens becomes lens-corrected. Records are sorted by hash seed, board seed and arm, with sorted JSON keys."
+  },
+  "rounding": "Displayed win rates use decimal half-up rounding to one decimal from exact win counts. Inference uses unrounded cluster means.",
+  "environment": {
+    "python": "3.12.3",
+    "requirements": "requirements-2026-10-09.txt"
+  },
+  "scope": "Four-player base-game bot play. Both arms already include owned-harbour exclusion and consistent half-cent rounding. Only harbour reachability differs. This comparison is separate from all earlier tests; no outcome-based tuning or retries.",
+  "interpretation": "Corrected Lens won one additional matched game (1,981 versus 1,980), while 488 losses became wins and 487 wins became losses. The primary paired 95% t interval includes both a disadvantage and an advantage. This does not establish superiority or equivalent performance. The descriptive comparison with the value bot is also uncertain. Legal reachability is established by graph and rule checks, not winning outcomes."
+}

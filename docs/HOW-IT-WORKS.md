@@ -108,7 +108,7 @@ corner with lower raw production; the explanation and opening summary show that 
 | Scarcity | A resource that is rare on *this* board is worth more: it trades at a premium and is hard to get elsewhere. |
 | Pairs | Wood with brick (roads) or wheat with ore (cities) from the same corner earns a small bonus. |
 | Repeated numbers | Extra production on the same number does not add another paying roll; a small penalty. |
-| Harbours | When included, a 3:1 harbour helps anyone; a 2:1 harbour helps most when you produce plenty of that resource. A nearby harbour needs two roads and a new settlement before you can use it. |
+| Harbours | When included, a 3:1 harbour helps anyone; a 2:1 harbour helps most when you produce plenty of that resource. A nearby harbour needs two roads and a new settlement before you can use it, including when those roads approach from inland. A type you already own adds no bonus. Useful direct access takes priority; otherwise only the best reachable new harbour counts. |
 | Room to grow | A strong open corner two roads away is worth something; a dead end is not. |
 | Second settlement | Your second pick gets credit for covering resources your first one lacks, especially wheat and ore. |
 
@@ -221,7 +221,17 @@ The rules come from expert advice, but advice is not proof, so the repository te
 are Catanatron's value-function bot; one seat has its opening chosen by a different strategy, then plays the rest of
 the game exactly like the others. A fair seat wins 25%.
 
-The owned-harbour policy avoids rewarding a harbour type you already own. A separate 24,000-game comparison
+The current policy completes the search for legal harbour destinations two roads away, including
+approaches from inland. Its separate 24,000-game test gave corrected Lens **1,981 wins out of 8,000**,
+versus **1,980** immediately before the correction and **2,015** for the bot's own opening. The primary
+paired difference was **+0.0125 percentage points** (approximate 95% interval: **−0.7705 to +0.7955**).
+It does not establish a win-rate advantage or prove equal policies: 488 matched games changed to a win
+and 487 to a loss. Against the bot's own opening, the difference was −0.425 points (−1.7202 to +0.8702).
+Both versions already include the ownership and rounding corrections. The fix follows legal access,
+independently of these outcomes. [Frozen inputs and raw games](../bench/catanatron/results.md#harbour-reachability-correction-2026-10-09)
+document the comparison without pooling it with earlier tests or tuning on its outcomes.
+
+The earlier owned-harbour policy avoids rewarding a harbour type you already own. A separate 24,000-game comparison
 on 8,000 new boards gave it **1,972 wins**, versus **1,976** before the correction and **1,985** for the
 bot's own opening. The correction's difference is **−0.05 percentage points**, with the planned approximate
 95% interval from **−0.098 to −0.002**. Only four win/loss pairs changed, all against the correction;
@@ -230,8 +240,8 @@ policies. Against the bot's own opening, the difference is −0.16 points (−1.
 uncertain. [Frozen inputs, exact counts and raw games](../bench/catanatron/results.md#owned-harbour-correction-2026-10-09)
 keep this test separate from those below. No policy was tuned on these results.
 
-The current app also corrects tiny arithmetic errors at half-cent scoring boundaries. These game
-tests predate that rounding repair and retain their frozen policies; the repair has no new win-rate result.
+The app also corrects tiny arithmetic errors at half-cent scoring boundaries. The newest comparison
+contains that repair in both versions, so it does not measure the repair's separate effect on winning.
 
 This table is the **earlier policy's 2026-10-09 fresh-seed test**: 20 bot tie-breaking seeds and 8,000 board seeds that
 were not in the earlier benchmark. The policy was frozen before the test, and its outcomes were not
@@ -258,12 +268,12 @@ order, which is fixed for a whole run and differs between runs. A single run the
 game-to-game luck suggests (an early single-run test swung from 28% to 22% between runs). The table above repeats the
 benchmark under 20 different hash seeds and computes the interval across runs, not across games.
 
-**Starting roads.** The opening phase itself is deterministic, so roads can be compared on identical situations.
-Over 400 openings, the first road the app suggested used to end in a dead end once setup was over 52% of the time,
-because it aimed at the best corner open *now* and other players took it first. It now skips corners the projected
-draft hands to other seats: 22% dead ends, against 42% for the bot's own road choice. Win rates did not change
-measurably (the bot plays on in its own way after the opening), but a road that leads somewhere is what the advice
-is for.
+**Starting roads.** The original 2026-09-29 comparison used 400 openings. Before the road rule considered
+the projected remaining placements, 52% of first roads had no legal settlement site one road beyond
+them after setup. The revised rule reduced that observed figure to 22%, versus 42% for the bot's road
+choice. These are historical measurements of those policies, not new rates for today's scoring policy
+or a promise about human opponents. The app still checks projected placements and explains contested
+targets; each full-game test above records the exact policy it measured.
 
 **What the openings look like.** `npm run report` compares the two settlements each strategy ends up with, from
 identical situations on 500 boards and every seat, without playing the game:

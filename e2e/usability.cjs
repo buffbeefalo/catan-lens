@@ -849,9 +849,17 @@ test('help preserves an unreadable link verbatim and its return stays within thi
   assert.equal(await page.locator('.best-ring').count(), 0);
 });
 
-test('the evidence page separates the harbour correction from earlier benchmarks on phones', async t => {
+test('the evidence page separates the harbour corrections from earlier benchmarks on phones', async t => {
   for (const width of [320, 1400]) {
     const page = await open(t, { width, height: 900 }, 'how-it-works.html');
+    const reachable = page.locator('#reachable-harbour-results');
+    assert.equal(await reachable.locator('tbody tr').count(), 3);
+    assert.match(await reachable.innerText(), /1,981 wins/);
+    assert.match(await reachable.innerText(), /1,980 wins/);
+    assert.match(await reachable.innerText(), /2,015 wins/);
+    assert.match(await page.locator('#reachable-harbour-comparison').innerText(), /one more win/i);
+    assert.match(await page.locator('#reachable-harbour-comparison').innerText(), /−0\.77 to \+0\.80/);
+    assert.match(await page.locator('#policy-version-note').innerText(), /both versions already contain the ownership and rounding fixes/);
     const corrected = page.locator('#owned-harbour-results');
     assert.equal(await corrected.locator('tbody tr').count(), 3);
     assert.match(await corrected.innerText(), /1,972 wins/);
@@ -879,6 +887,7 @@ test('the evidence page explains a results download failure instead of leaving a
   await page.goto(base + 'how-it-works.html', { waitUntil: 'networkidle' });
   assert.match(await page.locator('#results-status').innerText(), /could not be loaded/i);
   assert.equal(await page.locator('#owned-harbour-results tbody tr').count(), 0);
+  assert.equal(await page.locator('#reachable-harbour-results tbody tr').count(), 0);
   assert.ok(await page.getByRole('link', { name: /benchmark methods and records/i }).isVisible());
 });
 
@@ -1201,6 +1210,7 @@ test('Drill difficulty notices follow the actual seed through links, refresh and
   await page.addInitScript(() => { Math.random = () => 74.5 / 0xffffffff; });
   for (const seed of ['&seed=74', '']) {
     await page.goto(base + '?players=4&drill=1&level=15' + seed, { waitUntil: 'networkidle' });
+    await page.waitForURL(url => url.searchParams.get('seed') === '74');
     assert.equal(new URL(page.url()).searchParams.get('seed'), '74');
     assert.match(await page.locator('#difficulty-note').innerText(), /outside.*usual difficulty band/i);
     assert.doesNotMatch(await page.locator('#difficulty-note').innerText(), /this one is close|3\.02|corner \d/i);
@@ -1208,7 +1218,7 @@ test('Drill difficulty notices follow the actual seed through links, refresh and
     await reloadInBrowser(page);
     assert.equal(await page.locator('#difficulty-note').count(), 1);
   }
-  for (const seed of [1, 157]) {
+  for (const seed of [1, 25]) {
     await page.goto(base + '?players=4&drill=1&level=15&seed=' + seed, { waitUntil: 'networkidle' });
     assert.equal(await page.locator('#difficulty-note').count(), 0, 'a fitting seed, including the exact boundary, clears the notice');
   }

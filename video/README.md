@@ -11,6 +11,9 @@ that timeline: the app window on a backdrop, a camera that eases between framing
 recorded path, chapter labels, and the title, results and end cards from `cards.html`. There is no music on
 purpose: nothing in the pipeline can judge music, so the videos carry the voice alone.
 
+Each captured state also records the page's URL query, preserving the exact board, settings and placements
+without its local server address. Use it to reproduce a scene during a later policy or footage review.
+
 Pipeline (from the repository root; needs Node 22, ffmpeg with libx264, and a CUDA GPU for the voice):
 
 ```sh

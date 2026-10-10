@@ -95,7 +95,7 @@ window.__load = (data, which) => {
   if (which === 'outro') { $('#end').style.display = 'flex'; $('#e-title').textContent = D.outro.title; $('#e-line').textContent = D.outro.line; $('#e-url').textContent = D.site; }
   if (which === 'results') {
     $('#results').style.display = 'block';
-    $('#r-sub').textContent = `Fresh-seed test · 9 October 2026 · ${(D.results.games * D.results.arms.length).toLocaleString('en-US')} complete games, ${D.results.runs} runs. Only one seat's opening differs; the same value-function bot plays on afterward.`;
+    $('#r-sub').textContent = `Earlier frozen policy · 9 October 2026 · ${(D.results.games * D.results.arms.length).toLocaleString('en-US')} complete games, ${D.results.runs} runs. Only one seat's opening differs; the same value-function bot plays on afterward.`;
     $('#rows').innerHTML = D.results.arms.map(a => `<div class="row${a.key.startsWith('lens') ? ' lens' : ''}"><div class="lab">${a.label}</div><div class="track"><div class="bar"></div><div class="val"><b>0.0%</b><small>± ${a.ci.toFixed(1)}</small></div></div></div>`).join('') + '<div class="fair"><span>fair seat, 25%</span></div>';
   }
 };

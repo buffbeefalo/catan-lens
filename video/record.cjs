@@ -64,7 +64,8 @@ const moveTime = (a, b) => Math.min(1.05, 0.42 + Math.hypot(b[0] - a[0], b[1] - 
       const key = crypto.createHash('sha1').update(buf).digest('hex').slice(0, 16);
       if (!seen.has(key)) { seen.set(key, `states/${key}.png`); fs.writeFileSync(path.join(dir, `states/${key}.png`), buf); }
       const file = seen.get(key);
-      if (tl.states.at(-1)?.file !== file) tl.states.push({ t: +at.toFixed(3), file });
+      const query = new URL(page.url()).search;
+      if (tl.states.at(-1)?.file !== file || tl.states.at(-1)?.query !== query) tl.states.push({ t: +at.toFixed(3), file, query });
     }
     async function rectOf(sel) {
       if (sel === 'page') return [0, 0, VIEW.width, VIEW.height];

@@ -1,0 +1,50 @@
+{
+  "predeclaredAt": "2026-10-10T05:16:22.775242+00:00",
+  "purpose": "Measure a graph-reachability correctness repair; do not tune weights or choose it based on win outcomes",
+  "baselineCommit": "94838bc0b9db863384dc8ed678211b789ff02b94",
+  "baselineManifestSha256": "4a05d84f2f02f66ae067d0ba5b7a46c8f4a6f4f9de9078f718b58fa720865a87",
+  "candidate": "Consider every legal settlement destination two edges away for future harbour access, including inland approaches. Preserve bonus magnitudes,owned-type exclusion,direct-port priority and all other score components. Freeze candidate source and commit before its games.",
+  "arms": [
+    "Lens before reachability repair",
+    "Lens with reachability repair",
+    "value-function opening control"
+  ],
+  "hashSeeds": [
+    301,
+    302,
+    303,
+    304,
+    305,
+    306,
+    307,
+    308,
+    309,
+    310,
+    311,
+    312,
+    313,
+    314,
+    315,
+    316,
+    317,
+    318,
+    319,
+    320
+  ],
+  "boardSeeds": [
+    3000000,
+    3007999
+  ],
+  "gamesPerArm": 8000,
+  "totalGames": 24000,
+  "workersPerProcess": 4,
+  "baselineArms": [
+    "value",
+    "lens"
+  ],
+  "candidateArms": [
+    "lens"
+  ],
+  "analysis": "Candidate minus baseline within20 matched clusters is primary;candidate minus value descriptive. Report all finishes,board/seatpairs,exact wins,clustermeans and paired95% t intervals with19df. Publish regardless of direction,no outcome-based tuning or retries. Four-player base-game bots only,no human-effect claim.",
+  "acceptance": "Legal finite scoring;all legal two-edge harbour endpoints considered;blocked targets and owned port types excluded;direct-port priority retained;non-port numericcomponents unchanged;Ignore harbour effects identical. Winning outcomes do not establish graph reachability."
+}

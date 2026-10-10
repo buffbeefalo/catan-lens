@@ -53,6 +53,9 @@ and explicit research-document route apply before opening anything. See
    R7 derives owned harbour types from `mine` and excludes them from direct and reachable bonuses,
    without altering `board.harbors`. A redundant direct port gets a non-scoring explanation and does
    not prevent a useful different reachable port from being considered.
+   Useful direct access keeps priority. Otherwise, R7 checks every legal settlement destination two
+   graph edges away and the harbours incident to it, including approaches from inland. It credits
+   only the best new harbour type; reaching the coast by road alone does not grant a trade rate.
 3. `app.js` keeps one `state` object, mirrors it into the URL on every change (so any view can be shared), and
    re-renders the panel and the board marks. `landReadiness` and `harborStatus` in `board.js` gate ranking and
    draft computation; incomplete land or an unresolved harbour choice also hides placed verdicts and

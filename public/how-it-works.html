@@ -97,7 +97,7 @@
     <tr><td>Scarcity</td><td>A resource that is rare on this board is worth more.</td></tr>
     <tr><td>Pairs</td><td>Wood with brick, or wheat with ore, from the same corner earns a small bonus.</td></tr>
     <tr><td>Repeats</td><td>Two hexes with the same number is feast-or-famine: a small penalty.</td></tr>
-    <tr><td>Harbours</td><td>When included, 3:1 helps anyone; 2:1 helps most when you produce plenty of that resource. A harbour type you already own adds no duplicate bonus. A nearby harbour needs two roads and a new settlement before use.</td></tr>
+    <tr><td>Harbours</td><td>When included, 3:1 helps anyone; 2:1 helps most when you produce plenty of that resource. A harbour type you already own adds no duplicate bonus. A nearby harbour needs two roads and a new settlement before use; approaching from inland counts too. Useful direct access takes priority; otherwise only the best reachable new harbour counts.</td></tr>
     <tr><td>Room to grow</td><td>A strong open corner two roads away is worth something; a dead end is not.</td></tr>
     <tr><td>Second settlement</td><td>Credit for covering what the first one lacks, especially wheat and ore.</td></tr>
     <tr><td>Starting road</td><td>Prefer a direction with a useful two-road destination; the card explains conflicts in the projected setup.</td></tr>
@@ -109,9 +109,14 @@
   <p><b>Projected placements</b> shows this model's choices for each unmarked turn. People may choose differently. Road advice considers the remaining setup; if its target is also your projected second settlement, the card explains that the site would be occupied when setup ends. <b>Show best</b> reveals road hints in the map and verdicts.</p>
 
   <h2>Does following it win games?</h2>
-  <p id="policy-version-note">The current version avoids rewarding a harbour type you already own. That correction's comparison is separate from the earlier policy's results below; no weights were tuned on these outcomes. A later correction makes score rounding consistent when the same board is turned. The frozen game tests below predate that rounding correction, which has no new win-rate result.</p>
+  <p id="policy-version-note">The current version counts legal inland approaches to harbours, excludes trading access you already own, and rounds the same physical board consistently. The latest comparison isolates the harbour-reachability correction; both versions already contain the ownership and rounding fixes. Each earlier test keeps its own frozen policy. No weights were tuned on these outcomes.</p>
   <p><a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s value-function bot plays every seat. One seat's opening is chosen by each strategy, then it plays on like everyone else. Strategies face the same boards and seat orders. An evenly matched seat would win 25%.</p>
   <p id="results-status" role="status">Loading benchmark results…</p>
+  <h3>Complete harbour reachability · 9 October 2026</h3>
+  <p>This separate test finished 24,000 games on 8,000 fresh boards. It compares the correction for previously missed inland harbour routes with the policy immediately before it. Both versions were fixed before their games began.</p>
+  <table id="reachable-harbour-results"></table>
+  <p id="reachable-harbour-comparison">The correction had <b>one more win</b>: 1,981 versus 1,980 out of 8,000. The difference is +0.0125 percentage points, with an approximate 95% interval from −0.77 to +0.80. This does not establish an advantage or prove equal performance. Of the matched games, 488 changed from a loss to a win and 487 from a win to a loss.</p>
+  <p>Against the bot's own opening, the corrected policy's difference was −0.425 percentage points (95% interval: −1.72 to +0.87). That comparison also remains uncertain. The fix follows legal harbour access; its correctness does not depend on winning more simulated games.</p>
   <h3>Owned-harbour correction · 9 October 2026</h3>
   <p>This separate test finished 24,000 games on another 8,000 fresh boards. Both policies were fixed before their games began. The correction removes credit for trading access you already have; it was not chosen to improve these results.</p>
   <table id="owned-harbour-results"></table>
@@ -182,11 +187,13 @@
     showResults('results', res);
     showResults('holdout-results', res.holdout);
     showResults('owned-harbour-results', res.ownedHarbour);
+    showResults('reachable-harbour-results', res.reachableHarbour);
     document.getElementById('results-status').hidden = true;
   }).catch(() => {
     document.getElementById('results').textContent = '';
     document.getElementById('holdout-results').textContent = '';
     document.getElementById('owned-harbour-results').textContent = '';
+    document.getElementById('reachable-harbour-results').textContent = '';
     document.getElementById('results-status').textContent = 'Benchmark results could not be loaded. The methods and records are linked below.';
   });
 })();
