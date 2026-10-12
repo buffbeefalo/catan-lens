@@ -12,6 +12,8 @@ and starting-road suites. Set `CATAN_URL` to test another deployment instead; se
 - `custom.cjs`: Your board: paint, numbers, ports, box check, link round-trip, blank board, hostile links
 - `fold.cjs`: layout at phone, foldable, tablet and desktop widths: no sideways scroll; setup and paint tools
   above the board in single column
+- `pwa.cjs`: the installable app: manifest and icons, the offline copy taking control, and a board link and the
+  help page opening with the network cut (automated browsers skip the offline copy unless a test turns it on)
 - `usability.cjs` (`node --test`): confirmation visibility after taps and keys at seven widths, cancellation, taps
   on number tokens, blind-drill hint secrecy, keyboard draft choices, projection visibility, and the best-corner
   ring (ties, opponents, undo, restored links, phone width); keyboard board entry, incomplete-board gating,

@@ -16,7 +16,11 @@
 <meta name="color-scheme" content="light dark">
 <script>try{const t=localStorage.getItem("catan-lens.theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch{}</script>
 <meta name="darkreader-lock">
-<link rel="icon" href="data:,">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f4efe4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131b15" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -72,6 +76,9 @@
   };
   addEventListener('error', event => { if (event.target?.id === 'app-module' || event instanceof ErrorEvent) failed(); }, true);
   addEventListener('unhandledrejection', failed);
+  // Offline copy for the installed app (sw.js). Automated test browsers skip it, so tests that simulate failed
+  // downloads still reach the network; e2e/pwa.cjs turns it back on to test the offline path itself.
+  if ('serviceWorker' in navigator && !navigator.webdriver) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
 </script>
 <script type="module" src="app.js" id="app-module"></script>
