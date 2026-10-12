@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Catan opening review</title>
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../public/icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../public/style.css">
+<style>
+[hidden]{display:none!important}
+.study{max-width:1200px;margin:0 auto;padding:0 24px 32px}
+.notice{border:1px solid var(--amber);border-radius:8px;padding:12px 16px;background:var(--card);font-size:15px}
+.rules{margin:0;padding-left:18px}.rules li{margin:4px 0}
+.code-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 0}
+input[type="text"],select,textarea{font:inherit;min-height:44px;padding:6px 10px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,#pos-title:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.positions ol{list-style:none;display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0;padding:0}
+.positions button{min-width:52px;min-height:44px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font-family:var(--mono);font-size:12px;cursor:pointer}
+.positions button.done{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.positions button[aria-current="step"]{box-shadow:0 0 0 3px var(--accent2)}
+.position{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start;margin-top:16px}
+.position h2{font-size:18px;margin:0 0 4px}
+.position h3{font-size:13px;margin:12px 0 4px}
+#task{margin:0 0 8px;font-size:15px}
+#board{max-height:78vh}
+#placed{margin:0;padding-left:22px;font-size:13px}
+.legend{font-size:12px;color:var(--mut);margin:6px 0}
+.answer-col fieldset{border:1px solid var(--line);border-radius:8px;margin:0 0 12px;padding:10px 12px}
+.answer-col legend{font-weight:600;padding:0 4px}
+.answer-col select,.answer-col textarea{width:100%}
+.answer-col .note{margin:0 0 6px}
+.alts{display:grid;grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:2px 6px;max-height:260px;overflow:auto}
+.alts label,.scale label{display:flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;font-family:var(--mono)}
+.scale{display:flex;flex-wrap:wrap;gap:0 14px}.scale label{font-family:var(--ui)}
+.steps,.actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 0}
+.steps .btn{flex:1}
+.finish{margin-top:24px;border-top:1px solid var(--line)}
+#storage.warn{color:var(--amber);font-weight:600}
+#tap{margin:8px 0 0}
+.corner{cursor:pointer}
+.corner circle{fill:var(--card);stroke:var(--line2);stroke-width:.025}
+.corner text{font-family:var(--mono);font-size:.17px;font-weight:600;text-anchor:middle;fill:var(--ink);pointer-events:none}
+.corner.ok circle{stroke:var(--ink);stroke-width:.05;stroke-dasharray:.035 .035}
+.corner.second circle{stroke:var(--ink);stroke-width:.06;stroke-dasharray:.1 .06}
+.corner.choice circle{fill:var(--accent2);stroke:var(--piece-ink);stroke-width:.07}
+.corner.choice text{fill:var(--on-accent2)}
+.piece-n{font-family:var(--mono);font-size:.2px;font-weight:600;text-anchor:middle;fill:var(--piece-ink);pointer-events:none}
+.piece-n.mine{fill:var(--on-accent)}
+@media (max-width:900px){.position{grid-template-columns:1fr}}
+@media (max-width:600px){.study{padding:0 16px 24px}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><h1 class="wordmark" id="title">Catan opening review</h1></div>
+</header>
+<main class="study">
+  <p id="blocked" class="notice" hidden>This page could not start. Chrome, Edge and Safari block pages that are opened straight from a file. Open this file in Firefox instead, or ask the study team for a web address to use.</p>
+  <noscript><p class="notice">This page needs JavaScript to show the positions.</p></noscript>
+  <div id="app" hidden>
+    <section class="card" aria-labelledby="intro-h">
+      <h2 id="intro-h">How it works</h2>
+      <ul class="rules">
+        <li>Each position comes from a 4-player base game with the standard rules. Settlements go down in snake order: seats 1, 2, 3, 4, then 4, 3, 2, 1.</li>
+        <li>The pieces already on the board were placed by a fixed rule, not by real players. Take them as given.</li>
+        <li data-mode="review">Choose the corner you would actually play. Then tick any other corners a strong player could reasonably choose instead, say how sure you are, and add a sentence on why if you like.</li>
+        <li data-mode="test">Choose the corner you would actually play and say how sure you are. Work on your own: no notes, no apps and no help.</li>
+        <li>The page gives no hints and keeps no score. Please do not use Catan Lens or any other tool while you answer.</li>
+        <li>Your answers stay in this browser. Nothing is sent anywhere. When you are done, download your answers and give the file to the study team.</li>
+      </ul>
+      <p class="code-row"><label for="code">Your code (optional)</label> <input type="text" id="code" maxlength="40" autocomplete="off" spellcheck="false"> <span class="note">Use the code the study team gave you. Please do not type your name or email.</span></p>
+    </section>
+    <nav class="positions" aria-label="Positions">
+      <p id="progress" class="sub"></p>
+      <ol id="nav"></ol>
+    </nav>
+    <section class="position" aria-labelledby="pos-title">
+      <div>
+        <h2 id="pos-title" tabindex="-1">Position</h2>
+        <p id="task"></p>
+        <div class="board"><svg id="board" role="img" aria-label="Board map. The open corners and the placed pieces are also listed in words on this page."></svg></div>
+        <p class="legend">Open corners show their numbers. A square is another player's settlement and the house is yours; the number on each is the seat. A filled corner is your choice, a dashed ring your planned second, a dotted ring a corner you also accept.</p>
+        <div class="seg" id="tap" role="group" aria-label="What a click on a corner sets">
+          <button type="button" data-tap="choice" aria-pressed="true">Your choice</button>
+          <button type="button" data-tap="second" aria-pressed="false">Planned second</button>
+          <button type="button" data-tap="ok" aria-pressed="false">Also acceptable</button>
+        </div>
+        <h3>Placed so far, in order</h3>
+        <ol id="placed"></ol>
+      </div>
+      <div class="answer-col">
+        <fieldset>
+          <legend id="choice-legend">Your choice</legend>
+          <label for="choice" class="sr">Corner</label>
+          <select id="choice"></select>
+        </fieldset>
+        <fieldset id="second-box">
+          <legend>Second settlement you would aim for (optional)</legend>
+          <p class="note">Other players pick before your second turn, so this is a plan, not a promise.</p>
+          <label for="second" class="sr">Corner</label>
+          <select id="second"></select>
+        </fieldset>
+        <fieldset id="alt-box">
+          <legend>Other corners you would also accept (optional)</legend>
+          <p class="note">Tick every corner a strong player could reasonably choose here instead.</p>
+          <div id="alts" class="alts"></div>
+        </fieldset>
+        <fieldset id="confidence">
+          <legend>How sure are you?</legend>
+          <div class="scale">
+            <label><input type="radio" name="confidence" value="1"> 1 (a guess)</label>
+            <label><input type="radio" name="confidence" value="2"> 2</label>
+            <label><input type="radio" name="confidence" value="3"> 3</label>
+            <label><input type="radio" name="confidence" value="4"> 4</label>
+            <label><input type="radio" name="confidence" value="5"> 5 (certain)</label>
+          </div>
+        </fieldset>
+        <div id="why-box">
+          <label for="why"><b>Why?</b> A sentence or two (optional)</label>
+          <textarea id="why" rows="3" maxlength="800"></textarea>
+        </div>
+        <div class="steps">
+          <button type="button" class="btn ghost" id="prev">Previous</button>
+          <button type="button" class="btn" id="next">Next</button>
+        </div>
+      </div>
+    </section>
+    <section class="card finish" aria-labelledby="finish-h">
+      <h2 id="finish-h">When you are done</h2>
+      <p>Download your answers and give the file to the study team. You can download again at any time; each file holds everything answered so far.</p>
+      <p class="actions"><button type="button" class="btn" id="download">Download my answers</button> <button type="button" class="btn ghost" id="clear">Clear answers on this device</button></p>
+      <p id="storage" class="note"></p>
+      <p id="status" role="status"></p>
+    </section>
+  </div>
+</main>
+<footer class="foot">Study status: recruitment and results are outstanding. This page shows no rankings, scores or results, and no results exist yet.</footer>
+<script type="module" src="review.js" onerror="document.getElementById('blocked').hidden = false"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catan Lens study answer file",
+  "description": "The file study/review.html downloads: expert review answers (study A) or an unaided learning test (study B). Anonymous: people appear only as a code. No real answer files exist yet; recruitment and results are outstanding.",
+  "type": "object",
+  "required": ["kind", "positions", "study", "synthetic", "reviewer", "form", "exportedAt", "answers"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": { "const": "catan-lens-study-answers" },
+    "positions": { "type": "string", "description": "Version of the positions file answered, for example positions-2026-10-12." },
+    "study": { "enum": ["expert-review", "learning-test"], "description": "expert-review for study A; learning-test for a study B test form." },
+    "synthetic": { "type": "boolean", "description": "true only for made-up demonstration files. The analysis refuses to mix synthetic and real files." },
+    "note": { "type": "string", "description": "Only on synthetic files: says that the answers are made up." },
+    "reviewer": { "type": "string", "maxLength": 40, "description": "The reviewer or participant code the study team gave out, or empty. Never a name or email address." },
+    "form": { "enum": [null, "A", "B", "C"], "description": "The learning test form, or null for the expert review." },
+    "exportedAt": { "type": "string", "format": "date-time", "description": "When the file was downloaded." },
+    "answers": {
+      "type": "array",
+      "description": "One entry per answered position, in position order. Positions without a chosen corner are left out.",
+      "items": {
+        "type": "object",
+        "required": ["position", "choice", "plannedSecond", "acceptable", "confidence", "reasoning"],
+        "additionalProperties": false,
+        "properties": {
+          "position": { "type": "string", "pattern": "^P[0-9]{2}$", "description": "Position id from the positions file, for example P07." },
+          "choice": { "type": "integer", "minimum": 1, "maximum": 54, "description": "The corner the person would play, numbered as on the page. Always an open corner." },
+          "plannedSecond": { "type": ["integer", "null"], "minimum": 1, "maximum": 54, "description": "First settlement tasks in the expert review only: the second settlement the reviewer would aim for, or null." },
+          "acceptable": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 54 }, "uniqueItems": true, "description": "Other open corners the reviewer would also accept, in number order. Empty in a learning test." },
+          "confidence": { "type": ["integer", "null"], "minimum": 1, "maximum": 5, "description": "How sure, from 1 (a guess) to 5 (certain), or null if not given." },
+          "reasoning": { "type": "string", "maxLength": 800, "description": "Optional short reason, in the person's words. Empty in a learning test." }
+        }
+      }
+    }
+  }
+}

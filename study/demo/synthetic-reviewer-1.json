@@ -1,0 +1,254 @@
+{
+  "kind": "catan-lens-study-answers",
+  "positions": "positions-2026-10-12",
+  "study": "expert-review",
+  "synthetic": true,
+  "note": "SYNTHETIC DEMONSTRATION DATA. A script made up these answers to show the analysis running. No person reviewed these positions and no Catan Lens policy chose any corner.",
+  "reviewer": "SYNTHETIC-1",
+  "form": null,
+  "exportedAt": "2026-10-12T00:00:00.000Z",
+  "answers": [
+    {
+      "position": "P01",
+      "choice": 47,
+      "plannedSecond": 22,
+      "acceptable": [],
+      "confidence": 5,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P02",
+      "choice": 33,
+      "plannedSecond": 39,
+      "acceptable": [
+        34,
+        42
+      ],
+      "confidence": 2,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P03",
+      "choice": 33,
+      "plannedSecond": 45,
+      "acceptable": [],
+      "confidence": 3,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P04",
+      "choice": 33,
+      "plannedSecond": 25,
+      "acceptable": [
+        21,
+        32,
+        38
+      ],
+      "confidence": 2,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P05",
+      "choice": 18,
+      "plannedSecond": null,
+      "acceptable": [
+        4
+      ],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P06",
+      "choice": 8,
+      "plannedSecond": null,
+      "acceptable": [
+        2,
+        5,
+        40
+      ],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P07",
+      "choice": 27,
+      "plannedSecond": null,
+      "acceptable": [
+        8,
+        22,
+        32
+      ],
+      "confidence": 1,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P08",
+      "choice": 42,
+      "plannedSecond": null,
+      "acceptable": [
+        33
+      ],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P09",
+      "choice": 44,
+      "plannedSecond": null,
+      "acceptable": [
+        35
+      ],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P10",
+      "choice": 3,
+      "plannedSecond": null,
+      "acceptable": [
+        39
+      ],
+      "confidence": 1,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P11",
+      "choice": 51,
+      "plannedSecond": null,
+      "acceptable": [
+        16,
+        32,
+        45
+      ],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P12",
+      "choice": 32,
+      "plannedSecond": 39,
+      "acceptable": [],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P13",
+      "choice": 28,
+      "plannedSecond": null,
+      "acceptable": [],
+      "confidence": 5,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P14",
+      "choice": 13,
+      "plannedSecond": null,
+      "acceptable": [
+        5,
+        15
+      ],
+      "confidence": 1,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P15",
+      "choice": 32,
+      "plannedSecond": null,
+      "acceptable": [
+        2,
+        13,
+        35
+      ],
+      "confidence": 5,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P16",
+      "choice": 10,
+      "plannedSecond": null,
+      "acceptable": [
+        1,
+        14,
+        31
+      ],
+      "confidence": 3,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P17",
+      "choice": 10,
+      "plannedSecond": null,
+      "acceptable": [
+        9
+      ],
+      "confidence": 1,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P18",
+      "choice": 3,
+      "plannedSecond": 51,
+      "acceptable": [],
+      "confidence": 2,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P19",
+      "choice": 51,
+      "plannedSecond": 44,
+      "acceptable": [
+        34,
+        39
+      ],
+      "confidence": 3,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P20",
+      "choice": 10,
+      "plannedSecond": null,
+      "acceptable": [
+        9,
+        15
+      ],
+      "confidence": 2,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P21",
+      "choice": 17,
+      "plannedSecond": null,
+      "acceptable": [
+        42
+      ],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P22",
+      "choice": 51,
+      "plannedSecond": null,
+      "acceptable": [],
+      "confidence": 2,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P23",
+      "choice": 34,
+      "plannedSecond": null,
+      "acceptable": [
+        13
+      ],
+      "confidence": 3,
+      "reasoning": "Synthetic answer made up by a script."
+    },
+    {
+      "position": "P24",
+      "choice": 31,
+      "plannedSecond": null,
+      "acceptable": [],
+      "confidence": 4,
+      "reasoning": "Synthetic answer made up by a script."
+    }
+  ]
+}
