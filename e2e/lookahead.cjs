@@ -37,6 +37,8 @@ const assert = require('node:assert/strict');
   assert.doesNotMatch(await card.locator('.lookahead-note').innerText(), /not placed yet/, 'seats 1 to 3 are marked');
   assert.match(await card.locator('.road').innerText(), /^Road: point it toward/);
   await showDraft(page);
+  // Opening the projection redraws the badges from its toggle event, which lands just after the click.
+  await page.waitForFunction(() => document.querySelectorAll('#marks .badge.you').length === 2, null, { timeout: 5000 });
   const you = await page.locator('.rank.draft li.you').allInnerTexts();
   const desc = id => page.locator(`#hits .vx[aria-label="Corner ${id}"]`).getAttribute('aria-description');
   assert.equal(you.length, 2);
