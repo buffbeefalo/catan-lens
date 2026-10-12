@@ -6,6 +6,7 @@ optionally their free roads) chosen by a policy instead of by the bot itself:
 
   value      the bot's own choice (control)
   lens       Catan Lens's ranking for settlements and its suggested starting road (R13)
+  lens-draft the experimental look-ahead ranking (public/lookahead.js) for settlements, and the R13 road
   lens-sett  Catan Lens's settlements, the bot's own roads
   pips       the corner with the most raw pips (the simplest common rule), bot's roads
   random     a uniformly random legal corner, bot's roads (floor)
@@ -114,6 +115,15 @@ def translate(catan_map, graph):
     return {"hexes": hexes, "harbors": harbors}, node_to_v, v_to_node
 
 
+def placements(state):
+    """Every settlement placed so far as (color, node), in the order the game applied them. Taken from the
+    game's own action log, and checked against the board, so the order never rests on dict iteration."""
+    out = [(r.action.color, r.action.value) for r in state.action_records if r.action.action_type == ActionType.BUILD_SETTLEMENT]
+    assert len(out) == len(state.board.buildings) and {n for _, n in out} == set(state.board.buildings), 'placement log matches the board'
+    assert all(state.board.buildings[n][0] == c for c, n in out), 'placement log colors match the board'
+    return out
+
+
 class Subject(ValueFunctionPlayer):
     """A ValueFunctionPlayer whose opening settlements (and maybe roads) come from a policy."""
 
@@ -122,6 +132,7 @@ class Subject(ValueFunctionPlayer):
         self.policy, self.bridge, self.graph = policy, bridge, graph
         self.cache = None
         self.opening = []
+        self.projection = None   # lens-draft: the projected opening at the subject's first settlement
 
     def decide(self, game, playable_actions):
         st = game.state
@@ -131,9 +142,20 @@ class Subject(ValueFunctionPlayer):
             self.cache = translate(game.state.board.map, self.graph)
         board, n2v, v2n = self.cache
         seat = st.colors.index(self.color) + 1
+        order = placements(st)
         occupied = [n2v[n] for n in st.board.buildings]
         mine = [n2v[n] for n, (c, _) in st.board.buildings.items() if c == self.color]
+        assert mine == [n2v[n] for c, n in order if c == self.color] and occupied == [n2v[n] for _, n in order], 'board order is placement order'
         kind = playable_actions[0].action_type
+        if kind == ActionType.BUILD_SETTLEMENT and self.policy == "lens-draft":
+            me = [n2v[n] for c, n in order if c == self.color]
+            opp = [n2v[n] for c, n in order if c != self.color]
+            reply = self.bridge.ask(op="settle", board=board, seat=seat, players=len(st.colors), me=me, opp=opp, policy="lens-draft")
+            if self.projection is None:
+                self.projection = reply["projection"]
+            want = v2n[reply["vertex"]]
+            self.opening.append(want)
+            return next(a for a in playable_actions if a.value == want)
         if kind == ActionType.BUILD_SETTLEMENT:
             policy = "lens" if self.policy.startswith("lens") else self.policy
             vid = self.bridge.ask(op="settle", board=board, seat=seat, players=len(st.colors), mine=mine,
@@ -141,7 +163,7 @@ class Subject(ValueFunctionPlayer):
             want = v2n[vid]
             self.opening.append(want)
             return next(a for a in playable_actions if a.value == want)
-        if kind == ActionType.BUILD_ROAD and self.policy == "lens":
+        if kind == ActionType.BUILD_ROAD and self.policy in ("lens", "lens-draft"):
             last = self.opening[-1]
             e = self.bridge.ask(op="road", board=board, seat=seat, players=len(st.colors), mine=mine,
                                 occupied=occupied, vertex=n2v[last])["edge"]
@@ -155,6 +177,7 @@ class Subject(ValueFunctionPlayer):
 
 COLORS = [Color.RED, Color.BLUE, Color.WHITE, Color.ORANGE]
 _bridge = _graph = None
+LOG_OPENINGS = os.environ.get("LENS_LOG_OPENINGS") == "1"   # new runs only; archived runs keep their eight fields
 
 
 def play(job):
@@ -168,8 +191,15 @@ def play(job):
     game = Game([subject] + [ValueFunctionPlayer(c) for c in COLORS[1:]], seed=seed)
     winner = game.play()
     vp = {c.value: game.state.player_state[f"P{game.state.color_to_index[c]}_ACTUAL_VICTORY_POINTS"] for c in COLORS}
-    return {"arm": arm, "seed": seed, "hashseed": os.environ.get("PYTHONHASHSEED"), "seat": game.state.colors.index(Color.RED) + 1,
-            "win": winner == Color.RED, "finished": winner is not None, "vp": vp["RED"], "turns": game.state.num_turns}
+    row = {"arm": arm, "seed": seed, "hashseed": os.environ.get("PYTHONHASHSEED"), "seat": game.state.colors.index(Color.RED) + 1,
+           "win": winner == Color.RED, "finished": winner is not None, "vp": vp["RED"], "turns": game.state.num_turns}
+    if LOG_OPENINGS:
+        # Every seat's opening settlements as [seat, Lens vertex] in placement order, and (lens-draft) the projected
+        # opening the subject saw at its first settlement, so projection accuracy can be measured afterwards.
+        n2v = translate(game.state.board.map, _graph)[1]
+        row["openings"] = [[game.state.colors.index(c) + 1, n2v[n]] for c, n in placements(game.state)[:2 * len(COLORS)]]
+        row["projection"] = subject.projection
+    return row
 
 
 def main():

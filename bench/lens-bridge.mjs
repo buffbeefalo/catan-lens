@@ -2,13 +2,17 @@
 // stdin: one JSON request per line; stdout: one JSON reply per line.
 //   {"op":"graph"}                                  -> the base board's hexes, vertices and edges
 //   {"op":"settle", board, seat, players, mine, occupied, policy}  -> {"vertex": id}
+//   {"op":"settle", board, seat, players, me, opp, policy:"lens-draft"} -> {"vertex": id, "projection": [...]}
 //   {"op":"road", board, seat, players, mine, occupied, vertex}    -> {"edge": id | null}
 // `board` = {hexes:[{resource, number}] in Lens hex order, harbors:{edgeId: type}}.
-// policy "lens" = the app's ranking; "pips" = most raw pips (ties: lowest id); "random" = uniform legal corner.
+// policy "lens" = the app's ranking; "pips" = most raw pips (ties: lowest id); "random" = uniform legal corner;
+// "lens-draft" = the experimental look-ahead ranking (public/lookahead.js). It needs `me` and `opp` in placement
+// order, because the projected draft consumes placed pieces in turn order.
 import { createInterface } from 'node:readline';
 import { boardFrom, PIPS } from '../public/board.js';
 import { buildGraph, legalVertices } from '../public/geometry.js';
 import { rankSpots, suggestRoad } from '../public/score.js';
+import { rankLookahead } from '../public/lookahead.js';
 
 const pips = (b, v) => b.graph.vertices[v].hexes.reduce((s, h) => s + (b.hexes[h].number ? PIPS[b.hexes[h].number] : 0), 0);
 let seed = 1;
@@ -22,6 +26,10 @@ function handle(q) {
   if (q.op === 'seed') { seed = q.seed || 1; return { ok: true }; }
   const b = boardFrom({ setup: 'base', hexes: q.board.hexes, harbors: q.board.harbors });
   const settings = { players: q.players, seat: q.seat, cak: false };
+  if (q.op === 'settle' && q.policy === 'lens-draft') {
+    const top = rankLookahead(b, settings, { me: q.me, opp: q.opp })[0];
+    return { vertex: top.id, projection: top.projection.map(d => ({ seat: d.seat, round: d.round, id: d.id, actual: d.actual })) };
+  }
   if (q.op === 'settle') {
     const legal = legalVertices(b.graph, q.occupied);
     if (q.policy === 'random') return { vertex: legal[Math.floor(rand() * legal.length)] };
