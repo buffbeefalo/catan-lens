@@ -99,3 +99,18 @@ identify the game tests as preceding this arithmetic correction; the videos reta
 The later owned-harbour correction was reviewed against these demonstrations: the seed-42 first/second
 choices, second ranking and both suggested roads are unchanged. The results card remains the dated
 fresh-seed test of its recorded policy; the help page identifies later policy changes separately.
+
+The 2026-10-12 refresh replaces the narrator. A phonetic transcriber heard none of the previous voice's
+five published "Catan"s as cuh-TAHN (the vowel of "cat" four times, of "bet" once), so narration now uses
+Chatterbox's built-in voice with its default settings, and both the take selection and the finished-file
+check require every "Catan" to be heard as cuh-TAHN. Run on the previous overview, the new check failed
+only on the name (0 of 3) while every earlier check still passed. The recogniser now hears each take after
+0.3 seconds of silence, as in the finished-file check; without it, it sometimes missed a line's first
+word. The new videos are 59.2 seconds and 157.9 seconds, both 1080p at 60 fps. All eight acceptance checks
+passed, including 173/173 and 472/472 recognised words, 3/3 and 2/2 names heard as cuh-TAHN, and all 21/52
+caption cues. The new voice is faster, about 215 words a minute against about 170 before. Lowering
+Chatterbox's `cfg_weight` or `exaggeration` slowed it by at most about 7 percent and passed fewer test
+takes (4 to 7 of 12, against 9 of 12), so the defaults stay. Because the overview's opening-summary scene
+is now shorter, it frames the first-builds row on "first builds" and the income section on "Income is an
+average", giving each camera move time to arrive. These checks still do not establish natural-sounding
+speech.

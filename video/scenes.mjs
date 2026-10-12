@@ -45,7 +45,7 @@ export const VIDEOS = [
       { say: 'Keep the best corner instead, and the ring moves to the second settlement that best completes your first.',
         act: async u => { await u.click('#cancel-pick'); await u.focus([BOARD, PANEL]); await u.click('#preview-best'); await u.click('#keep'); await u.expect(PANEL, 'Great pick'); await u.at('the ring moves'); await u.focus(BOARD); await u.hover('#svg .best-ring'); } },
       { say: 'Keep your second settlement to see resource income and the cards your first builds need. Income is an average; actual rolls vary.',
-        act: async u => { await u.click('#preview-best'); await u.click('#keep'); await u.expect('.opening-card', 'Your opening'); await u.at('resource income'); await u.focus('.opening-resources', { read: true }); await u.at('first builds'); await u.focus('.opening-builds', { read: true }); } },
+        act: async u => { await u.click('#preview-best'); await u.click('#keep'); await u.expect('.opening-card', 'Your opening'); await u.at('first builds'); await u.focus('.opening-builds', { read: true }); await u.at('Income is an average'); await u.focus('.opening-resources', { read: true }); } },
       { say: 'Practise with sixteen drill levels, or copy the real board from your table. It all runs in your browser, with no account and no tracking.',
         act: async u => { await u.focus('page'); await u.hover('#drill'); await u.at('copy the real board'); await u.hover('#custom'); } },
     ],
