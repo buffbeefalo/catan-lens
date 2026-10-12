@@ -22,8 +22,18 @@ export function planFor(settings) {
   return settings.seat <= Math.ceil(settings.players / 2) ? 'ows' : 'road';
 }
 
+// Per-board caches. A board's tiles never change once it is built (the editor builds a new board on every
+// edit), so board-wide facts and each corner's production are worked out once per board, not once per corner
+// scored. Cached production is frozen, so an accidental edit fails loudly instead of corrupting later scores.
+const FACTS = new WeakMap(), PRODUCTION = new WeakMap(), MAX_PIPS = new WeakMap();
+
 // Board-wide facts used by the scarcity rule (R3) and by the explanations.
 export function boardFacts(board) {
+  let facts = FACTS.get(board.hexes);
+  if (!facts) FACTS.set(board.hexes, facts = computeBoardFacts(board));
+  return facts;
+}
+function computeBoardFacts(board) {
   const pips = Object.fromEntries(RESOURCES.map(r => [r, 0]));
   const marquee = Object.fromEntries(RESOURCES.map(r => [r, 0]));
   for (const h of board.hexes) {
@@ -43,6 +53,13 @@ export function boardFacts(board) {
 }
 
 function vertexProduction(board, vid) {
+  let cache = PRODUCTION.get(board.hexes);
+  if (!cache) PRODUCTION.set(board.hexes, cache = new Map());
+  let result = cache.get(vid);
+  if (!result) cache.set(vid, result = computeProduction(board, vid));
+  return result;
+}
+function computeProduction(board, vid) {
   const prod = {};
   const numbers = [];
   for (const hid of board.graph.vertices[vid].hexes) {
@@ -51,8 +68,13 @@ function vertexProduction(board, vid) {
     prod[h.resource] = (prod[h.resource] || 0) + PIPS[h.number];
     numbers.push(h.number);
   }
-  return { prod, numbers, pips: Object.values(prod).reduce((s, x) => s + x, 0) };
+  return Object.freeze({ prod: Object.freeze(prod), numbers: Object.freeze(numbers), pips: Object.values(prod).reduce((s, x) => s + x, 0) });
 }
+const maxPipsOf = board => {
+  let max = MAX_PIPS.get(board.hexes);
+  if (max === undefined) MAX_PIPS.set(board.hexes, max = Math.max(...board.graph.vertices.map(v => vertexProduction(board, v.id).pips)));
+  return max;
+};
 
 function portsAt(board, vid) {
   const v = board.graph.vertices[vid];
@@ -99,7 +121,8 @@ const list = arr => arr.length <= 1 ? arr.join('') : arr.slice(0, -1).join(', ')
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Score one corner. `mine` = my settlements already on the board; `occupied` = every settlement.
-export function scoreVertex(board, settings, vid, { mine = [], occupied = [], facts = boardFacts(board), maxPips = 0 } = {}) {
+// `explain: false` skips writing the sentences (for projections nobody reads); every value is the same.
+export function scoreVertex(board, settings, vid, { mine = [], occupied = [], facts = boardFacts(board), maxPips = 0, explain = true } = {}) {
   const plan = PLANS[planFor(settings)];
   const { prod, numbers, pips } = vertexProduction(board, vid);
   const parts = [];
@@ -114,11 +137,11 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     base += p * plan.weights[h.resource] * facts.scarcity[h.resource] * (p <= 2 ? plan.lowTokenMul : 1);
   }
   const rank = pips >= maxPips ? 'the most on the board' : pips >= maxPips - 1 ? 'within a pip of the best corner' : pips >= 10 ? 'a strong corner' : pips >= 8 ? 'a fair corner' : 'thin production';
-  parts.push({ k: 'production', v: round(base), text: `${pips} pips of production — ${rank}: ${list(Object.entries(prod).map(([r, p]) => `${p} ${NAMES[r]}`))}.` });
+  parts.push({ k: 'production', v: round(base), text: explain && `${pips} pips of production — ${rank}: ${list(Object.entries(prod).map(([r, p]) => `${p} ${NAMES[r]}`))}.` });
   const scarce = resources.filter(r => facts.scarcity[r] >= 1.15 && prod[r] >= 3);
-  if (scarce.length) parts.push({ k: 'scarcity', v: null, text: `${cap(list(scarce.map(r => NAMES[r])))} ${scarce.length > 1 ? 'are' : 'is'} scarce on this board (${list(scarce.map(r => `${facts.pips[r]} pips of ${NAMES[r]} anywhere`))}), so this corner's share is worth a trading premium.` });
+  if (scarce.length) parts.push({ k: 'scarcity', v: null, text: explain && `${cap(list(scarce.map(r => NAMES[r])))} ${scarce.length > 1 ? 'are' : 'is'} scarce on this board (${list(scarce.map(r => `${facts.pips[r]} pips of ${NAMES[r]} anywhere`))}), so this corner's share is worth a trading premium.` });
   const plentiful = resources.filter(r => facts.scarcity[r] <= 0.85 && prod[r] >= 3);
-  if (plentiful.length) parts.push({ k: 'plenty', v: null, text: `${cap(list(plentiful.map(r => NAMES[r])))} ${plentiful.length > 1 ? 'are' : 'is'} plentiful on this board, so it trades cheaply — counted at a discount.` });
+  if (plentiful.length) parts.push({ k: 'plenty', v: null, text: explain && `${cap(list(plentiful.map(r => NAMES[r])))} ${plentiful.length > 1 ? 'are' : 'is'} plentiful on this board, so it trades cheaply — counted at a discount.` });
 
   // R4 complementary pairs
   let pair = 0;
@@ -133,23 +156,24 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   for (const n of numbers) { if (held.has(n) || seenHere.has(n)) repeated.push(n); seenHere.add(n); }
   const repeats = repeated.length;
   const repeatPen = repeats * REPEAT_PENALTY;
-  if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: `Repeats ${list([...new Set(repeated)].map(String))} — extra production on the same number does not add another paying roll. A nudge, not a veto.` });
+  if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: explain && `Repeats ${list([...new Set(repeated)].map(String))} — extra production on the same number does not add another paying roll. A nudge, not a veto.` });
 
   // R7 ports (on the corner, or a potential settlement two roads away at half value)
   const minePips = mine.reduce((acc, m) => { const p = vertexProduction(board, m).prod; for (const r in p) acc[r] = (acc[r] || 0) + p[r]; return acc; }, {});
   const ownedPorts = new Set(mine.flatMap(m => portsAt(board, m)));
   const portValue = (type, mul, where) => {
-    if (type === '3:1') return { v: PORT.generic * mul, text: `${where} the 3:1 port — the flexible port top players value most.` };
+    if (type === '3:1') return { v: PORT.generic * mul, text: explain && `${where} the 3:1 port — the flexible port top players value most.` };
     const have = (prod[type] || 0) + (minePips[type] || 0);
-    if (have >= PORT.matchPips) return { v: PORT.matched * mul, text: `${where} the 2:1 ${NAMES[type]} port with ${have} pips of ${NAMES[type]} to feed it — a private trading post that never says no.` };
-    return { v: PORT.unmatched * mul, text: `${where} the 2:1 ${NAMES[type]} port, but with only ${have} pips of ${NAMES[type]} it will rarely be used.` };
+    if (have >= PORT.matchPips) return { v: PORT.matched * mul, text: explain && `${where} the 2:1 ${NAMES[type]} port with ${have} pips of ${NAMES[type]} to feed it — a private trading post that never says no.` };
+    return { v: PORT.unmatched * mul, text: explain && `${where} the 2:1 ${NAMES[type]} port, but with only ${have} pips of ${NAMES[type]} it will rarely be used.` };
   };
   const v = board.graph.vertices[vid];
-  const after = new Set(legalVertices(board.graph, [...occupied, vid]));   // corners still open once this one is taken
+  const taken = new Set([...occupied, vid]);
+  const after = { has: id => !taken.has(id) && !board.graph.vertices[id].neighbors.some(n => taken.has(n)) };   // corners still open once this one is taken
   let port = null;
   for (const t of portsAt(board, vid)) {
     if (ownedPorts.has(t)) {
-      parts.push({ k: 'port-owned', v: null, text: `You already have ${t === '3:1' ? '3:1' : '2:1 ' + NAMES[t]} port access from an owned settlement. Another copy does not improve your trade rate, so it adds no port bonus.` });
+      parts.push({ k: 'port-owned', v: null, text: explain && `You already have ${t === '3:1' ? '3:1' : '2:1 ' + NAMES[t]} port access from an owned settlement. Another copy does not improve your trade rate, so it adds no port bonus.` });
       continue;
     }
     const c = portValue(t, plan.portMul, 'Sits on'); if (!port || c.v > port.v) port = c;
@@ -171,8 +195,8 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     if (!best || p.pips > best.pips) best = { id: nn, ...p };
   }
   const expansion = best ? best.pips * EXPANSION : 0;
-  if (best && best.pips >= 8) parts.push({ k: 'expansion', v: round(expansion), text: `Room to grow: ${best.pips === 8 || best.pips === 11 || best.pips === 18 ? 'an' : 'a'} ${best.pips}-pip corner (${list(Object.entries(best.prod).map(([r, p]) => `${p} ${NAMES[r]}`))}) sits two roads away.` });
-  else if (best) parts.push({ k: 'expansion', v: round(expansion), text: `Room to grow is thin: the best open corner two roads away has only ${best.pips} pip${best.pips === 1 ? '' : 's'}.` });
+  if (best && best.pips >= 8) parts.push({ k: 'expansion', v: round(expansion), text: explain && `Room to grow: ${best.pips === 8 || best.pips === 11 || best.pips === 18 ? 'an' : 'a'} ${best.pips}-pip corner (${list(Object.entries(best.prod).map(([r, p]) => `${p} ${NAMES[r]}`))}) sits two roads away.` });
+  else if (best) parts.push({ k: 'expansion', v: round(expansion), text: explain && `Room to grow is thin: the best open corner two roads away has only ${best.pips} pip${best.pips === 1 ? '' : 's'}.` });
   else parts.push({ k: 'expansion', v: 0, text: 'No open settlement site two roads away. Longer routes are not included in this expansion bonus.' });
 
   // R9 second-settlement complement
@@ -181,9 +205,9 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     const missing = RESOURCES.filter(r => !minePips[r]);
     const covers = resources.filter(r => missing.includes(r));
     for (const r of covers) complement += (r === 'wheat' || r === 'ore') ? COMPLEMENT.key : COMPLEMENT.any;
-    if (covers.length) parts.push({ k: 'complement', v: round(complement), text: `Patches your first settlement: adds ${list(covers.map(r => NAMES[r]))}${covers.some(r => r === 'wheat' || r === 'ore') ? ' — the wheat/ore you need for cities' : ''}.` });
+    if (covers.length) parts.push({ k: 'complement', v: round(complement), text: explain && `Patches your first settlement: adds ${list(covers.map(r => NAMES[r]))}${covers.some(r => r === 'wheat' || r === 'ore') ? ' — the wheat/ore you need for cities' : ''}.` });
     const stillMissing = missing.filter(r => !covers.includes(r));
-    if (stillMissing.length) parts.push({ k: 'gap', v: null, text: `You would still have no ${list(stillMissing.map(r => NAMES[r]))}.` });
+    if (stillMissing.length) parts.push({ k: 'gap', v: null, text: explain && `You would still have no ${list(stillMissing.map(r => NAMES[r]))}.` });
   }
 
   // R11 commodity hexes (C&K only)
@@ -191,7 +215,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   if (plan.commodity) {
     const c = v.hexes.map(h => board.hexes[h]).filter(h => h.number && COMMODITY_HEXES.has(h.resource));
     commodity = c.length * plan.commodity;
-    if (c.length) parts.push({ k: 'commodity', v: commodity, text: `${c.length} commodity hex${c.length > 1 ? 'es' : ''} (${list(c.map(h => NAMES[h.resource]))}) — a city here also produces ${list(c.map(h => ({ wood: 'paper', sheep: 'cloth', ore: 'coin' })[h.resource]))}.` });
+    if (c.length) parts.push({ k: 'commodity', v: commodity, text: explain && `${c.length} commodity hex${c.length > 1 ? 'es' : ''} (${list(c.map(h => NAMES[h.resource]))}) — a city here also produces ${list(c.map(h => ({ wood: 'paper', sheep: 'cloth', ore: 'coin' })[h.resource]))}.` });
   }
 
   const score = round(base + pair - repeatPen + (port ? port.v : 0) + expansion + complement + commodity);
@@ -208,11 +232,11 @@ function round(x) {
 }
 
 // Rank every legal corner. Returns best-first.
-export function rankSpots(board, settings, { mine = [], occupied = [] } = {}) {
+export function rankSpots(board, settings, { mine = [], occupied = [], explain = true } = {}) {
   const facts = boardFacts(board);
   const legal = legalVertices(board.graph, occupied);
-  const maxPips = Math.max(...board.graph.vertices.map(v => vertexProduction(board, v.id).pips));   // board-wide, so 'the most on the board' stays true when corners are taken
-  return legal.map(v => scoreVertex(board, settings, v, { mine, occupied, facts, maxPips })).sort((a, b) => b.score - a.score || b.pips - a.pips || a.id - b.id);
+  const maxPips = maxPipsOf(board);   // board-wide, so 'the most on the board' stays true when corners are taken
+  return legal.map(v => scoreVertex(board, settings, v, { mine, occupied, facts, maxPips, explain })).sort((a, b) => b.score - a.score || b.pips - a.pips || a.id - b.id);
 }
 
 // Explain a higher-ranked corner using its existing score terms.
@@ -286,7 +310,7 @@ export function simulateDraft(board, settings, { me = [], opp = [] } = {}) {
     if (seat === S) { if (mi < me.length) id = me[mi++]; }
     else if (oi < opp.length) id = opp[oi++];
     if (id === undefined) {
-      const rk = rankSpots(board, { ...settings, seat }, { mine: round === 2 && firsts[seat] !== undefined ? [firsts[seat]] : [], occupied });
+      const rk = rankSpots(board, { ...settings, seat }, { mine: round === 2 && firsts[seat] !== undefined ? [firsts[seat]] : [], occupied, explain: false });
       if (!rk.length) return;
       id = rk[0].id; actual = false; score = rk[0].score; occupied.push(id);
     }
