@@ -53,13 +53,16 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 </tr>
 <tr>
 <td><b>Drill until it is second nature.</b> Sixteen levels, easy to hard, on the table you choose. Hints stay hidden until you commit; a miss shows your rank and offers a fresh board at the same level.</td>
-<td><b>Use your real board.</b> Paint the board in front of you, set its numbers and harbours, and every ranking applies to it. The link carries the whole board, so your table can open it too.</td>
+<td><b>Use your real board.</b> Paint the board in front of you, set its numbers and harbours, and every ranking applies to it. Or read it from a screenshot or a photo: tap four corner tokens, then check the guesses. The link carries the whole board, so your table can open it too.</td>
 </tr>
 </table>
 
 **Turn the opening into a plan.** After the second settlement, see average resource income, missing
 resources, your starting hand and the cards still needed for each first build. Preview the same facts
 before committing a second corner; blind practice keeps them hidden until you choose.
+
+**Choose your plan, or look ahead.** Rank your own corners for a cities or a roads plan instead of the seat rule,
+or switch the ranking to Look-ahead (experimental), which values a corner by the whole opening it leads to.
 
 Light and dark themes: it follows your device, or pick one with the switch in the header. No account, no tracking,
 no analysis backend: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.
@@ -78,8 +81,9 @@ no analysis backend: the app is plain HTML, CSS and JavaScript modules with zero
 
 [Try a worked example](https://buffbeefalo.github.io/catan-lens/how-it-works.html#worked-example): the same two corners can give the same income but different starting hands and first-build options.
 
-With a weak connection, load the app first and keep the tab open. Entry, scoring, Drill and restoring
-earlier boards work without further downloads. Fresh loads, refreshes, help and videos may need a connection.
+Install it on your phone from the browser menu (Install app, or Add to Home Screen on an iPhone). After one visit
+with a connection, most browsers keep an offline copy, so the app and its help page open without one; videos still
+need a connection.
 
 ## How it works
 

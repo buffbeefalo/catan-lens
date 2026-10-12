@@ -22,6 +22,9 @@ public/
   theme.js          light/dark switch: follows the device until the viewer picks, remembers the pick
   lookahead.js      the experimental look-ahead policy (draft-aware-2026-10-12): projectDraft, rankFirst,
                     rankSecond, rankLookahead (remembered per board), projectionFor, compareLookahead
+  imageread.js      reading a board from a picture: four-tap perspective map, tile colours under the box's
+                    tile counts, token reading (pure, no DOM)
+  picture.js        the Read from a picture dialog (canvas, taps, review before anything is applied)
   sw.js             the offline copy (network first; the saved copy answers only when the network fails)
   manifest.webmanifest, icons/   what a phone needs to install the app (icons drawn by scripts/make-icons.cjs)
   how-it-works.html the explainer page with the videos
@@ -272,6 +275,10 @@ Rapid full-board entry previously exhausted WebKit's limit and interrupted rende
 - **The offline copy**: add every new page file to `SHELL` in `public/sw.js`; `test/pwa.test.js` fails otherwise.
   Automated browsers skip the service worker (`navigator.webdriver`), so request-interception tests reach the network;
   `e2e/pwa.cjs` turns it on and cuts a real proxy to test the offline path.
+- **Reading a board from a picture**: `imageread.js` is pure and deterministic; `test/imageread.test.js` measures
+  its accuracy on the generated pictures in `test/fixtures/imageread/` (redrawn by `scripts/make-board-fixtures.cjs`).
+  The dialog is `picture.js`; `e2e/picture.cjs` taps real fixtures in the page. Nothing is applied before the player
+  accepts, and the picture is never uploaded.
 - **The UI**: `app.js` and `style.css`; run `npm run e2e`. A new color goes in as a token in both themes (the
   `:root` block and the two dark blocks); `test/theme.test.js` rejects literal colors and checks contrast.
   Forced-colour overrides use the device's `Highlight`, `HighlightText` and `Canvas` system colours for

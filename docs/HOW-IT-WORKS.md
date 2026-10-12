@@ -14,6 +14,10 @@ guide remains available below the videos.
 
 - **Plan a real opening together.** Set Players and Your seat before entering tiles. Open **Your board**
   and **Start blank**, paint the resources, add numbers, then finish or explicitly exclude harbours.
+  Or choose **Read from a picture**: pick a screenshot or a photo taken from straight above, tap the
+  number tokens on the four highlighted corner tiles, check the guesses (unsure tiles are outlined) and
+  choose **Use these tiles**. Harbours are not read. The picture stays on your device. The reader was
+  tested on generated pictures, not yet on many real photos, so compare every tile with your table.
   Mark opponents in placement order and use **Keep** for your own settlement when your turn comes.
   Before keeping your second corner, compare alternatives. On a base-game table, ask which resource
   you cannot produce and which first build needs the fewest new cards.

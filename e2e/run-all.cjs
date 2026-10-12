@@ -8,7 +8,7 @@ const path = require('node:path');
 const { ENGINE, launch } = require('./helpers.cjs');   // an unknown CATAN_BROWSER stops the run here
 
 const root = path.join(__dirname, '..');
-const WALKS = ['audit', 'drill', 'verdict', 'draft', 'focus', 'custom', 'fold', 'theme', 'pwa', 'lookahead'];
+const WALKS = ['audit', 'drill', 'verdict', 'draft', 'focus', 'custom', 'fold', 'theme', 'pwa', 'lookahead', 'picture'];
 
 (async () => {
   // A missing or broken engine is reported once, as such, before any suite runs.

@@ -24,6 +24,13 @@ harbours) instead of the seat rule (R10). No coefficient changed; the other seat
 
 **Installable app.** The site can be installed on a phone's home screen and keeps an offline copy.
 
+**Read a board from a picture.** In Your board, a screenshot or a top-down photo plus four taps on the corner
+tiles' number tokens gives a guess for every tile and number. Nothing changes until you accept; unsure tiles are
+outlined, and harbours are not read. The picture stays on the device. On nine generated test pictures (app
+screenshots, flat drawings and photo-like renders at an angle with uneven light, blur, noise and compression), read
+with exact and with slightly misplaced taps, every tile and number came out right. A tenth picture in colours the
+reader does not know had every tile flagged. Real photos have not been measured, so check every tile.
+
 **Faster scoring, same scores.** Per-board caches and a narrower legality check. 8,600 rankings (483,874 corner
 scores with every part and sentence), 900 projected drafts and 3,100 road hints matched the previous code exactly.
 
