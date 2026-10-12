@@ -24,10 +24,14 @@ guide remains available below the videos.
   Copy from **Your board** when you want explicit tiles and harbours in the saved link. Generated links
   use a seed and the app's current setup rules; scoring can change when the app is updated.
 
-**Weak connection at the table?** Load the app while connected and keep that tab open. Board entry,
-scoring, Drill, Undo, Restore and Back/Forward within the app work without further downloads. Fresh
-loads, refreshing, opening the separate help page and watching videos may need a connection. Copying
-a link preserves the current position; opening it on another device still needs the app to load there.
+- **Install it on your phone.** On Android, open the app in Chrome and choose **Install app** or **Add to
+  Home screen** from the browser menu. On an iPhone or iPad, open it in Safari, tap **Share**, then **Add
+  to Home Screen**. It opens full screen like an app, with the same links and no account.
+
+**Weak connection at the table?** Open the app once while connected. Most browsers then keep an offline
+copy, so the board page and the help page open and refresh without a connection; videos still need one.
+Copying a link preserves the current position; opening it on another device needs the app to load there
+once.
 
 ## 1. The board
 
@@ -207,6 +211,26 @@ Open **Plan your first builds** under Your opening to inspect the difference. St
 the second settlement; changing its order changes the immediate options without changing production.
 The comparison uses the starting hand before rolls or trades, and buying still needs your turn. In a
 real draft, mark opponents first to check which locations remain available.
+
+### Your plan and the look-ahead ranking
+
+**Your plan.** By seat follows R10: early seats chase ore, wheat and sheep for cities and development
+cards, later seats lean on wood, brick and harbours. Under **Your plan** in Table settings, choose
+**Cities** or **Roads** to rank your own corners for that plan instead. The other seats keep the seat rule
+in every projection, and Cities & Knights keeps its own weighting.
+
+**Look-ahead (experimental).** The classic ranking scores one corner at a time. Under **Ranking**, choose
+**Look-ahead** and your next settlement is ranked by the opening it leads to: the corner plus the best
+second settlement the projected draft leaves you, the safe second pick strong players describe. Room to
+grow then counts only a corner still open when setup ends. The card shows both parts, names the projected
+second settlement, and says what the projection assumes: every seat that has not placed picks by the
+classic model, in turn order. A real table can differ. Drill always uses the classic ranking.
+
+Why add it: in 1,200 simulated four-player positions (300 boards, every seat), taking the best corner
+alone and then the best second corner left gave a weaker two-settlement opening, by the model's own
+scoring, on 45.3% to 64.7% of boards depending on the seat. The room-to-grow corner credited to the classic
+top choice was taken or blocked by another seat by the end of setup 77.0% of the time
+(`node bench/draft-diagnostics.mjs 300`). These are model diagnostics, not game results.
 
 ## 4. Drill mode
 

@@ -20,6 +20,10 @@ public/
                     saved-progress validation and pending-action replay
   style.css         all styling (system fonts only); every color is a token with a light and a dark value
   theme.js          light/dark switch: follows the device until the viewer picks, remembers the pick
+  lookahead.js      the experimental look-ahead policy (draft-aware-2026-10-12): projectDraft, rankFirst,
+                    rankSecond, rankLookahead (remembered per board), projectionFor, compareLookahead
+  sw.js             the offline copy (network first; the saved copy answers only when the network fails)
+  manifest.webmanifest, icons/   what a phone needs to install the app (icons drawn by scripts/make-icons.cjs)
   how-it-works.html the explainer page with the videos
   media/            video posters, captions (WebVTT), transcripts, results.json
                     (the MP4s are attached to GitHub Releases, not stored in git)
@@ -260,6 +264,14 @@ Rapid full-board entry previously exhausted WebKit's limit and interrupted rende
   `python3 bench/catanatron/verify_holdout.py` checks the frozen raw data and public holdout figures;
   CI runs it without installing the simulation engine. Do not retune on a dataset labelled holdout.
 - **A drill level**: the `STAGES` table in `drill.js`.
+- **The look-ahead policy**: `lookahead.js`, with `test/lookahead.test.js` (an exhaustive reference for small
+  positions, exact pruning, reflection, determinism) and `test/plans.test.js`. Opponents are always projected with
+  the classic model, so the policy never calls itself; classic `score.js` behaviour must not change (its
+  `explain: false` option only skips sentences). `bench/draft-diagnostics.mjs` reproduces the measurements behind
+  it; `bench/lookahead-latency.cjs` times it in a browser at full speed and 4x CPU throttling.
+- **The offline copy**: add every new page file to `SHELL` in `public/sw.js`; `test/pwa.test.js` fails otherwise.
+  Automated browsers skip the service worker (`navigator.webdriver`), so request-interception tests reach the network;
+  `e2e/pwa.cjs` turns it on and cuts a real proxy to test the offline path.
 - **The UI**: `app.js` and `style.css`; run `npm run e2e`. A new color goes in as a token in both themes (the
   `:root` block and the two dark blocks); `test/theme.test.js` rejects literal colors and checks contrast.
   Forced-colour overrides use the device's `Highlight`, `HighlightText` and `Canvas` system colours for
