@@ -1,8 +1,7 @@
 // Light and dark: the page follows the device until the header switch picks a theme, remembers the pick, applies it
 // before the app script runs (no flash), and keeps the board's physical pieces (cream tokens, dark numbers) in both.
-const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
-const { BASE } = require('./helpers.cjs');
+const { BASE, launch } = require('./helpers.cjs');
 
 const LIGHT_BG = 'rgb(244, 239, 228)', DARK_BG = 'rgb(19, 27, 21)';
 const look = page => page.evaluate(() => {
@@ -12,7 +11,7 @@ const look = page => page.evaluate(() => {
 });
 
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await launch();
   const errors = [];
   const url = BASE + '?seed=42&players=4&seat=1';
 

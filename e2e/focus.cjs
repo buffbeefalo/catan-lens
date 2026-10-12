@@ -1,8 +1,7 @@
-const { showSettings, BASE } = require('./helpers.cjs');
-const { chromium } = require('playwright');
+const { showSettings, BASE, launch } = require('./helpers.cjs');
 const assert = require('node:assert/strict');
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.goto(BASE + '?seed=42&players=4&seat=1', { waitUntil: 'networkidle' });

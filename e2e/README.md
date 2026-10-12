@@ -1,6 +1,6 @@
 # Browser tests
 
-Headless-Chromium tests (Playwright) against a running copy of the app. `npm run e2e` starts the local server,
+Headless browser tests (Playwright) against a running copy of the app. `npm run e2e` starts the local server,
 runs every walkthrough from a temporary directory (their screenshots never land in the repo), then the interaction
 and starting-road suites. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` to use a specific Chromium build.
 
@@ -15,7 +15,8 @@ and starting-road suites. Set `CATAN_URL` to test another deployment instead; se
 - `lookahead.cjs`: the experimental look-ahead ranking and plan choice: ring, Best card, projected rows and road agree;
   links round-trip; old and hostile links stay classic; Drill locks both controls; blind practice reveals nothing early
 - `pwa.cjs`: the installable app: manifest and icons, the offline copy taking control, and a board link and the
-  help page opening with the network cut (automated browsers skip the offline copy unless a test turns it on)
+  help page opening with the network cut (automated browsers skip the offline copy unless a test turns it on;
+  see Engines for how the network is cut)
 - `usability.cjs` (`node --test`): confirmation visibility after taps and keys at seven widths, cancellation, taps
   on number tokens, blind-drill hint secrecy, keyboard draft choices, projection visibility, and the best-corner
   ring (ties, opponents, undo, restored links, phone width); keyboard board entry, incomplete-board gating,
@@ -98,3 +99,39 @@ is missing or skipped.
 
 Each walkthrough ends with an `... OK, zero page errors` line. Some write drill progress to the browser's
 localStorage; every run starts from a fresh browser context.
+
+## Engines
+
+Chromium is the default. `CATAN_BROWSER` runs the whole browser suite, every walkthrough and the interaction
+suite, in another engine:
+
+```sh
+npx playwright install --with-deps firefox webkit   # once
+CATAN_BROWSER=firefox npm run e2e
+CATAN_BROWSER=webkit npm run e2e
+```
+
+Any other value stops the run with an error. An engine that is not installed or cannot start fails the run
+before any suite starts; it is never counted as a pass. The run ends with that engine's totals and lists every
+skipped check with its reason; a skipped check is not a passed one. CI runs Chromium in its main job and Firefox
+and WebKit in a separate matrix job, one engine per runner.
+
+These are emulations, not a physical-device test: a phone size is a browser window at a phone's width with
+touch input turned on, not a real phone, its browser, screen or keyboard, or assistive technology. WebKit here
+is Playwright's Linux build of the engine, not Safari on an iPhone.
+
+What differs by engine (Playwright 1.60):
+
+- `usability.cjs` skips the magnified-page check outside Chromium, because page-scale emulation needs Chromium's
+  DevTools protocol. The high-contrast checks skip themselves if an engine does not emulate forced colours; all
+  three emulate them today, so those checks run everywhere.
+- `fold.cjs` in Firefox: Playwright's Firefox cannot emulate a phone's viewport handling (`isMobile`), so the
+  narrow sizes run at the same widths with touch only, and the result line says so. The page sets
+  `width=device-width`, so the layout widths match the other engines.
+- `pwa.cjs` reaches the app through a local doorway and shuts it to cut the network: a real failure in every
+  engine. Playwright's offline switch cannot be used for this. In Firefox the service worker still reached the
+  server while "offline" (a copy of the app with its offline fallback removed still passed), and in WebKit every
+  request failed before the service worker could answer. WebKit also reports each file the offline copy cannot
+  supply as a page error, so after the cut those two exact reports are allowed in WebKit only.
+- All three engines report `navigator.webdriver` as true, so the app never starts its offline copy in the other
+  tests and `page.route` sees every request: simulated download failures behave the same in each engine.

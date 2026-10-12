@@ -1,15 +1,9 @@
 const assert = require('node:assert/strict');
 const { test, before, after } = require('node:test');
-const { chromium, firefox, webkit } = require('playwright');
 
-const { BASE: base, navigateHistory } = require('./helpers.cjs');
+const { BASE: base, ENGINE, launch, navigateHistory } = require('./helpers.cjs');
 let browser;
-before(async () => {
-  const name = process.env.CATAN_BROWSER || 'chromium';
-  const engine = { chromium, firefox, webkit }[name];
-  if (!engine) throw new Error('Unknown CATAN_BROWSER: ' + name);
-  browser = await engine.launch({ headless: true, executablePath: name === 'chromium' ? process.env.CHROMIUM_PATH || undefined : undefined });
-});
+before(async () => { browser = await launch(); });
 after(async () => { await browser?.close(); });
 
 async function open(t, viewport, query = '?seed=42&players=4&seat=1') {
@@ -155,7 +149,7 @@ test('custom signed scores show a point gap in previews and verdicts without cha
 });
 
 test('magnified pages keep confirmation and result focus inside the visual viewport', async t => {
-  if ((process.env.CATAN_BROWSER || 'chromium') !== 'chromium') return t.skip('page-scale emulation uses Chromium CDP');
+  if (ENGINE !== 'chromium') return t.skip('page-scale emulation uses Chromium CDP');
   for (const width of [390, 1400]) for (const scale of [2, 3]) for (const choice of ['first', 'last']) {
     const page = await open(t, { width, height: 844 });
     const cdp = await page.context().newCDPSession(page);

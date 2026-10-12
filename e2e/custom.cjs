@@ -1,8 +1,7 @@
-const { showSettings, BASE, navigateHistory } = require('./helpers.cjs');
-const { chromium } = require('playwright');
+const { showSettings, BASE, navigateHistory, launch } = require('./helpers.cjs');
 const assert = require('node:assert/strict');
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await launch();
   const errors = [];
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   page.on('pageerror', e => errors.push(e.message)); page.on('console', m => { if (m.type() === 'error') errors.push('console: ' + m.text()); });

@@ -20,3 +20,23 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       - run: npm run report -- 100
+  # The same browser suites in the other engines, in parallel with the Chromium run above. Each engine reports
+  # on its own: one failing does not cancel the other.
+  browsers:
+    name: e2e (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npm run e2e
+        env:
+          CATAN_BROWSER: ${{ matrix.browser }}

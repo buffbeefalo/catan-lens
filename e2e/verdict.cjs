@@ -1,8 +1,7 @@
-const { showDraft } = require('./helpers.cjs');
-const { chromium } = require('playwright');
+const { showDraft, launch } = require('./helpers.cjs');
 const assert = require('node:assert/strict');
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await launch();
   const errors = [];
   const base = require('./helpers.cjs').BASE;
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
