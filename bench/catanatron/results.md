@@ -4,6 +4,31 @@ Every comparison below records its frozen policy. The newest test isolates compl
 reachability; both versions already contain the owned-harbour and rounding corrections. It does not
 measure those earlier changes separately. No test outcomes tuned the policies, and the tests are not pooled.
 
+## Exact tests on changed pairs, 2026-10-12
+
+Each paired comparison below plays two strategies on the same boards and subject seats. Only pairs
+whose win or loss differs carry information about a difference. If the strategies were equal, each
+changed pair would be equally likely to favour either one, so an exact two-sided McNemar (binomial)
+test asks whether the changed pairs lean one way more than chance explains.
+[`exact_tests.py`](exact_tests.py) recomputes every value below from the raw archives using only the
+Python standard library. Continuous integration checks them against [`exact-tests.json`](exact-tests.json)
+and the public results file. This test ignores the clustering by bot hash seed; the clustered t
+intervals estimate the size of a difference. From this date on, when fewer than 100 pairs change, the
+exact test governs; otherwise a conclusion must agree with both.
+
+| Comparison | Changed pairs (of 8,000) | Favour the first | Favour the second | Exact p |
+|---|---|---|---|---|
+| Fresh-seed test: Lens minus most pips | 2,252 | 1,442 | 810 | below 0.000001 |
+| Fresh-seed test: Lens minus the bot's own opening | 2,637 | 1,309 | 1,328 | 0.73 |
+| Owned-harbour correction minus the previous policy (primary) | 4 | 0 | 4 | 0.125 |
+| Owned-harbour correction minus the bot's own opening | 2,625 | 1,306 | 1,319 | 0.81 |
+| Reachability correction minus the previous policy (primary) | 975 | 488 | 487 | 1.0 |
+| Reachability correction minus the bot's own opening | 2,630 | 1,298 | 1,332 | 0.52 |
+
+Every published conclusion agrees with its exact test except the owned-harbour primary interval,
+which is corrected in its erratum below. The original 2026-09-29 test kept no game records, so it has
+no exact test.
+
 ## Harbour reachability correction, 2026-10-09
 
 Policy `r7-reachable-ports-2026-10-09` counts every legal harbour settlement two roads away, including
@@ -116,6 +141,14 @@ lies slightly below zero, but its narrowness relies on a t approximation with ve
 Keep that limitation with the reported interval; this is no demonstrated win-rate gain or proof of
 equivalent policies. Thirteen paired records differ in win, victory points or turns; the archive
 does not record every move, so identical result fields do not establish identical game histories.
+
+**Erratum, 2026-10-12.** The primary interval above (−0.0980 to −0.0020) excludes zero only because
+the changes were sparse. Sixteen of the 20 cluster differences are exactly zero, so a t interval over
+the 20 cluster means is not a valid basis here. The [exact test](#exact-tests-on-changed-pairs-2026-10-12)
+on the four changed pairs (none favour the correction, four favour the previous policy) gives
+p = 0.125: no significant difference between the two policies. The conclusion above (no demonstrated
+gain, no proof of equivalence) is unchanged. The archived report and its public figures are kept as
+recorded.
 
 Subject seats were distributed **2,023 / 1,977 / 2,033 / 1,967** across seats 1–4, identically for each
 strategy. These are four-player base-game bots, not evidence of human improvement, other table sizes

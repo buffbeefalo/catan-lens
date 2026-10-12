@@ -250,5 +250,67 @@
       "winChanged": 975,
       "recordedOutcomeChanged": 3445
     }
+  },
+ "exactTests": [
+  {
+   "archive": "holdout-2026-10-09",
+   "comparison": "lens-minus-pips",
+   "role": "reported",
+   "pairs": 8000,
+   "changedPairs": 2252,
+   "favoursFirst": 1442,
+   "favoursSecond": 810,
+   "pValue": 7.32221e-41
+  },
+  {
+   "archive": "holdout-2026-10-09",
+   "comparison": "lens-minus-value",
+   "role": "reported",
+   "pairs": 8000,
+   "changedPairs": 2637,
+   "favoursFirst": 1309,
+   "favoursSecond": 1328,
+   "pValue": 0.725953
+  },
+  {
+   "archive": "owned-harbour-2026-10-09",
+   "comparison": "lens-corrected-minus-lens-before",
+   "role": "primary",
+   "pairs": 8000,
+   "changedPairs": 4,
+   "favoursFirst": 0,
+   "favoursSecond": 4,
+   "pValue": 0.125
+  },
+  {
+   "archive": "owned-harbour-2026-10-09",
+   "comparison": "lens-corrected-minus-value",
+   "role": "descriptive",
+   "pairs": 8000,
+   "changedPairs": 2625,
+   "favoursFirst": 1306,
+   "favoursSecond": 1319,
+   "pValue": 0.814823
+  },
+  {
+   "archive": "reachable-harbour-2026-10-09",
+   "comparison": "lens-corrected-minus-lens-before",
+   "role": "primary",
+   "pairs": 8000,
+   "changedPairs": 975,
+   "favoursFirst": 488,
+   "favoursSecond": 487,
+   "pValue": 1.0
+  },
+  {
+   "archive": "reachable-harbour-2026-10-09",
+   "comparison": "lens-corrected-minus-value",
+   "role": "descriptive",
+   "pairs": 8000,
+   "changedPairs": 2630,
+   "favoursFirst": 1298,
+   "favoursSecond": 1332,
+   "pValue": 0.519919
   }
+ ]
 }

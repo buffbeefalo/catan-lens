@@ -16,6 +16,7 @@ jobs:
       - run: python3 bench/catanatron/verify_holdout.py
       - run: python3 bench/catanatron/verify_owned_harbours.py
       - run: python3 bench/catanatron/verify_reachable_harbours.py
+      - run: python3 bench/catanatron/exact_tests.py --check
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
       - run: npm run report -- 100
