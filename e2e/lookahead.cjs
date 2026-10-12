@@ -19,7 +19,7 @@ const assert = require('node:assert/strict');
   assert.equal(await pressed('#policy'), 'Classic');
   assert.equal(await pressed('#plan'), 'By seat');
   assert.deepEqual(await ring(), [41]);
-  assert.equal(await page.locator('.lookahead-note').count(), 0, 'no look-ahead note in classic mode');
+  assert.equal(await page.locator('.lookahead-note, .alternative-note').count(), 0, 'no look-ahead notes in classic mode');
   assert.equal(query().has('policy'), false);
 
   // Look-ahead: the ring, the card, the stats and the projection all name the same opening.
@@ -32,6 +32,7 @@ const assert = require('node:assert/strict');
   assert.match(await card.locator('.stat').innerText(), /Opening value\s*28\.07[\s\S]*This corner\s*11\.93[\s\S]*Second pick\s*16\.14/);
   assert.ok(await card.locator('[data-disclosure="best"]').evaluate(el => el.open), 'Why this corner? starts open');
   assert.match(await card.innerText(), /Second settlement: the projected draft leaves you/);
+  assert.match(await card.locator('.alternative-note').innerText(), /^Alternative: the classic ranking’s first choice \(.+\) makes an opening worth 26\.35 with its own projected second, against 28\.07 for this one\. Over both settlements, this opening has \d+ (more|fewer) \w+ pips?/);
   assert.match(await card.locator('.lookahead-note').innerText(), /The projection assumes every seat that has not placed picks by this model/);
   assert.doesNotMatch(await card.locator('.lookahead-note').innerText(), /not placed yet/, 'seats 1 to 3 are marked');
   assert.match(await card.locator('.road').innerText(), /^Road: point it toward/);
@@ -93,7 +94,7 @@ const assert = require('node:assert/strict');
   // Blind practice with the look-ahead on: nothing is revealed before Keep.
   await page.goto(last + '&policy=draft&best=0', { waitUntil: 'networkidle' });
   assert.deepEqual(await ring(), []);
-  assert.equal(await page.locator('.best-card, #marks .badge, #marks .road, .lookahead-note').count(), 0);
+  assert.equal(await page.locator('.best-card, #marks .badge, #marks .road, .lookahead-note, .alternative-note').count(), 0);
   await page.locator('#hits .vx[aria-label="Corner 33"]').press('Enter');
   assert.match(await page.locator('.pick-card h2').innerText(), /preview/);
   assert.doesNotMatch(await page.locator('.pick-card').innerText(), /Opening value|Second settlement|\d+\.\d\d/);

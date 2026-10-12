@@ -618,6 +618,29 @@ const gradePosition = g => `#${g.rank} of ${g.total} · ${g.pct === null ? `${g.
 const scoreStats = (r, stage) => r.second
   ? `<span>Opening value <b>${r.score.toFixed(2)}</b></span><span>This corner <b>${r.own.toFixed(2)}</b></span><span>Second pick <b>${r.second.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span>`
   : `<span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : ''}`;
+// The look-ahead's credible alternative, from computed values only: the classic ranking's choice when it differs,
+// otherwise the next best opening; then how the two openings' production differs, resource by resource.
+function alternativeNote(best) {
+  if (!lookahead() || ranking.length < 2) return '';
+  const classicTop = rankSpots(analysisBoard, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp], explain: false })[0];
+  const classic = classicTop && classicTop.id !== best.id, alt = classic ? ranking.find(r => r.id === classicTop.id) : ranking[1];
+  if (!alt) return '';
+  const pair = r => (state.me.length ? [state.me[0], r.id] : [r.id, r.second?.id]).filter(v => v !== undefined);
+  const prod = r => {
+    const out = {};
+    for (const v of pair(r)) for (const h of board.graph.vertices[v].hexes) { const x = board.hexes[h]; if (x.number) out[x.resource] = (out[x.resource] || 0) + PIPS[x.number]; }
+    return out;
+  };
+  const mine = prod(best), theirs = prod(alt);
+  const diffs = Object.keys(NAMES).filter(k => (mine[k] || 0) !== (theirs[k] || 0)).map(k => { const d = (mine[k] || 0) - (theirs[k] || 0); return `${Math.abs(d)} ${d > 0 ? 'more' : 'fewer'} ${k} pip${Math.abs(d) === 1 ? '' : 's'}`; });
+  const same = pair(best).slice().sort().join() === pair(alt).slice().sort().join();
+  const tradeoff = same ? 'It uses the same two corners in the other order. Which one comes second changes your starting cards and how well the second patches the first.'
+    : diffs.length ? `Over both settlements, this opening has ${list(diffs)}.` : 'Over both settlements, the two openings produce the same resources.';
+  // A second pick's value is the whole opening when the ranking says which first settlement it completes.
+  const worth = !state.me.length ? `makes an opening worth ${alt.score.toFixed(2)}${alt.second ? ' with its own projected second' : ''}`
+    : best.first ? `makes an opening worth ${alt.score.toFixed(2)}` : `scores ${alt.score.toFixed(2)} as your second settlement`;
+  return `<p class="sub alternative-note">Alternative: ${classic ? 'the classic ranking’s first choice' : `the next best ${state.me.length ? 'second settlement' : 'opening'}`} (${esc(cornerDesc(alt.id))}) ${worth}, against ${best.score.toFixed(2)} for this one. ${tradeoff}</p>`;
+}
 // Said once, with the look-ahead's choice: what the projection assumes, and which seats have not placed yet.
 function assumptionNote() {
   if (!lookahead()) return '';
@@ -796,7 +819,7 @@ function render() {
       ${best.second ? `<p class="sub" id="best-second">Then your second settlement: ${esc(cornerDesc(best.second.id))}, if the other seats pick by this model.</p>` : ''}
       ${state.mode === 'me' && !state.tool ? '<button class="btn ghost preview-best" id="preview-best">Try this corner</button>' : ''}
       <details class="analysis-details" data-disclosure="best"><summary>Why this corner?</summary>
-      ${reasons(best)}${assumptionNote()}${roadLine(best.id)}
+      ${reasons(best)}${alternativeNote(best)}${assumptionNote()}${roadLine(best.id)}
       <div class="stat">${scoreStats(best, stage)}</div></details></div>`;
   }
 
