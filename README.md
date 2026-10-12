@@ -171,9 +171,10 @@ translations, or new drill levels. Keep every scoring change tied to a source in
 
 Both videos are rebuilt from the real app by [`video/`](video): a script drives the app, the corners it clicks come from
 the app's own scoring code, and a renderer draws the camera moves, cursor and cards frame by frame. The narration is
-spoken locally by [Qwen3-TTS](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice) (Apache-2.0); every line is
-checked word for word by a speech recogniser, and `video/qa.py` checks loudness, sync, captions and picture quality
-before a release. See [video/README.md](video/README.md).
+a computer voice, spoken locally by [Chatterbox](https://huggingface.co/ResembleAI/chatterbox) (MIT); every line is
+checked word for word by a speech recogniser, every "Catan" is checked by a phonetic transcriber for the cuh-TAHN
+pronunciation, and `video/qa.py` checks loudness, sync, captions and picture quality before a release. See
+[video/README.md](video/README.md).
 
 ## License
 

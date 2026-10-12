@@ -20,8 +20,9 @@ Pipeline (from the repository root; needs Node 22, ffmpeg with libx264, and a CU
 # 0. Python tools: install torch and torchaudio for your platform (https://pytorch.org), then
 python -m venv video/.venv && video/.venv/bin/pip install -r video/requirements.txt
 
-# 1. Narration: Qwen3-TTS speaks each line four times; faster-whisper transcribes every take and the one that
-#    matches the script word for word, at the most typical length, is kept (build/<id>/narration.json).
+# 1. Narration: Chatterbox speaks each line four times in its built-in voice (more, up to 16, if none passes);
+#    faster-whisper transcribes every take, a phonetic transcriber checks that each "Catan" is said cuh-TAHN, and
+#    the take that matches the script word for word, at the most typical length, is kept (build/<id>/narration.json).
 video/.venv/bin/python video/narrate.py            # --model DIR and --asr DIR accept local model copies
 
 # 2. Cards and recording: the designed frames, then the app itself (npm start serves it locally).
@@ -37,8 +38,9 @@ video/.venv/bin/python video/render.py --ffmpeg ffmpeg
 #    to -16 LUFS, captions are timed to the spoken words; writes video/out/<id>.mp4, .vtt, .txt and .jpg.
 video/.venv/bin/python video/assemble.py --ffmpeg ffmpeg
 
-# 5. Acceptance: format, loudness, every line heard word for word by a recogniser given no script, lines on
-#    cue, picture fidelity against losslessly drawn frames, caption lengths. Exits non-zero on any failure.
+# 5. Acceptance: format, loudness, every line heard word for word by a recogniser given no script, every "Catan"
+#    heard as cuh-TAHN, lines on cue, picture fidelity against losslessly drawn frames, caption lengths. Exits
+#    non-zero on any failure.
 video/.venv/bin/python video/qa.py --ffmpeg ffmpeg
 
 # 6. README images (docs/media/), drawn from the same frames.
@@ -69,10 +71,11 @@ For fully local narration and checking, pass existing model directories with `--
 `HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1`. A cached snapshot can be passed directly even if its model-name
 lookup is unavailable offline. The acceptance checker also takes `--asr DIR`. All video generation uses
 local models; the application itself makes no model or account requests.
-Use `--resume` after repairing a script line to retain matching, previously approved takes. Failed lines
-still receive only four takes, are recorded for inspection and make narration exit unsuccessfully;
-assembly also refuses unchecked narration. The recorder normalises British/American spellings like
-harbour/harbor consistently with the speech checker when matching a camera cue to spoken words.
+Use `--resume` after repairing a script line to retain matching, previously approved takes. A line with no
+passing take gets more takes, up to sixteen; if none passes, it is recorded for inspection and makes
+narration exit unsuccessfully; assembly also refuses unchecked narration. The recorder normalises
+British/American spellings like harbour/harbor consistently with the speech checker when matching a camera
+cue to spoken words.
 
 The 2026-10-09 refresh is 71.3 seconds for the overview and 195.2 seconds for the walkthrough, both
 1080p at 60 fps. Finished-file checks passed format, streaming index, loudness, narration timing,

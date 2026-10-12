@@ -1,9 +1,10 @@
-"""Narration for the demo videos: Qwen3-TTS (open weights, Apache-2.0) speaks every line several times, faster-whisper
-transcribes each take, and the take that says the script word for word at the most natural pace is kept.
+"""Narration for the demo videos: Chatterbox (open weights, MIT) speaks every line several times in its built-in voice,
+faster-whisper transcribes each take, and the take that says the script word for word at the most natural pace is kept.
+A phonetic transcriber also listens to every "Catan": a take passes only if it says cuh-TAHN.
 
   python video/narrate.py [--model DIR] [id ...]
 
---model is a local copy of Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice (default: download it from Hugging Face).
+--model is a local copy of ResembleAI/chatterbox (default: download it from Hugging Face).
 Writes build/<id>/voice/*.wav (24-bit, trimmed, untreated: mix.py does the processing) and build/<id>/narration.json:
 per scene its file, duration and each sentence's start/end (from the word timings), which become the captions,
 plus a take report so a bad line is visible without listening.
@@ -21,13 +22,14 @@ import torch
 import torchaudio
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SPEAKER = "aiden"
-STYLE = ("A warm, confident, friendly narrator for a polished product video. Clear American English, relaxed and "
-         "measured pace, natural intonation with gentle emphasis on key words, a slight smile in the voice. "
-         "Studio-quality voiceover, close microphone, no background noise.")
-TAKES = 4
+VOICE = "Chatterbox built-in voice, default settings"
+TAKES = 4               # takes per line; the most typical length among the passing ones is kept
+MAX_TAKES = 16          # a line with no passing take gets more, up to this many
 MAX_ERRORS = 0          # a take must match the script word for word (after normalising spelling and numbers)
 GAP_LIMIT = 0.9         # and never pause longer than this inside a line
+LEAD_IN = 0.3           # silence put before each take for the recogniser, which can miss a first word that starts at once
+NAME_VOWELS = ("ɑː", "ɑ")   # and say cuh-TAHN: the vowel after the t in "Catan", as the phonetic transcriber writes it
+PHONEMES = "facebook/wav2vec2-lv-60-espeak-cv-ft"   # that transcriber (Apache-2.0)
 
 ONES = "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split()
 TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
@@ -91,6 +93,40 @@ def longest_gap(ws):
     return max([b["start"] - a["end"] for a, b in zip(ws, ws[1:])] or [0.0])
 
 
+_phonemes = []
+
+
+def name_vowels(x16, ws):
+    """The vowel heard after the t in each recognised "Catan" (x16: 16 kHz mono; ws: recognised words with times)."""
+    spots = [w for w in ws if re.sub(r"[^a-z]", "", w["w"].lower()) == "catan"]
+    if not spots:
+        return []
+    if not _phonemes:
+        from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
+        _phonemes.extend([Wav2Vec2Processor.from_pretrained(PHONEMES, do_phonemize=False), Wav2Vec2ForCTC.from_pretrained(PHONEMES).eval()])
+    proc, model = _phonemes
+    with torch.inference_mode():
+        ids = model(proc(x16, sampling_rate=16000, return_tensors="pt").input_values).logits.argmax(-1)
+    per_s = ids.shape[1] / (len(x16) / 16000)
+    out = []
+    for w in spots:   # the phonemes around the word, e.g. "k ə t ɑː n l"
+        heard = proc.batch_decode(ids[:, max(0, int((w["start"] - 0.1) * per_s)):int((w["end"] + 0.1) * per_s)])[0]
+        m = re.search(r"(?:^| )t (\S+) n(?: |$)", heard)
+        out.append(m.group(1) if m else "?")
+    return out
+
+
+def says_name(take):
+    """Every "Catan" in the take was heard as cuh-TAHN (true for lines without the name; false if never checked)."""
+    return all(v in NAME_VOWELS for v in take.get("name", ["?"]))
+
+
+def passes(take):
+    """The take says the script word for word, without a long pause, and says cuh-TAHN."""
+    return (take.get("errors", MAX_ERRORS + 1) <= MAX_ERRORS and take.get("gap", GAP_LIMIT + 1) <= GAP_LIMIT
+            and says_name(take))
+
+
 def sentence_times(text, ws):
     """Maps each script sentence onto the transcribed words by word count (the kept take matches the script)."""
     ws = [w for w in ws for _ in words(w["w"])]   # "36" or "thirty-six" is two script words: count it twice
@@ -105,14 +141,14 @@ def sentence_times(text, ws):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice")
+    ap.add_argument("--model", default=None)
     ap.add_argument("--asr", default="medium.en")
     ap.add_argument("--resume", action="store_true", help="reuse matching lines whose existing takes passed every check")
     ap.add_argument("ids", nargs="*")
     a = ap.parse_args()
     from faster_whisper import WhisperModel
-    from qwen_tts import Qwen3TTSModel
-    tts = Qwen3TTSModel.from_pretrained(a.model, device_map="cuda:0", dtype=torch.bfloat16, attn_implementation="sdpa")
+    from chatterbox.tts import ChatterboxTTS
+    tts = ChatterboxTTS.from_local(a.model, "cuda") if a.model else ChatterboxTTS.from_pretrained(device="cuda")
     asr = WhisperModel(a.asr, device="cpu", compute_type="int8", cpu_threads=8)
     failed = []
     for v in script():
@@ -130,45 +166,48 @@ def main():
         for i, text in enumerate(v["lines"]):
             old = previous[i] if i < len(previous) else {}
             kept = old.get("kept", {})
-            if (a.resume and old.get("text") == text and os.path.isfile(os.path.join(out, old.get("file", "")))
-                    and kept.get("errors", MAX_ERRORS + 1) <= MAX_ERRORS and kept.get("gap", GAP_LIMIT + 1) <= GAP_LIMIT):
+            if a.resume and old.get("text") == text and os.path.isfile(os.path.join(out, old.get("file", ""))) and passes(kept):
                 lines.append(old)
                 print(f"{v['id']} line {i}: reused verified take", flush=True)
                 continue
-            ref, takes = words(text), []
-            for k in range(TAKES):
+            ref, takes, sr = words(text), [], tts.sr
+            for k in range(MAX_TAKES):
+                if k >= TAKES and any(passes(t) for t in takes):
+                    break
                 torch.manual_seed(1000 * i + k + 1)
                 with torch.inference_mode():
-                    waves, sr = tts.generate_custom_voice(text=text, language="English", speaker=SPEAKER, instruct=STYLE,
-                                                          max_new_tokens=2400, temperature=0.6, top_p=0.9, repetition_penalty=1.05)
-                x = trim(np.asarray(waves[0], dtype=np.float32), sr)
+                    wave = tts.generate(text)
+                x = trim(wave.squeeze(0).cpu().numpy().astype(np.float32), sr)
                 wav = os.path.join(out, "voice", f"line-{i:02d}-take{k}.wav")
                 sf.write(wav, x, sr, subtype="PCM_24")
                 x16 = torchaudio.functional.resample(torch.from_numpy(x), sr, 16000).numpy()
-                segs, _ = asr.transcribe(x16, language="en", word_timestamps=True, beam_size=5, vad_filter=False)
-                ws = merge_numbers([{"w": w.word, "start": w.start, "end": w.end} for s in segs for w in s.words])
+                segs, _ = asr.transcribe(np.concatenate([np.zeros(int(LEAD_IN * 16000), np.float32), x16]), language="en",
+                                         word_timestamps=True, beam_size=5, vad_filter=False)
+                ws = merge_numbers([{"w": w.word, "start": max(0.0, w.start - LEAD_IN), "end": max(0.0, w.end - LEAD_IN)}
+                                    for s in segs for w in s.words])
                 hyp = words(" ".join(w["w"] for w in ws))
                 takes.append({"file": wav, "duration": len(x) / sr, "errors": errors(ref, hyp), "gap": longest_gap(ws),
-                              "heard": " ".join(w["w"].strip() for w in ws), "words": ws})
+                              "heard": " ".join(w["w"].strip() for w in ws), "words": ws, "name": name_vowels(x16, ws)})
             med = float(np.median([t["duration"] for t in takes]))
-            ok = [t for t in takes if t["errors"] <= MAX_ERRORS and t["gap"] <= GAP_LIMIT] or takes
-            best = min(ok, key=lambda t: (t["errors"], t["gap"] > GAP_LIMIT, abs(t["duration"] - med)))
+            ok = [t for t in takes if passes(t)] or takes
+            best = min(ok, key=lambda t: (t["errors"], t["gap"] > GAP_LIMIT, not says_name(t), abs(t["duration"] - med)))
             keep = os.path.join(out, "voice", f"line-{i:02d}.wav")
             os.replace(best["file"], keep)
             lines.append({"file": f"voice/line-{i:02d}.wav", "duration": round(best["duration"], 3), "text": text,
                           "sentences": sentence_times(text, best["words"]) if best["words"] else [],
-                          "takes": [{"errors": t["errors"], "gap": round(t["gap"], 2), "duration": round(t["duration"], 2)} for t in takes],
+                          "takes": [{"errors": t["errors"], "gap": round(t["gap"], 2), "duration": round(t["duration"], 2), "name": t["name"]} for t in takes],
                           "words": [{"w": w["w"].strip(), "start": round(w["start"], 3), "end": round(w["end"], 3)} for w in best["words"]],
-                          "kept": {"errors": best["errors"], "gap": round(best["gap"], 2), "heard": best["heard"]}})
-            flag = "" if best["errors"] <= MAX_ERRORS and best["gap"] <= GAP_LIMIT else "   <-- CHECK"
+                          "kept": {"errors": best["errors"], "gap": round(best["gap"], 2), "heard": best["heard"], "name": best["name"]}})
+            flag = "" if passes(best) else "   <-- CHECK"
             if flag:
                 failed.append(f"{v['id']} line {i}")
-            print(f"{v['id']} line {i}: {best['duration']:.1f} s, {best['errors']} word errors, longest pause {best['gap']:.2f} s "
-                  f"(takes: {[t['errors'] for t in takes]}){flag}", flush=True)
+            print(f"{v['id']} line {i}: {best['duration']:.1f} s, {best['errors']} word errors, longest pause {best['gap']:.2f} s"
+                  f"{', Catan ' + ' '.join(best['name']) if best['name'] else ''} "
+                  f"(takes: {[(t['errors'], *t['name']) if t['name'] else t['errors'] for t in takes]}){flag}", flush=True)
         for f in os.listdir(os.path.join(out, "voice")):
             if "take" in f:
                 os.remove(os.path.join(out, "voice", f))
-        json.dump({"speaker": SPEAKER, "style": STYLE, "scenes": lines[:-1], "outro": lines[-1]},
+        json.dump({"voice": VOICE, "scenes": lines[:-1], "outro": lines[-1]},
                   open(os.path.join(out, "narration.json"), "w"), indent=1)
         print(f"{v['id']}: {len(lines)} lines, {sum(l['duration'] for l in lines):.1f} s of narration")
     if failed:

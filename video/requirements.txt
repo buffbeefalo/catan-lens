@@ -1,6 +1,9 @@
-# Python tools for the demo videos (narration, speech check, picture, mix). Linux aarch64/x86_64 with CUDA, Python 3.12.
-# Install torch and torchaudio for your platform first (https://pytorch.org), then: pip install -r video/requirements.txt
-qwen-tts==0.1.1
+# Python tools for the demo videos (narration, speech and pronunciation checks, picture, mix). Linux aarch64/x86_64 with
+# CUDA, Python 3.12. Install torch and torchaudio for your platform first (https://pytorch.org), then:
+# pip install -r video/requirements.txt
+# chatterbox-tts pins torch 2.6. Where that has no wheel (aarch64 with CUDA 13, as used for these videos), install
+# chatterbox-tts with --no-deps and then the other packages it lists, keeping your own torch and torchaudio.
+chatterbox-tts==0.1.7
 faster-whisper>=1.1
 numpy
 soundfile

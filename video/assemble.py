@@ -108,11 +108,10 @@ def main():
             continue
         tl = json.load(open(os.path.join(d, "timeline.json")))
         nar = json.load(open(os.path.join(d, "narration.json")))
-        from narrate import MAX_ERRORS, GAP_LIMIT
+        from narrate import passes
         approved = nar["scenes"] + [nar["outro"]]
-        if nar.get("dryRun") or any(line.get("kept", {}).get("errors", MAX_ERRORS + 1) > MAX_ERRORS or
-                                   line.get("kept", {}).get("gap", GAP_LIMIT + 1) > GAP_LIMIT for line in approved):
-            raise ValueError(f"{vid}: narration has not passed its word and pause checks")
+        if nar.get("dryRun") or not all(passes(line.get("kept", {})) for line in approved):
+            raise ValueError(f"{vid}: narration has not passed its word, pause and pronunciation checks")
         lines = [(s["voice"], n) for s, n in zip(tl["scenes"], nar["scenes"])] + [(tl["outro"]["voice"], nar["outro"])]
         sr = sf.info(os.path.join(d, lines[0][1]["file"])).samplerate
         track = np.zeros(int(tl["duration"] * sr) + sr, np.float32)

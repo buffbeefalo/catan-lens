@@ -8,6 +8,8 @@ CATAN is a trademark of Catan GmbH. This project is not affiliated with or
 endorsed by Catan GmbH or Catan Studio, and this license grants no rights in
 that trademark.
 
-The demo videos are narrated with Qwen3-TTS
-(https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice), Apache-2.0, and
-checked with faster-whisper (https://github.com/SYSTRAN/faster-whisper), MIT.
+The demo videos are narrated with Chatterbox
+(https://huggingface.co/ResembleAI/chatterbox), MIT, and checked with
+faster-whisper (https://github.com/SYSTRAN/faster-whisper), MIT, and
+wav2vec2-lv-60-espeak-cv-ft
+(https://huggingface.co/facebook/wav2vec2-lv-60-espeak-cv-ft), Apache-2.0.

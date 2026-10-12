@@ -3,10 +3,10 @@
   python video/qa.py [--ffmpeg PATH] [--asr MODEL] [id ...]
 
 What they establish: format and loudness, that a speech recogniser hearing the finished file with no hint of the
-script gets the words right, that each line starts where its scene does, that the encode keeps the picture (SSIM
-against losslessly drawn frames, including close-ups of text being read), and that captions are short, ordered and
-inside the video. What they cannot establish: whether the voice sounds natural or the whole feels professional;
-that still needs a person watching.
+script gets the words right, that a phonetic transcriber hears every "Catan" as cuh-TAHN, that each line starts
+where its scene does, that the encode keeps the picture (SSIM against losslessly drawn frames, including close-ups
+of text being read), and that captions are short, ordered and inside the video. What they cannot establish: whether
+the voice sounds natural or the whole feels professional; that still needs a person watching.
 """
 import argparse
 import json
@@ -20,7 +20,7 @@ import soundfile as sf
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from narrate import errors, words  # noqa: E402
+from narrate import NAME_VOWELS, errors, name_vowels, words  # noqa: E402
 import render  # noqa: E402
 
 
@@ -67,16 +67,21 @@ def main():
         x, _ = sf.read(wav, dtype="float32")
         # heard line by line from the finished file (long-form decoding loses its place), with no hint of the script
         spans = [(s["voice"], n) for s, n in zip(tl["scenes"], nar["scenes"])] + [(tl["outro"]["voice"], nar["outro"])]
-        e = total = 0
+        e = total = named = 0
+        names = []
         for at, line in spans:
             seg = x[int(max(0, at - 0.3) * 16000):int((at + line["duration"] + 0.3) * 16000)]
-            segs, _ = asr.transcribe(seg, language="en", beam_size=5, condition_on_previous_text=False)
+            segs = list(asr.transcribe(seg, language="en", beam_size=5, condition_on_previous_text=False, word_timestamps=True)[0])
             heard, ref = " ".join(s.text for s in segs), words(line["text"])
             k = errors(ref, words(heard))
             e, total = e + k, total + len(ref)
             if k:
                 print(f"  {vid} at {at:.1f}s heard: {heard.strip()}\n  {' ' * len(vid)}   script: {line['text']}")
+            named += ref.count("catan")
+            names += name_vowels(seg, [{"w": w.word, "start": w.start, "end": w.end} for s in segs for w in s.words])
         gate("words", e / total <= 0.02, f"{e} word errors in {total} ({100 * e / total:.1f}%), each line heard on its own, recogniser given no script")
+        said = sum(v in NAME_VOWELS for v in names)
+        gate("name", said == named, f"{said} of {named} \"Catan\" heard as cuh-TAHN by a phonetic transcriber (vowels heard: {' '.join(names) or 'none'})")
         # each line starts where its scene says: speech energy rises within 0.2 s of the planned start
         env = np.sqrt(np.convolve(x ** 2, np.ones(320) / 320, "same"))
         late = []
