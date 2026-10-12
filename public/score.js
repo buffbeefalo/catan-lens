@@ -17,8 +17,12 @@ const PORT = { generic: 1.0, matched: 1.5, unmatched: 0.25, matchPips: 5, farMul
 const EXPANSION = 0.10;                                 // R8
 const COMPLEMENT = { any: 1.0, key: 1.5 };              // R9
 
+// R10 picks the plan from your seat. You can also choose one of the two plans for your own seat (strategy
+// modes); Cities & Knights keeps its own weighting either way. Other seats always keep the seat rule.
+export const PLAN_CHOICES = ['ows', 'road'];
 export function planFor(settings) {
   if (settings.cak) return 'cak';
+  if (PLAN_CHOICES.includes(settings.plan)) return settings.plan;
   return settings.seat <= Math.ceil(settings.players / 2) ? 'ows' : 'road';
 }
 
@@ -310,7 +314,7 @@ export function simulateDraft(board, settings, { me = [], opp = [] } = {}) {
     if (seat === S) { if (mi < me.length) id = me[mi++]; }
     else if (oi < opp.length) id = opp[oi++];
     if (id === undefined) {
-      const rk = rankSpots(board, { ...settings, seat }, { mine: round === 2 && firsts[seat] !== undefined ? [firsts[seat]] : [], occupied, explain: false });
+      const rk = rankSpots(board, { ...settings, seat, plan: seat === S ? settings.plan : undefined }, { mine: round === 2 && firsts[seat] !== undefined ? [firsts[seat]] : [], occupied, explain: false });
       if (!rk.length) return;
       id = rk[0].id; actual = false; score = rk[0].score; occupied.push(id);
     }
