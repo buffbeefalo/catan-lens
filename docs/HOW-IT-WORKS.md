@@ -140,7 +140,7 @@ stays dominant.
   sorted. The best one gets a gold ring on the map and a "Best settlement" card.
 - **Your pick.** Click any corner to preview it: the app grades it (Great / Good / Fair / Weak), shows
   its rank and its score share (or point gap when a percentage is unsuitable), and explains why a higher-ranked corner scores
-  better. When the choice comes down to small differences between the same kinds of bonuses, it compares
+  better. A score share such as "92% of best" compares model scores; it is not a chance of winning. When the choice comes down to small differences between the same kinds of bonuses, it compares
   the actual score terms. A corner can produce more raw cards yet score lower because of its resources;
   the explanation acknowledges that tradeoff. Equal scores share the top rank without a claim that one
   tied corner is better. When number repetition matters, the comparison gives each corner's actual
