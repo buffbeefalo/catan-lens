@@ -21,7 +21,7 @@ export const SETUPS = {
   },
 };
 
-// Number of ways to roll each total with two dice — the "pips" printed on the token.
+// Number of ways to roll each total with two dice: the "pips" printed on the token.
 export const PIPS = { 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 8: 5, 9: 4, 10: 3, 11: 2, 12: 1 };
 
 // Small seeded generator (mulberry32) so boards are reproducible from their seed.
@@ -62,7 +62,7 @@ function spiralOrder(graph, turn) {
   }
   const maxL = Math.max(...layer);
   // Official spiral: walk the outer ring, then step inward next to where you stopped and keep
-  // going the same way — every step in the order is to an adjacent hex.
+  // going the same way: every step in the order is to an adjacent hex.
   const order = [];
   let prevEnd = null;
   for (let l = 0; l <= maxL; l++) {
@@ -100,7 +100,7 @@ function harborEdges(graph, count) {
 
 // `balanced` asks for 6 and 8 never to share an edge. The six spiral rotations almost always
 // satisfy it; otherwise tokens are shuffled with rejection (bounded). If even that fails the
-// board is returned with `balanced: false` and `balanceFailed: true` — never mislabelled.
+// board is returned with `balanced: false` and `balanceFailed: true`, never mislabelled.
 // `_spirals` / `_tries` exist only so a test can force the exhaustion path.
 export function generateBoard({ setup = 'base', seed = 1, balanced = true, _spirals = 6, _tries = 2000 } = {}) {
   const spec = SETUPS[setup];

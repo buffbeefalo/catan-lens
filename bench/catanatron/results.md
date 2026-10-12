@@ -44,7 +44,7 @@ The corrected policy was frozen at **05:26:04Z**, before its games, at
 Only the scoring input differs among the nine frozen source files. Python dependencies, Catanatron
 and its opponent policy match the preceding test. Both policies contain the half-cent rounding repair.
 
-Hash seeds **301–320** and board seeds **3,000,000–3,007,999** are separate from every earlier test.
+Hash seeds **301 to 320** and board seeds **3,000,000 to 3,007,999** are separate from every earlier test.
 Each arm plays 8,000 matched boards and subject seats, in 20 clusters of 400 boards. All **24,000 games
 finished**; the records were independently checked at **05:42:35Z**. There were no outcome-based retries.
 
@@ -68,7 +68,7 @@ changed win/loss pairs**: 488 losses become wins and 487 wins become losses. In 
 records differ in win, victory points or turns. The archive does not contain every move, so matching
 result fields do not prove identical game histories.
 
-Subject seats are **2,022 / 1,995 / 1,972 / 2,011** for seats 1–4, identically in each arm. This is a
+Subject seats are **2,022 / 1,995 / 1,972 / 2,011** for seats 1 to 4, identically in each arm. This is a
 four-player base-game bot experiment, not an estimate of human improvement or evidence for other
 player counts or Cities & Knights. Both paired intervals include a disadvantage and an advantage.
 
@@ -92,7 +92,7 @@ wrong cluster counts, duplicate games, mismatched seats, unfinished games and a 
 
 ### Reproduce the reachability comparison
 
-Use separate checkouts at the two commits above and the frozen Python dependencies. For runs 1–20,
+Use separate checkouts at the two commits above and the frozen Python dependencies. For runs 1 to 20,
 use `arms=value,lens` in the baseline checkout and `arms=lens` in the corrected checkout, with separate
 output directories. The environment setup follows the fresh-seed instructions below.
 
@@ -116,7 +116,7 @@ all nine corrected inputs match
 [`2f8c75c`](https://github.com/buffbeefalo/catan-lens/tree/2f8c75c7e14e385df50cea6ed825c3500ac5ea91).
 Only the scoring input differs between snapshots.
 
-Hash seeds **201–220** and board seeds **2,000,000–2,007,999** are separate from both earlier tests.
+Hash seeds **201 to 220** and board seeds **2,000,000 to 2,007,999** are separate from both earlier tests.
 Each strategy plays the same 8,000 boards and subject seats, grouped into 20 clusters of 400 boards.
 All **24,000 games finished**. Python, Catanatron and the value-function opponent policy are unchanged.
 
@@ -150,7 +150,7 @@ p = 0.125: no significant difference between the two policies. The conclusion ab
 gain, no proof of equivalence) is unchanged. The archived report and its public figures are kept as
 recorded.
 
-Subject seats were distributed **2,023 / 1,977 / 2,033 / 1,967** across seats 1–4, identically for each
+Subject seats were distributed **2,023 / 1,977 / 2,033 / 1,967** across seats 1 to 4, identically for each
 strategy. These are four-player base-game bots, not evidence of human improvement, other table sizes
 or Cities & Knights. The repair corrects the explanation of trading access; its rationale does not
 depend on gaining wins in this sample.
@@ -176,7 +176,7 @@ the report; raw game records change only the Lens arm labels to distinguish old 
 ### Reproduce this comparison
 
 Use separate checkouts at the two exact commits above and the frozen Python dependency versions.
-For runs 1–20 in each checkout, use the invocation below. Set `arms=value,lens` for the baseline and
+For runs 1 to 20 in each checkout, use the invocation below. Set `arms=value,lens` for the baseline and
 `arms=lens` for the correction; keep outputs in separate directories. Every run contains 400 boards.
 
 ```sh
@@ -193,7 +193,7 @@ This comparison is never pooled with the earlier results.
 The opening policy was frozen before this test at Catan Lens commit
 [`00cf63e78b7130772c8db86fc08b79ba0b7498d7`](https://github.com/buffbeefalo/catan-lens/tree/00cf63e78b7130772c8db86fc08b79ba0b7498d7).
 The run plan was recorded at 2026-10-09T22:46:32Z. No scoring weights were tuned on these outcomes.
-It used hash seeds **101–120**, board seeds **1,000,000–1,007,999**, and the same five strategies as the
+It used hash seeds **101 to 120**, board seeds **1,000,000 to 1,007,999**, and the same five strategies as the
 original benchmark. Each hash seed supplies one cluster of 400 boards, with all five strategies tested
 on the same board and subject seat. All **40,000 games finished**.
 
@@ -222,7 +222,7 @@ For comparisons, subtract strategies **within each cluster**, then apply the sam
 The test supports an advantage over most-pips in this bot setting. The comparison with the bot's own
 opening does not establish an advantage or prove equivalent performance. The results concern
 four-player base-game bots; they do not estimate human improvement, other table sizes or C&K play.
-Subject seats were distributed 2,007 / 1,954 / 1,995 / 2,044 across seats 1–4, identically for each strategy.
+Subject seats were distributed 2,007 / 1,954 / 1,995 / 2,044 across seats 1 to 4, identically for each strategy.
 
 ### Check the published records
 
@@ -284,7 +284,7 @@ seat's opening differs. Intervals are 95% t-intervals across the 20 run means (e
 The 2026-10-09 audit reran these same seeds and reproduced all five win counts and rounded intervals.
 This is a replication of the original observations. It is not pooled with the fresh-seed test above.
 
-Historical starting-road comparison (`road_deadends.py`, seeds 0–399, 2026-09-29 policies): the first
+Historical starting-road comparison (`road_deadends.py`, seeds 0 to 399, 2026-09-29 policies): the first
 road had no legal settlement site one road farther away after setup in 22% of openings with Lens's
 road and 42% with the bot's. Before that road-rule change, the Lens figure was 52%. These percentages
 are not new measurements of the later scoring policies.

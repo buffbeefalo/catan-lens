@@ -1,9 +1,9 @@
 // Drill mode: one straight ladder of levels, easy to hard (no worlds, no themes). You choose the TABLE
-// before you start — how many players (3–6) and whether Cities & Knights weighting is on — and every
+// before you start (how many players, 3 to 6, and whether Cities & Knights weighting is on), and every
 // level runs on that table. Each stage then fixes the scenario (your seat as a position in the order,
 // which seats have already placed, first or second settlement) and two dials that ramp: how close to the
 // best corner you must land (`pass.top`: rank 3, 2, then exactly 1) and how clear-cut the board is
-// (`board.minMargin` / `maxMargin`: the score gap between the top two corners you can choose from — a wide
+// (`board.minMargin` / `maxMargin`: the score gap between the top two corners you can choose from; a wide
 // gap is an easy read, a near-tie is hard). Boards are found by searching seeds for one that fits the band.
 // Presentation layer over score.js; no new scoring rules.
 import { generateBoard } from './board.js';
@@ -115,7 +115,7 @@ export function judge(stage, g) {
   const close = g.gap > 0 && Number.isFinite(g.pct) && g.pct >= 99 ? ' This is a close model score; real-game outcomes can differ.' : '';
   const share = Number.isFinite(g.pct) ? ` at ${g.pct}% of the best` : '';
   const text = !available ? 'This corner is not in the current legal ranking. Choose an available corner to try this stage.' : pass
-    ? (g.rank === 1 ? 'You found the best corner.' : `Rank ${g.rank} — inside the top ${top}, that clears it.`)
+    ? (g.rank === 1 ? 'You found the best corner.' : `Rank ${g.rank}: inside the top ${top}, which clears it.`)
     : `Rank ${g.rank} of ${g.total}${share}.${gap} This stage needs ${need}.${close}`;
   return { pass, text, need };
 }

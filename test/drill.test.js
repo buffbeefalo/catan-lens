@@ -69,7 +69,7 @@ test('TABLES + ladderKey: one progress track per table', () => {
   assert.equal(ladderKey({ players: 6, cak: true }), '6-cak');
 });
 
-test('setupStage: pre-placed pieces are legal, opponents come from the seats that place before you, second-settlement stages give you a first — every table', () => {
+test('setupStage: pre-placed pieces are legal, opponents come from the seats that place before you, second-settlement stages give you a first, at every table', () => {
   for (const cfg of CONFIGS) for (let n = 1; n <= STAGES.length; n++) {
     const st = stageFor(n, cfg);
     const r = setupStage(st, 7);
@@ -85,7 +85,7 @@ test('setupStage: pre-placed pieces are legal, opponents come from the seats tha
   }
 });
 
-test('findSeed: returns a seed whose board meets the stage margin band (or says it fell back) — every table', () => {
+test('findSeed: returns a seed whose board meets the stage margin band (or says it fell back), at every table', () => {
   for (const cfg of CONFIGS) {
     let rolls = 0; const rngSeq = () => { rolls++; return (rolls * 2654435761) >>> 0; };
     let fallbacks = 0;

@@ -48,9 +48,9 @@ nor equivalence to the value bot, human improvement, or other rulesets. No weigh
 outcomes. The [raw games, frozen inputs and reproduction method](../bench/catanatron/results.md)
 remain separate from the original benchmark and its same-seed replication.
 
-**Harbour correction, 2026-10-09.** Generated 5–6-player boards previously had six 3:1 harbours and
+**Harbour correction, 2026-10-09.** Generated boards for 5 or 6 players previously had six 3:1 harbours and
 only one sheep harbour. The distribution now matches source 14. Tests check the complete type counts
-against literal rulebook expectations. Old 5–6-player seed links now use the corrected distribution;
+against literal rulebook expectations. Old seed links for 5 or 6 players now use the corrected distribution;
 custom-board links carry their own harbours and remain unchanged. Base-game boards and scoring weights
 are unaffected. The custom-board box check now compares each harbour type as well as the total count,
 so a board with nine ore harbours can no longer claim to match the base-game box.
@@ -139,4 +139,4 @@ you; that idea was borrowed. "Your board" starts from the board
 on screen; paint resources, tap a hex then its token, tap coastal edges to cycle harbours. A blank or desert hex
 never carries a number and produces nothing. The link carries the board (`b=` one letter per hex plus its number,
 `h=` edge:harbour pairs); a check lists differences from the official box; balance is
-measured from the entered numbers. Every existing rule then applies unchanged — nothing in the scoring moved.
+measured from the entered numbers. Every existing rule then applies unchanged. Nothing in the scoring moved.
