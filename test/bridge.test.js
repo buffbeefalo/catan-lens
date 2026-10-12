@@ -28,3 +28,15 @@ test('lens and lens-draft settle requests match the app rankings, with the proje
   assert.deepEqual(draft.projection.map(d => d.id), top.projection.map(d => d.id));
   assert.deepEqual(draft.projection.filter(d => d.seat === 4).map(d => d.id), [top.id, top.second.id]);
 });
+
+test('a lens-draft road follows the look-ahead projection, exactly as the page computes it', async () => {
+  const { suggestRoad } = await import('../public/score.js');
+  const { projectDraft } = await import('../public/lookahead.js');
+  const b = generateBoard({ seed: 3 });
+  const board = { hexes: b.hexes.map(h => ({ resource: h.resource, number: h.number })), harbors: b.harbors };
+  const s = { players: 4, seat: 4, cak: false }, opp = [43, 3, 20], me = [33];
+  const [reply] = ask([{ op: 'road', board, seat: 4, players: 4, me, opp, vertex: 33, policy: 'lens-draft' }]);
+  const projection = rankLookahead(b, s, { me, opp })[0]?.projection || projectDraft(b, s, { me, opp });
+  const road = suggestRoad(b, s, 33, { mine: me, occupied: [...me, ...opp], projection });
+  assert.deepEqual(reply.edge, b.graph.edges[road.edge].v);
+});

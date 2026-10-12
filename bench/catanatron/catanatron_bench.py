@@ -165,8 +165,12 @@ class Subject(ValueFunctionPlayer):
             return next(a for a in playable_actions if a.value == want)
         if kind == ActionType.BUILD_ROAD and self.policy in ("lens", "lens-draft"):
             last = self.opening[-1]
-            e = self.bridge.ask(op="road", board=board, seat=seat, players=len(st.colors), mine=mine,
-                                occupied=occupied, vertex=n2v[last])["edge"]
+            if self.policy == "lens-draft":
+                e = self.bridge.ask(op="road", board=board, seat=seat, players=len(st.colors), policy="lens-draft", vertex=n2v[last],
+                                    me=[n2v[n] for c, n in order if c == self.color], opp=[n2v[n] for c, n in order if c != self.color])["edge"]
+            else:
+                e = self.bridge.ask(op="road", board=board, seat=seat, players=len(st.colors), mine=mine,
+                                    occupied=occupied, vertex=n2v[last])["edge"]
             if e is not None:
                 want = tuple(sorted(v2n[v] for v in e))
                 for a in playable_actions:

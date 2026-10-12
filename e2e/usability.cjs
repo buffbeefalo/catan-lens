@@ -142,7 +142,7 @@ test('custom signed scores show a point gap in previews and verdicts without cha
   await page.locator('.vx.legal[aria-label="Corner 44"]').press('Enter');
   assert.match(await page.locator('.pick-card h2').innerText(), /0\.54 point gap/);
   assert.doesNotMatch(await page.locator('.pick-card h2, .pick-card .grade').allTextContents().then(xs => xs.join(' ')), /%|null/);
-  await page.locator('.pick-card summary').first().click();
+  assert.ok(await page.locator('.pick-card [data-disclosure="pick"]').evaluate(el => el.open), 'Why this corner? starts open');
   assert.match(await page.locator('.pick-card .stat').first().innerText(), /Score\s*-0\.51/);
   await page.locator('#showbest').click();
   assert.match(await page.locator('.pick-card h2').innerText(), /preview/);
@@ -798,7 +798,7 @@ test('duplicate harbour access is explained without extra trade credit or blind-
     await page.getByRole('button', { name: 'Corner 16', exact: true }).press('Enter');
     const pick = page.locator('.pick-card');
     if (showBest) {
-      await pick.locator('[data-disclosure="pick"] summary').click();
+      assert.ok(await pick.locator('[data-disclosure="pick"]').evaluate(el => el.open), 'Why this corner? starts open');
       assert.match(await pick.innerText(), /already have 3:1 port access/);
       assert.match(await pick.innerText(), /adds no port bonus/);
     } else {

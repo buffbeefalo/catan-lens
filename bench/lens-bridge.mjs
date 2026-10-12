@@ -4,6 +4,8 @@
 //   {"op":"settle", board, seat, players, mine, occupied, policy}  -> {"vertex": id}
 //   {"op":"settle", board, seat, players, me, opp, policy:"lens-draft"} -> {"vertex": id, "projection": [...]}
 //   {"op":"road", board, seat, players, mine, occupied, vertex}    -> {"edge": id | null}
+//   {"op":"road", board, seat, players, me, opp, vertex, policy:"lens-draft"} -> {"edge": id | null}, using the
+//     look-ahead's projection exactly as the app's look-ahead mode does
 // `board` = {hexes:[{resource, number}] in Lens hex order, harbors:{edgeId: type}}.
 // policy "lens" = the app's ranking; "pips" = most raw pips (ties: lowest id); "random" = uniform legal corner;
 // "lens-draft" = the experimental look-ahead ranking (public/lookahead.js). It needs `me` and `opp` in placement
@@ -12,7 +14,7 @@ import { createInterface } from 'node:readline';
 import { boardFrom, PIPS } from '../public/board.js';
 import { buildGraph, legalVertices } from '../public/geometry.js';
 import { rankSpots, suggestRoad } from '../public/score.js';
-import { rankLookahead } from '../public/lookahead.js';
+import { rankLookahead, projectDraft } from '../public/lookahead.js';
 
 const pips = (b, v) => b.graph.vertices[v].hexes.reduce((s, h) => s + (b.hexes[h].number ? PIPS[b.hexes[h].number] : 0), 0);
 let seed = 1;
@@ -35,6 +37,11 @@ function handle(q) {
     if (q.policy === 'random') return { vertex: legal[Math.floor(rand() * legal.length)] };
     if (q.policy === 'pips') return { vertex: legal.reduce((a, v) => (pips(b, v) > pips(b, a) ? v : a)) };
     return { vertex: rankSpots(b, settings, { mine: q.mine.slice(0, 1), occupied: q.occupied })[0].id };
+  }
+  if (q.op === 'road' && q.policy === 'lens-draft') {
+    const projection = rankLookahead(b, settings, { me: q.me, opp: q.opp })[0]?.projection || projectDraft(b, settings, { me: q.me, opp: q.opp });
+    const r = suggestRoad(b, settings, q.vertex, { mine: q.me, occupied: [...q.me, ...q.opp], projection });
+    return { edge: r ? b.graph.edges[r.edge].v : null };
   }
   if (q.op === 'road') {
     const r = suggestRoad(b, settings, q.vertex, { mine: q.mine, occupied: q.occupied });

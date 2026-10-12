@@ -129,7 +129,8 @@ export function rankLookahead(board, settings, { me = [], opp = [] } = {}) {
   if (!memo) MEMO.set(board, memo = new Map());
   const key = JSON.stringify([settings.players, settings.seat, !!settings.cak, settings.plan ?? null, me, opp]);
   if (memo.has(key)) return memo.get(key);
-  const ranking = me.length === 1 ? rankSecond(board, settings, me[0], [...me, ...opp]) : rankFirst(board, settings, { opp });
+  // Every open corner is valued (no pruning here), so any pick on screen can be graded against the same ranking.
+  const ranking = me.length === 1 ? rankSecond(board, settings, me[0], [...me, ...opp], { all: true }) : rankFirst(board, settings, { opp });
   if (memo.size >= 64) memo.delete(memo.keys().next().value);   // keep the most recent positions only
   memo.set(key, ranking);
   return ranking;

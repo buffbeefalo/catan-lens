@@ -340,8 +340,9 @@ export function placementContext(history, vid) {
 
 // R13 starting road, one free side of the settlement at a time: the corners one road further on that
 // a road along that side could aim at, best first. Shared by the suggested road and by the grade of a
-// road the player places, so both judge a direction the same way.
-export function roadOptions(board, settings, vid, { mine = [], occupied = [] } = {}) {
+// road the player places, so both judge a direction the same way. `projection` replaces the classic projected
+// draft (the look-ahead policy passes its own, so the road always matches the projection on screen).
+export function roadOptions(board, settings, vid, { mine = [], occupied = [], projection: given = null } = {}) {
   const g = board.graph, v = g.vertices[vid];
   const facts = boardFacts(board);
   const taken = new Set([...occupied, vid]);
@@ -351,7 +352,7 @@ export function roadOptions(board, settings, vid, { mine = [], occupied = [] } =
   // comparison of 400 openings (bench/catanatron/road_deadends.py), the first road lacked a legal settlement
   // site one further road away after setup 52% of the time before this filter and 22% after. Those are historical
   // policy measurements. If nothing survives, fall back to what is open now.
-  const projection = simulateDraft(board, settings, { me: mineAfter, opp: occupied.filter(x => !mineAfter.includes(x)) });
+  const projection = given || simulateDraft(board, settings, { me: mineAfter, opp: occupied.filter(x => !mineAfter.includes(x)) });
   const projected = projection.filter(d => !d.you && !d.actual).map(d => d.id);
   const now = new Set(legalVertices(g, [...taken]));
   const safe = new Set(legalVertices(g, [...taken, ...projected]));

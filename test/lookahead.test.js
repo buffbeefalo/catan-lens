@@ -241,11 +241,12 @@ test('a repeated position is answered from memory, and projectionFor matches the
   assert.equal(rankLookahead(b, s, { me: [], opp: [...opp] }), one, 'same position, same array');
   assert.notEqual(rankLookahead(b, S({ seat: 2, plan: 'road' }), { me: [], opp }), one, 'a different plan is a different position');
   for (const r of one.slice(0, 3)) assert.deepEqual(projectionFor(b, s, { me: [], opp }, r.id), r.projection);
-  // Second picks the exact pruning never projected still get a projection with both of my settlements placed.
+  // The on-screen second-pick ranking values every open corner (the pruning is only used inside first picks), so any
+  // pick can be graded, and each one's projection has both of my settlements in place.
   const first = one[0].id;
-  const pruned = rankLookahead(b, s, { me: [first], opp }), all = rankSecond(b, s, first, [first, ...opp], { all: true });
-  const unprojected = all.filter(x => !pruned.some(p => p.id === x.id));
-  assert.ok(unprojected.length > 0, 'pruning skipped some second picks on this board');
-  const proj = projectionFor(b, s, { me: [first], opp }, unprojected[0].id);
-  assert.deepEqual(proj.filter(d => d.you).map(d => d.id), [first, unprojected[0].id]);
+  const shown = rankLookahead(b, s, { me: [first], opp }), pruned = rankSecond(b, s, first, [first, ...opp]);
+  assert.ok(pruned.length < shown.length, 'the pruned search skips corners the shown ranking includes');
+  assert.deepEqual(shown.map(r => r.id).sort((x, y) => x - y), legalVertices(b.graph, [first, ...opp]).sort((x, y) => x - y));
+  const last = shown[shown.length - 1];
+  assert.deepEqual(projectionFor(b, s, { me: [first], opp }, last.id).filter(d => d.you).map(d => d.id), [first, last.id]);
 });

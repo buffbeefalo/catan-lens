@@ -4,7 +4,7 @@
 const CACHE = 'catan-lens-v1';
 // Everything the board page needs to start, plus the help page. A unit test checks this list against the
 // modules app.js imports, so a new module cannot be forgotten here.
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'board.js', 'geometry.js', 'score.js', 'drill.js', 'theme.js',
+const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'board.js', 'geometry.js', 'score.js', 'lookahead.js', 'drill.js', 'theme.js',
   'how-it-works.html', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png',
   'icons/apple-touch-icon.png'];
 
