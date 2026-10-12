@@ -1,11 +1,10 @@
 // The look-ahead ranking (experimental) and plan choice in the page: the ring, the Best card, the projected rows and
 // the road hint agree; links round-trip; old and hostile links stay classic; Drill locks both controls; blind practice
 // still reveals nothing before a commit.
-const { BASE, showSettings, showDraft } = require('./helpers.cjs');
-const { chromium } = require('playwright');
+const { BASE, launch, showSettings, showDraft } = require('./helpers.cjs');
 const assert = require('node:assert/strict');
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
+  const browser = await launch();
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const pressed = sel => page.locator(`${sel} button[aria-pressed="true"]`).innerText();
