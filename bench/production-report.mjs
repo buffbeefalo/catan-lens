@@ -3,6 +3,8 @@
 // from the same situation: the seats before you take their projected picks, you pick, the draft runs on
 // to your second turn, you pick again. Then we measure the opening you end up with.
 //   lens    Catan Lens's ranking (its second pick complements the first)
+//   lens-draft  the experimental look-ahead ranking: each pick is valued by the opening it leads to, with the
+//           other seats projected by the classic model (public/lookahead.js)
 //   pips    the open corner with the most pips (ties: lowest corner id)
 //   random  a uniformly random open corner (seeded)
 // Max-pips maximises expected cards per roll by construction, so it SHOULD win that column; the question
@@ -10,6 +12,7 @@
 import { generateBoard, PIPS, RESOURCES, rng } from '../public/board.js';
 import { legalVertices } from '../public/geometry.js';
 import { rankSpots, simulateDraft } from '../public/score.js';
+import { rankLookahead } from '../public/lookahead.js';
 
 const BOARDS = Number(process.argv[2]) || 500;
 const pipsAt = (b, v) => b.graph.vertices[v].hexes.reduce((s, h) => s + (b.hexes[h].number ? PIPS[b.hexes[h].number] : 0), 0);
@@ -18,6 +21,7 @@ function pick(policy, b, settings, mine, occupied, rand) {
   const legal = legalVertices(b.graph, occupied);
   if (policy === 'random') return legal[Math.floor(rand() * legal.length)];
   if (policy === 'pips') return legal.reduce((a, v) => (pipsAt(b, v) > pipsAt(b, a) ? v : a));
+  if (policy === 'lens-draft') return rankLookahead(b, settings, { me: mine, opp: occupied.filter(v => !mine.includes(v)) })[0].id;
   return rankSpots(b, settings, { mine, occupied })[0].id;
 }
 
@@ -47,7 +51,7 @@ function measure(b, ids) {
   return { cards: pips / 36, prod, covered: RESOURCES.filter(r => prod[r] > 0).length, spread: numbers.size, cityPair: Math.min(prod.wheat, prod.ore) };
 }
 
-const POLICIES = ['lens', 'pips', 'random'];
+const POLICIES = ['lens', 'lens-draft', 'pips', 'random'];
 const sum = Object.fromEntries(POLICIES.map(p => [p, { n: 0, cards: 0, covered: 0, all5: 0, spread: 0, cityPair: 0, prod: Object.fromEntries(RESOURCES.map(r => [r, 0])) }]));
 for (let seed = 1; seed <= BOARDS; seed++) {
   const b = generateBoard({ setup: 'base', seed, balanced: true });
