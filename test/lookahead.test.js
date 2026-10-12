@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { generateBoard, boardFrom, PIPS } from '../public/board.js';
 import { rankSpots, scoreVertex, simulateDraft } from '../public/score.js';
 import { legalVertices } from '../public/geometry.js';
-import { POLICY, projectDraft, rankFirst, rankSecond, rankLookahead, compareLookahead } from '../public/lookahead.js';
+import { POLICY, projectDraft, projectionFor, rankFirst, rankSecond, rankLookahead, compareLookahead } from '../public/lookahead.js';
 
 const S = (o = {}) => ({ players: 4, seat: 1, cak: false, ...o });
 const cents = x => Math.round(x * 100);
@@ -233,4 +233,19 @@ test('compareLookahead puts the second-settlement outlook first, then the corner
   assert.match(lines[0], /^Second-settlement outlook: \d+\.\d\d for #1 versus \d+\.\d\d for your pick\.$/);
   assert.deepEqual(compareLookahead(la[0], la[0]), []);
   assert.equal(POLICY, 'draft-aware-2026-10-12');
+});
+
+test('a repeated position is answered from memory, and projectionFor matches the ranking it came from', () => {
+  const b = generateBoard({ seed: 14 }), s = S({ seat: 2 }), opp = before(b, s);
+  const one = rankLookahead(b, s, { me: [], opp });
+  assert.equal(rankLookahead(b, s, { me: [], opp: [...opp] }), one, 'same position, same array');
+  assert.notEqual(rankLookahead(b, S({ seat: 2, plan: 'road' }), { me: [], opp }), one, 'a different plan is a different position');
+  for (const r of one.slice(0, 3)) assert.deepEqual(projectionFor(b, s, { me: [], opp }, r.id), r.projection);
+  // Second picks the exact pruning never projected still get a projection with both of my settlements placed.
+  const first = one[0].id;
+  const pruned = rankLookahead(b, s, { me: [first], opp }), all = rankSecond(b, s, first, [first, ...opp], { all: true });
+  const unprojected = all.filter(x => !pruned.some(p => p.id === x.id));
+  assert.ok(unprojected.length > 0, 'pruning skipped some second picks on this board');
+  const proj = projectionFor(b, s, { me: [first], opp }, unprojected[0].id);
+  assert.deepEqual(proj.filter(d => d.you).map(d => d.id), [first, unprojected[0].id]);
 });

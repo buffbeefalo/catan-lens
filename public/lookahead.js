@@ -120,11 +120,28 @@ export function rankFirst(board, settings, { opp = [] } = {}) {
 }
 
 // The look-ahead ranking of my next settlement, given what is on the board. Same shape as score.js rankSpots, plus
-// `own`, `second` and `projection` on first picks. Returns [] once both of my settlements are down.
+// `own`, `second` and `projection` on first picks. Returns [] once both of my settlements are down. Results are
+// remembered per board (the page redraws often; the answer for one position never changes) and must not be edited.
+const MEMO = new WeakMap();
 export function rankLookahead(board, settings, { me = [], opp = [] } = {}) {
   if (me.length >= 2) return [];
-  if (me.length === 1) return rankSecond(board, settings, me[0], [...me, ...opp]);
-  return rankFirst(board, settings, { opp });
+  let memo = MEMO.get(board);
+  if (!memo) MEMO.set(board, memo = new Map());
+  const key = JSON.stringify([settings.players, settings.seat, !!settings.cak, settings.plan ?? null, me, opp]);
+  if (memo.has(key)) return memo.get(key);
+  const ranking = me.length === 1 ? rankSecond(board, settings, me[0], [...me, ...opp]) : rankFirst(board, settings, { opp });
+  if (memo.size >= 64) memo.delete(memo.keys().next().value);   // keep the most recent positions only
+  memo.set(key, ranking);
+  return ranking;
+}
+
+// The projected opening if `id` becomes my next settlement: the same projection the look-ahead used to value it,
+// so the road advice and the map badges always match the choice on screen.
+export function projectionFor(board, settings, { me = [], opp = [] } = {}, id) {
+  const ranked = rankLookahead(board, settings, { me, opp }).find(r => r.id === id);
+  if (ranked?.projection) return ranked.projection;
+  if (me.length === 0) return projectDraft(board, settings, { me: [id], opp }, occupied => rankSecond(board, settings, id, occupied, { explain: false })[0] || null);
+  return projectDraft(board, settings, { me: [...me, id], opp });
 }
 
 // Explain why a higher-ranked look-ahead choice beats a pick: the second-settlement outlook first, then the
