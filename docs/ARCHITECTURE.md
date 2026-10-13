@@ -207,9 +207,16 @@ links, seedless-link search exhaustion and refresh; it does not depend on a tran
 It reveals no corner or score, changes no pass rule, and does not expand the 120-seed search budget.
 
 An already-loaded app supports entry, scoring, Drill and history recovery without further network
-requests. It has no service worker or offline installation cache: first loads, refreshes, the separate
-help page and videos can still need a connection. History navigation clears per-board editing and
-answer state, while keeping pending local progress actions available for Retry saving.
+requests. Where the browser runs a service worker (a secure page that is not an automated browser), `sw.js`
+keeps an offline copy of the board page, its modules, icons and the help page: the network answers first and
+the saved copy only when the network fails, so a refresh or a cold start offline still opens the app. The help
+videos always need a connection. History navigation clears per-board editing and answer state, while keeping
+pending local progress actions available for Retry saving.
+
+Every ranking, look-ahead included, is computed synchronously from the current state whenever it changes, so a
+result on screen always belongs to the board and settings on screen; nothing runs in the background to finish
+late. The slowest measured look-ahead case (six players at a 4x CPU slowdown, `bench/lookahead-latency.cjs`)
+took about 230 ms, so there is no Web Worker, work budget or cancellation.
 
 The HTML contains a startup message before loading any application module. A small inline handler
 preserves the query in the help link and shows a retry message when the module download or initial
