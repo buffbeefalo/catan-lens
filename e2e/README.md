@@ -2,7 +2,7 @@
 
 Headless-Chromium tests (Playwright) against a running copy of the app. `npm run e2e` starts the local server,
 runs every walkthrough from a temporary directory (their screenshots never land in the repo), then the interaction
-suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` to use a specific Chromium build.
+and starting-road suites. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` to use a specific Chromium build.
 
 - `audit.cjs`: reload keeps placement order, hostile links, balanced switch, seed field, tooltips, drill exit
 - `drill.cjs`: level ladder: clear / miss / scramble / track / progress / locked links
@@ -64,6 +64,33 @@ suite. Set `CATAN_URL` to test another deployment instead; set `CHROMIUM_PATH` t
   Chromium page-scale emulation checks confirmation and result focus at 2×/3× magnification in phone
   and desktop layouts. It checks the visual viewport's vertical bounds; a wide control can still
   require horizontal panning. Other engines skip this CDP-only check, not the ordinary focus tests.
+
+- `starting-roads.cjs` (`node --test`): the starting road you place. Mouse, tap and keyboard placement after Keep,
+  moves, the same-side no-op, Undo (including an opponent mark that shares the road's number) and reload; roads
+  stay optional and never add settlements, reorder them or change the projected draft. A road is graded on its
+  settlement's own turn: on the demo board, after keeping corners 43 and 3, side 56 must read Weak and side 57
+  Great although the live board says the reverse, and a later opponent mark or move changes nothing. The drawn
+  suggestion for a kept settlement is the side that grades Great, before and after a reload; it stays where
+  the preview drew it through Keep, a later mark and Undo; a link without a placement order lists opponents
+  first, and its roads are advised and graded from that order through a reload and the re-shared link; and
+  Drill still draws from the board as it is. Only a Fair or Weak road is shown the better side, dashed, and
+  only with hints on; a road tied for best gets neither a dashed "alternative" nor the card's sentence about
+  the other side, and a corner with no two-road target gets no grade. Links from before roads load unchanged; roads before their settlement, off the
+  board, away from your settlements or not along a side, repeats, malformed tokens and unknown prefixes are
+  dropped, and the latest valid road wins. Blind practice shows only a
+  neutral note until both settlements are kept, then a neutrally coloured bare grade; the cards, slot labels,
+  descriptions and titles carry no destination, resource, count or projection wording, before and after the
+  second settlement, after Undo, after reload and after hints are turned off again. Your board takes roads the
+  same way; Drill offers none.
+
+Starting-road acceptance runs offline through `node scripts/verify-starting-roads.mjs`, which needs the installed
+`playwright` package and its Chromium (or `CHROMIUM_PATH`) and downloads nothing:
+`--unit` runs the unit suite with `test/starting-roads.test.mjs` (including the comparison with the frozen copy
+of the previous scorer in `test/fixtures/`); `--browser` starts the local server on a free port and runs every
+browser suite; `--mutations` copies the app to a temporary directory, applies 32 targeted mutations one at a
+time and requires an assertion in the named regressions to fail for each, rejecting a mutation that survives,
+cannot be applied, or fails only through a syntax, module or server error. Each mode fails if a required test
+is missing or skipped.
 
 Each walkthrough ends with an `... OK, zero page errors` line. Some write drill progress to the browser's
 localStorage; every run starts from a fresh browser context.

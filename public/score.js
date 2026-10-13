@@ -296,13 +296,24 @@ export function simulateDraft(board, settings, { me = [], opp = [] } = {}) {
   return out;
 }
 
-// R13 starting road: the free road that comes with a settlement should point at the best open corner
-// you can actually reach (two roads away), preferring a direction that keeps more than one option
-// open. Targets are scored with the same ranking as everything else (so a fed port or a resource
-// you lack counts, as the guides say), and a corner is only a target if it stays legal once this
-// settlement is placed. Returns null when every two-road destination is occupied or blocked;
-// longer routes are outside this search.
-export function suggestRoad(board, settings, vid, { mine = [], occupied = [] } = {}) {
+const describeCorner = c => `${c.pips}-pip corner (${Object.entries(c.prod).map(([r, p]) => `${p} ${NAMES[r].toLowerCase()}`).join(', ') || 'no production'})`;
+
+// The position a kept settlement was placed in, read from the placement history: your settlements before it
+// (mine) and every settlement before it (occupied). Starting roads are not settlements, so they are skipped.
+// Returns null when the settlement has no entry of its own, so callers withhold its advice instead of guessing;
+// a first settlement legitimately gets two empty lists. The road functions below add the settlement itself
+// (roadOptions), so leaving it out changes no road advice; scoreVertex does not, so it must stay out.
+export function placementContext(history, vid) {
+  const at = history.findIndex(h => h.k === 'me' && h.id === vid);
+  if (at < 0) return null;
+  const before = history.slice(0, at).filter(h => h.k !== 'road');
+  return { mine: before.filter(h => h.k === 'me').map(h => h.id), occupied: before.map(h => h.id) };
+}
+
+// R13 starting road, one free side of the settlement at a time: the corners one road further on that
+// a road along that side could aim at, best first. Shared by the suggested road and by the grade of a
+// road the player places, so both judge a direction the same way.
+export function roadOptions(board, settings, vid, { mine = [], occupied = [] } = {}) {
   const g = board.graph, v = g.vertices[vid];
   const facts = boardFacts(board);
   const taken = new Set([...occupied, vid]);
@@ -320,27 +331,83 @@ export function suggestRoad(board, settings, vid, { mine = [], occupied = [] } =
   const contested = !reachable(safe);
   const after = contested ? now : safe;
   const maxPips = Math.max(...g.vertices.map(x => vertexProduction(board, x.id).pips));
+  const score = id => scoreVertex(board, settings, id, { mine: mineAfter, occupied: [...taken], facts, maxPips });
+  const directions = v.neighbors.filter(n => !taken.has(n)).map(n => {   // a road into an occupied corner leads nowhere
+    const ahead = g.vertices[n].neighbors.filter(nn => nn !== vid);
+    const targets = ahead.filter(nn => after.has(nn)).map(score).sort((a, b) => b.score - a.score || b.pips - a.pips || a.id - b.id);
+    return { via: n, edge: v.edges.find(e => g.edges[e].v.includes(n)), targets, open: ahead.filter(nn => now.has(nn)) };
+  });
+  return { directions, contested, now, safe, projection, score };
+}
+
+// R13 starting road: the free road that comes with a settlement should point at the best open corner
+// you can actually reach (two roads away), preferring a direction that keeps more than one option
+// open. Targets are scored with the same ranking as everything else (so a fed port or a resource
+// you lack counts, as the guides say), and a corner is only a target if it stays legal once this
+// settlement is placed. Returns null when every two-road destination is occupied or blocked;
+// longer routes are outside this search.
+export function suggestRoad(board, settings, vid, context = {}) {
+  const g = board.graph;
+  const { directions, contested, now, safe, projection, score } = roadOptions(board, settings, vid, context);
   let pick = null;
-  for (const n of v.neighbors) {
-    if (taken.has(n)) continue;                                   // a road into an occupied corner leads nowhere
-    const targets = g.vertices[n].neighbors.filter(nn => nn !== vid && after.has(nn))
-      .map(nn => scoreVertex(board, settings, nn, { mine: mineAfter, occupied: [...taken], facts, maxPips }))
-      .sort((a, b) => b.score - a.score || b.pips - a.pips || a.id - b.id);
-    if (!targets.length) continue;
-    const c = { via: n, target: targets[0], options: targets.length };
+  for (const d of directions) {
+    if (!d.targets.length) continue;
+    const c = { via: d.via, edge: d.edge, target: d.targets[0], options: d.targets.length };
     if (!pick || c.target.score > pick.target.score || (c.target.score === pick.target.score && c.options > pick.options)) pick = c;
   }
   if (!pick) return null;
-  const edge = v.edges.find(e => g.edges[e].v.includes(pick.via));
+  const edge = pick.edge;
   const t = pick.target;
   const port = portsAt(board, t.id)[0];
-  const describeCorner = c => `${c.pips}-pip corner (${Object.entries(c.prod).map(([r, p]) => `${p} ${NAMES[r].toLowerCase()}`).join(', ') || 'no production'})`;
   // Explain the projected placements behind a skipped corner and a target used for the own second pick.
-  const twoAway = new Set(v.neighbors.filter(n => !taken.has(n)).flatMap(n => g.vertices[n].neighbors).filter(nn => nn !== vid));
+  const twoAway = new Set(directions.flatMap(d => g.vertices[d.via].neighbors).filter(nn => nn !== vid));
   const lost = contested ? null : [...twoAway].filter(x => now.has(x) && !safe.has(x))
-    .map(x => scoreVertex(board, settings, x, { mine: mineAfter, occupied: [...taken], facts, maxPips })).filter(x => x.score > t.score)
+    .map(score).filter(x => x.score > t.score)
     .sort((a, b) => b.score - a.score || a.id - b.id)[0];
   const ownSecond = projection.find(d => d.you && d.round === 2 && !d.actual);
   const text = `Road: point it toward the ${describeCorner(t)}${port !== undefined ? `, which sits on the ${port === '3:1' ? '3:1' : '2:1 ' + NAMES[port].toLowerCase()} port` : ''}. ${contested ? 'Every direction is contested in the projected opening: the other seats take or block the two-road targets.' : pick.options > 1 ? `${pick.options} open corners lie that way, so the direction stays flexible.` : 'It is the only open corner that way, so take it before someone else does.'}${lost ? ` The ${describeCorner(lost)} nearby is taken or blocked by another seat in the projected opening.` : ''}${ownSecond?.id === t.id ? ' The opening projection also uses this target for your second settlement, so it would already be occupied when setup ends.' : ''}`;
   return { edge, via: pick.via, target: { id: t.id, score: t.score, pips: t.pips, prod: t.prod, numbers: t.numbers }, options: pick.options, text };
+}
+
+// The Fair line for road grades, on scores in integer hundredths: short of the best by at most a tenth of its
+// size. For a positive best this is exactly grade()'s "at least 90% of the best"; measuring against |best| keeps
+// a zero or negative best (possible on a mostly desert custom board) on the same footing.
+export const withinTenth = (bestUnits, units) => 10 * (bestUnits - units) <= Math.abs(bestUnits);
+
+// Grade a starting road the player placed along `edge`, a side of their settlement `vid`, with the same
+// direction-by-direction evaluation as the suggested road (R13), so the two can never disagree about
+// which way is best. Directions rank as suggestRoad orders them: the best open target two roads away,
+// then how many targets lie that way. Great = the top direction (exact ties share it); Fair = its best
+// target is within a tenth of the top direction's (90% or more, like settlement grades, when scores are
+// positive); Weak = lower, or no target that way. Returns null when `edge` is not a free side of `vid`.
+// Presentation only.
+export function gradeRoad(board, settings, vid, edge, context = {}) {
+  const { directions, contested, projection, score } = roadOptions(board, settings, vid, context);
+  const own = directions.find(d => d.edge === edge);
+  if (!own) return null;
+  const value = d => d.targets[0].score;
+  const reaching = directions.filter(d => d.targets.length);
+  if (!reaching.length) return { tier: 'none', label: 'No two-road target', rank: null, pct: null, gap: null, target: null,
+    why: 'no direction from this settlement has an open settlement site two roads away. Longer routes are not checked.', detail: null };
+  const bestValue = Math.max(...reaching.map(value));
+  if (!own.targets.length) {
+    const blocked = contested ? null : own.open.map(score).sort((a, b) => b.score - a.score || a.id - b.id)[0];
+    return { tier: 'weak', label: 'Weak road', rank: reaching.length + 1, pct: null, gap: null, target: null,
+      why: blocked ? 'the open corners this way are taken or blocked by another seat in the projected opening.' : 'no legal settlement site is open two roads this way. Longer routes are not checked.',
+      detail: blocked ? `The ${describeCorner(blocked)} this way is taken or blocked by another seat in the projected opening.` : null };
+  }
+  const rank = 1 + reaching.filter(d => value(d) > value(own) || (value(d) === value(own) && d.targets.length > own.targets.length)).length;
+  const bestUnits = Math.round(bestValue * 100), ownUnits = Math.round(value(own) * 100);
+  const pct = bestUnits > 0 && ownUnits >= 0 ? Math.floor(ownUnits * 10000 / bestUnits) / 100 : null;
+  const gap = (bestUnits - ownUnits) / 100;
+  const tier = rank === 1 ? 'great' : withinTenth(bestUnits, ownUnits) ? 'fair' : 'weak';
+  const label = { great: 'Great road', fair: 'Fair road', weak: 'Weak road' }[tier];
+  const why = tier === 'great' ? 'the best direction from this settlement.'
+    : gap === 0 ? 'its best target ties the best direction’s, but fewer open corners lie this way.'
+    : pct === null ? `its best target is ${gap.toFixed(2)} points below the best direction’s.`
+    : `its best target scores ${tier === 'weak' ? 'only ' : ''}${pct}% of the best direction’s, ${gap.toFixed(2)} points lower.`;
+  const t = own.targets[0], port = portsAt(board, t.id)[0];
+  const ownSecond = projection.find(d => d.you && d.round === 2 && !d.actual);
+  const detail = `Your road points toward the ${describeCorner(t)}${port !== undefined ? `, which sits on the ${port === '3:1' ? '3:1' : '2:1 ' + NAMES[port].toLowerCase()} port` : ''}. ${own.targets.length > 1 ? `${own.targets.length} open corners lie that way.` : 'It is the only open corner that way.'}${ownSecond?.id === t.id ? ' The opening projection also uses this target for your second settlement, so it would already be occupied when setup ends.' : ''}${contested ? ' Every direction is contested in the projected opening, so this compares the corners open now.' : ''}`;
+  return { tier, label, rank, pct, gap, target: { id: t.id, score: t.score, pips: t.pips }, why, detail };
 }

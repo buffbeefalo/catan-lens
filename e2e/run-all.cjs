@@ -1,4 +1,4 @@
-// `npm run e2e`: every browser walkthrough, then the usability suite. Starts the local server unless
+// `npm run e2e`: every browser walkthrough, then the usability and starting-road suites. Starts the local server unless
 // CATAN_URL points at a deployment already running. Walkthroughs run in a temp dir so their
 // screenshots never overwrite anything in the repo.
 const { spawn, spawnSync } = require('node:child_process');
@@ -23,8 +23,10 @@ const WALKS = ['audit', 'drill', 'verdict', 'draft', 'focus', 'custom', 'fold', 
     console.log(`${r.status === 0 ? 'ok  ' : 'FAIL'} ${w}: ${last}`);
     if (r.status !== 0) { failed++; process.stderr.write(r.stdout + r.stderr); }
   }
-  const u = spawnSync(process.execPath, ['--test', path.join(__dirname, 'usability.cjs')], { cwd: root, stdio: 'inherit' });
-  if (u.status !== 0) failed++;
+  for (const suite of ['usability.cjs', 'starting-roads.cjs']) {
+    const u = spawnSync(process.execPath, ['--test', path.join(__dirname, suite)], { cwd: root, stdio: 'inherit' });
+    if (u.status !== 0) failed++;
+  }
   if (server) server.kill();
   console.log(failed ? `${failed} suite(s) failed` : 'all browser suites passed');
   process.exit(failed ? 1 : 0);

@@ -90,6 +90,7 @@
     <li>Choose <b>Players</b> and <b>Your seat</b> in Table settings before entering tiles.</li>
     <li>Open <b>Your board</b> and <b>Start blank</b>. Paint resources, set numbers, then finish the harbours or explicitly exclude their effects.</li>
     <li>Mark opponents in placement order. When your turn comes, choose a corner and use <b>Keep</b> for your own settlement.</li>
+    <li>Tap the side of that settlement where your starting road went. With <b>Show best</b> on, the card says how that direction compares with the others.</li>
     <li>Compare second-settlement candidates before committing. On a base-game table, check what you cannot produce and which first build needs the fewest new cards.</li>
   </ol>
   <p>For practice, choose <b>Drill</b>, set your table and commit before seeing the answer. Replay a cleared level to try that situation again. For a group review, <b>Copy link</b> from <b>Your board</b> saves explicit tiles, harbours and placement order. Generated links use a seed and the current setup rules; scoring can change as the app is updated.</p>
@@ -137,13 +138,15 @@
     <tr><td>Harbours</td><td>When included, 3:1 helps anyone; 2:1 helps most when you produce plenty of that resource. A harbour type you already own adds no duplicate bonus. A nearby harbour needs two roads and a new settlement before use; approaching from inland counts too. Useful direct access takes priority; otherwise only the best reachable new harbour counts.</td></tr>
     <tr><td>Room to grow</td><td>Adds value for an open settlement site exactly two roads away. Longer routes are outside this factor.</td></tr>
     <tr><td>Second settlement</td><td>Credit for covering what the first one lacks, especially wheat and ore.</td></tr>
-    <tr><td>Starting road</td><td>Prefer a direction with a useful two-road destination; the card explains conflicts in the projected setup.</td></tr>
+    <tr><td>Starting road</td><td>Prefer a direction with a useful two-road destination; the card explains conflicts in the projected setup. A road you place is graded by the same rule; see <i>Your starting road</i> below.</td></tr>
   </table>
   <p>Every rule traces to a published source. The source table, the exact weights and what was left out are in
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/RESEARCH.md">RESEARCH.md</a>; the full explanation is in
   <a href="https://github.com/buffbeefalo/catan-lens/blob/main/docs/HOW-IT-WORKS.md">HOW-IT-WORKS.md</a>.</p>
 
   <p><b>Projected placements</b> shows this model's choices for each unmarked turn. People may choose differently. Road advice considers the remaining setup; if its target is also your projected second settlement, the card explains that the site would be occupied when setup ends. When no two-road destination is legal, the card states that limit; the hint does not check longer routes. <b>Show best</b> reveals road hints in the map and verdicts.</p>
+
+  <p><b>Your starting road.</b> Placing it is optional. After you keep a settlement, click or tap one of its sides (or Tab to a side and press Enter); choose another side to move it, and Undo puts it back. The road is judged as of that settlement's turn, so later placements do not change its grade: <b>Great</b> for the best direction, <b>Fair</b> when the best open corner two roads that way scores at least 90% of the best direction's (a teaching convention the author chose, not a measured cutoff), <b>Weak</b> otherwise. If no direction has an open settlement site two roads away, there is no grade. Opponents' roads are not entered, and longer routes are not checked. With <b>Show best</b> off, the grade appears only once both of your settlements are down, and the reasons wait for Show best. Drill practises settlements only.</p>
 
   <h2>Does following it win games?</h2>
   <p id="policy-version-note">The current version counts legal inland approaches to harbours, excludes trading access you already own, and rounds the same physical board consistently. The latest comparison isolates the harbour-reachability correction; both versions already contain the ownership and rounding fixes. Each earlier test keeps its own frozen policy. No weights were tuned on these outcomes.</p>

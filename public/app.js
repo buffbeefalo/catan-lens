@@ -1,6 +1,6 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
 import { hexCorners, legalVertices, nearestVertex, nearestCoastalEdge } from './geometry.js';
-import { suggestRoad, rankSpots, compare, grade, simulateDraft, openingFacts, PLANS, planFor } from './score.js';
+import { suggestRoad, gradeRoad, placementContext, rankSpots, compare, grade, simulateDraft, openingFacts, PLANS, planFor } from './score.js';
 import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel, normalizeProgress, applyProgressActions } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
 
@@ -46,8 +46,13 @@ function readUrl() {
   if (state.linkError) return;
   const ids = k => [...new Set((q.get(k) || '').split(',').filter(Boolean).map(Number).filter(x => Number.isInteger(x) && x >= 0))];
   state.me = ids('me'); state.opp = ids('opp');
-  // Free play keeps the placement ORDER too (seq=o23,m13,…), so Undo and the verdicts survive a reload.
-  state.seq = (q.get('seq') || '').split(',').filter(Boolean).map(t => ({ k: t[0] === 'o' ? 'opp' : 'me', id: Number(t.slice(1)), user: t[0] === 'm' })).filter(t => Number.isInteger(t.id) && t.id >= 0);
+  // Free play keeps the placement ORDER too (seq=o23,m13,r13-14,…), so Undo and the verdicts survive a reload.
+  // r<settlement>-<corner> is a starting road you placed; an app without roads reads it as no number and drops it.
+  // Each token is read by its prefix (m mine, o opponent, r road); anything else is dropped, so a malformed road can never become a settlement.
+  state.seq = (q.get('seq') || '').split(',').map(t => {
+    const road = /^r(\d+)-(\d+)$/.exec(t), piece = /^([mo])(\d+)$/.exec(t);
+    return road ? { k: 'road', at: Number(road[1]), to: Number(road[2]) } : piece ? { k: piece[1] === 'o' ? 'opp' : 'me', id: Number(piece[2]), user: piece[1] === 'm' } : null;
+  }).filter(Boolean);
 }
 let historyIssue = null;
 function currentQuery(snapshot = state, customBoard = board) {
@@ -62,7 +67,7 @@ function currentQuery(snapshot = state, customBoard = board) {
     if (snapshot.custom) { const enc = encodeBoard(customBoard); q.delete('seed'); q.set('b', enc.b); if (enc.h) q.set('h', enc.h); if (snapshot.portMode !== 'check') q.set('ports', snapshot.portMode); }
     if (snapshot.me.length) q.set('me', snapshot.me.join(','));
     if (snapshot.opp.length) q.set('opp', snapshot.opp.join(','));
-    if (snapshot.history.length) q.set('seq', snapshot.history.map(h => (h.k === 'opp' ? 'o' : 'm') + h.id).join(','));
+    if (snapshot.history.length) q.set('seq', snapshot.history.map(h => h.k === 'road' ? `r${h.at}-${h.to}` : (h.k === 'opp' ? 'o' : 'm') + h.id).join(','));
   }
   return '?' + q.toString();
 }
@@ -127,6 +132,11 @@ function rebuild() {
   // Replay in order; anything off the board, doubled, or illegal where it stands is dropped rather than crashing the page.
   state.me = []; state.opp = []; state.history = [];
   for (const h of hist) {
+    if (h.k === 'road') {   // a road after its settlement, along one of its sides; a repeat of the current road adds nothing
+      const id = board.graph.vertices[h.at]?.edges.find(e => board.graph.edges[e].v.includes(h.to));
+      if (id !== undefined && roadOwner(id) === h.at && roadEdge(h.at) !== id) state.history.push({ k: 'road', id, at: h.at, to: h.to });
+      continue;
+    }
     if (!(Number.isInteger(h.id) && h.id >= 0 && h.id < n)) continue;
     if (h.k === 'me' && state.me.length >= 2) continue;
     if (!legalVertices(board.graph, [...state.me, ...state.opp]).includes(h.id)) continue;
@@ -147,6 +157,23 @@ function recompute() {
   if (state.pick !== null && !ranking.some(r => r.id === state.pick)) state.pick = null;
   writeUrl(); render();
 }
+// Starting roads you placed live in the placement history as { k: 'road', id: edge, at: settlement, to: corner }.
+// A later road for the same settlement moves it, so Undo puts it back where it was.
+const roadEdge = vid => state.history.findLast(h => h.k === 'road' && h.at === vid)?.id;
+// Your settlement at one end of this edge, if its starting road may go there (the far corner holds no
+// settlement); null otherwise.
+function roadOwner(eid) {
+  const e = board.graph.edges[eid];
+  const vid = e?.v.find(x => state.me.includes(x));
+  return vid === undefined || e.v.some(x => x !== vid && (state.me.includes(x) || state.opp.includes(x))) ? null : vid;
+}
+// Every side a starting road could take right now.
+const roadSides = () => state.me.flatMap(vid => board.graph.vertices[vid].edges.filter(e => roadOwner(e) === vid).map(edge => ({ edge, vid })));
+// The position a settlement's starting-road advice is judged from. A kept settlement's road goes down on its own
+// setup turn, so in free play and Your board it is the position that settlement was placed in; a corner under
+// consideration, and Drill (which has no road placement), use the board as it is now. null withholds the
+// advice: a kept settlement with no entry in the placement history.
+const roadContext = id => !state.drill && state.me.includes(id) ? placementContext(state.history, id) : { mine: state.me, occupied: [...state.me, ...state.opp] };
 
 // ---- Board drawing ---------------------------------------------------------
 const NAMES = { wood: 'Wood', brick: 'Brick', wheat: 'Wheat', sheep: 'Sheep', ore: 'Ore', desert: 'Desert', blank: 'Blank' };
@@ -262,12 +289,25 @@ function drawMarks() {
     const x = d.actual ? p.x + 0.26 : p.x, y = d.actual ? p.y - 0.26 : p.y, r = d.actual ? 0.17 : 0.22;
     marks.append(el('g', { class: `badge r${d.round}${d.you ? ' you' : ''}${d.actual ? ' placed' : ''}` }, el('circle', { cx: x, cy: y, r }), el('text', { x, y: y + (d.actual ? 0.08 : 0.1) }, String(d.seat))));
   });
+  // Starting roads you placed, drawn under the settlements as on a real board; until a settlement has one,
+  // its free sides are marked as places a road can go.
+  const sides = canPlaceRoad() ? roadSides() : [];
+  for (const { edge, vid } of sides) if (roadEdge(vid) === undefined) { const [a, b] = board.graph.edges[edge].v.map(i => v[i]); marks.append(el('line', { class: 'road-slot', x1: a.x, y1: a.y, x2: b.x, y2: b.y })); }
+  for (const id of state.me) {
+    const eid = roadEdge(id); if (eid === undefined) continue;
+    const [a, b] = board.graph.edges[eid].v.map(i => v[i]);
+    for (const cls of ['my-road-edge', 'my-road']) marks.append(el('line', { class: cls, x1: a.x, y1: a.y, x2: b.x, y2: b.y }));
+  }
   for (const id of state.opp) { const p = v[id]; marks.append(el('rect', { class: 'piece opp', x: p.x - 0.18, y: p.y - 0.18, width: 0.36, height: 0.36, rx: 0.05 })); }
   for (const id of state.me) { const p = v[id]; marks.append(el('path', { class: 'piece me', d: house(p.x, p.y) })); }
   if (state.pick !== null && !state.me.includes(state.pick)) { const p = v[state.pick]; marks.append(el('path', { class: 'piece pick', d: house(p.x, p.y) })); }
   // R13: the starting road each settlement should take (a hint, so only when hints are revealed)
   if (reveal()) {
-    const roadFor = (id, cls) => { const r = roadHint(id); if (!r) return; const e = board.graph.edges[r.edge]; const a = v[e.v[0]], b = v[e.v[1]]; marks.append(el('line', { class: 'road ' + cls, x1: a.x, y1: a.y, x2: b.x, y2: b.y })); };
+    // Once you place a road that grades Fair or Weak, the suggestion is drawn dashed beside it. A Great road, even on
+    // another side tied for best, is never shown a "better" side.
+    const roadFor = (id, cls) => { const r = roadHint(id); if (!r) return; const placed = roadEdge(id); if (placed === r.edge) return;
+      if (placed !== undefined && !['fair', 'weak'].includes(gradeRoad(analysisBoard, settings(), id, placed, roadContext(id))?.tier)) return;
+      const e = board.graph.edges[r.edge]; const a = v[e.v[0]], b = v[e.v[1]]; marks.append(el('line', { class: 'road ' + cls + (placed === undefined ? '' : ' hinted'), x1: a.x, y1: a.y, x2: b.x, y2: b.y })); };
     for (const id of state.me) roadFor(id, 'me');
     if (state.pick !== null && !state.me.includes(state.pick)) roadFor(state.pick, 'pick');
   }
@@ -281,10 +321,25 @@ function drawMarks() {
     hits.append(c);
     if (focused && ok && focused === `Corner ${p.id}`) queueMicrotask(() => c.focus({ preventScroll: true }));
   }
+  // Each side a starting road can take is a button. It starts a quarter of the way out so a tap on the
+  // settlement itself stays ambiguous; taps reach it through pickOnBoard, Enter or Space directly.
+  for (const { edge, vid } of sides) {
+    const s = v[vid], far = v[board.graph.edges[edge].v.find(x => x !== vid)];
+    const hit = el('line', { class: 'road-hit', x1: s.x + (far.x - s.x) / 4, y1: s.y + (far.y - s.y) / 4, x2: far.x, y2: far.y, tabindex: 0, role: 'button', 'data-edge': edge,
+      'aria-label': `Starting road for your ${state.me.indexOf(vid) === 0 ? 'first' : 'second'} settlement, toward corner ${far.id}`, 'aria-pressed': String(roadEdge(vid) === edge) });
+    hit.addEventListener('click', e => { if (e.detail === 0) { e.stopPropagation(); placeRoad(edge); } });
+    hit.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); placeRoad(edge); } });
+    hits.append(hit);
+  }
 }
-// R13 starting road for a settlement, against the pieces on the board right now.
-const roadHint = id => suggestRoad(analysisBoard, settings(), id, { mine: state.me, occupied: [...state.me, ...state.opp] });
-const roadLine = id => { if (!reveal()) return ''; const r = roadHint(id); return `<p class="sub road">${esc(r ? r.text : 'No legal settlement site is open two roads away. This road hint does not check longer routes.')}</p>`; };
+// R13 starting road for a settlement, from the same position its verdict and road grade use (roadContext).
+const roadHint = id => { const c = roadContext(id); return c && suggestRoad(analysisBoard, settings(), id, c); };
+const roadLine = id => { if (!reveal() || !roadContext(id)) return ''; const r = roadHint(id), placed = roadEdge(id);
+  // A placed Great road is the best direction even when the suggestion takes another side tied with it, so that side is not offered as a correction.
+  if (r && placed !== undefined && placed !== r.edge && gradeRoad(analysisBoard, settings(), id, placed, roadContext(id))?.tier === 'great') return '';
+  return `<p class="sub road">${esc(r ? r.text : 'No legal settlement site is open two roads away. This road hint does not check longer routes.')}</p>`; };
+// Can a tap on a side of your settlement place its starting road? Free play and Your board; Drill keeps its settlement levels.
+const canPlaceRoad = () => !state.linkError && !state.tool && !state.drill && entry.ready && state.mode === 'me' && state.pick === null && state.me.length > 0;
 // Can a click on the board do anything right now?
 const canPlace = () => !state.linkError && (state.tool ? false : state.mode === 'opp' ? !state.drill : entry.ready && state.me.length < 2 && !state.drillSetup && !(state.drill && state.answered !== null));
 const house = (x, y) => `M${x - 0.2},${y + 0.18} L${x - 0.2},${y - 0.05} L${x},${y - 0.24} L${x + 0.2},${y - 0.05} L${x + 0.2},${y + 0.18} Z`;
@@ -421,7 +476,8 @@ function pickOnBoard(event) {
   boardTouch = null;
   if (!event.detail || state.linkError) return;
   const editingPorts = state.custom && state.tool === 'port';
-  if (!editingPorts && !canPlace()) return;
+  const sides = !editingPorts && canPlaceRoad() ? roadSides() : [];
+  if (!editingPorts && !canPlace() && !sides.length) return;
   const matrix = $('#svg').getScreenCTM();
   if (!matrix) return;
   const point = new DOMPoint(pointer.clientX, pointer.clientY).matrixTransform(matrix.inverse());
@@ -435,7 +491,19 @@ function pickOnBoard(event) {
     return;
   }
   const reach = Math.min(0.9, Math.max(0.3, 22 / scale));
-  const id = nearestVertex(board.graph, point, reach);
+  // A side of your settlement has its own region, measured from a quarter of the way out so a tap on the
+  // settlement picks no side. A tap there lays the road and never reaches corner snapping; every legal corner
+  // is at least 0.55 from that region, so no corner tap is lost to it.
+  let side = null;
+  for (const s of sides) {
+    const a = board.graph.vertices[s.vid], b = board.graph.vertices[board.graph.edges[s.edge].v.find(x => x !== s.vid)];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const t = Math.max(0.25, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / (dx * dx + dy * dy)));
+    const d = Math.hypot(point.x - a.x - t * dx, point.y - a.y - t * dy);
+    if (d <= Math.min(0.45, reach) && (!side || d < side.d)) side = { edge: s.edge, d };
+  }
+  if (side) return placeRoad(side.edge);
+  const id = canPlace() ? nearestVertex(board.graph, point, reach) : null;
   if (id !== null && legalVertices(board.graph, [...state.me, ...state.opp]).includes(id)) place(id);
 }
 function place(id) {
@@ -476,41 +544,62 @@ function keepPick() {
     else result.scrollIntoView({ block: 'nearest', behavior: 'instant' });
   }
 }
+// Place (or move) the starting road of one of your settlements along `eid`, then show its result.
+function placeRoad(eid) {
+  const vid = roadOwner(eid);
+  if (vid === null || !canPlaceRoad() || roadEdge(vid) === eid) return;
+  state.history.push({ k: 'road', id: eid, at: vid, to: board.graph.edges[eid].v.find(x => x !== vid) }); recompute();
+  const result = $(`#road-grade-${vid}`);
+  if (result) { result.focus({ preventScroll: true }); result.scrollIntoView({ block: 'nearest', behavior: 'instant' }); }
+}
 // Undo reverses the LAST action, whichever kind it was (a pending preview first).
 function undo() {
   if (state.pick !== null) { state.pick = null; render(); return; }
   const last = state.history.pop();
   if (!last) return;
   if (last.k === 'me') state.me = state.me.filter(x => x !== last.id);
-  else { const i = state.opp.lastIndexOf(last.id); if (i >= 0) state.opp.splice(i, 1); }
+  else if (last.k === 'opp') { const i = state.opp.lastIndexOf(last.id); if (i >= 0) state.opp.splice(i, 1); }
   recompute();
 }
 function reset() { if ((state.me.length || state.opp.length) && !keepPreviousBoard('pieces')) return; state.me = []; state.opp = []; state.history = []; state.pick = null; recompute(); }
 
 // ---- Panel -----------------------------------------------------------------
 // Grade each placed settlement against the corners that were open when it went down (replayed
-// from the action history), so the verdict survives later placements and reloads.
+// from the action history), so the verdict survives later placements and reloads. Its starting road
+// belongs to the same setup turn, so the road is graded in that same position however late it is entered.
 function placedVerdicts() {
   if (!entry.ready) return [];
   const out = [];
-  const seen = [];
   for (const h of state.history) {
-    if (h.k === 'me' && (!state.drill || h.user)) {
-      const mine = seen.filter(x => x.k === 'me').map(x => x.id);
-      const rk = rankSpots(analysisBoard, settings(), { mine, occupied: seen.map(x => x.id) });
-      const r = rk.find(x => x.id === h.id);
-      if (r) out.push({ r, g: grade(r, rk, state.players), diff: compare(rk[0], r), n: mine.length + 1 });
-    }
-    seen.push(h);
+    if (h.k !== 'me' || (state.drill && !h.user)) continue;
+    const context = placementContext(state.history, h.id);   // the position it was placed in, as for its road
+    const rk = rankSpots(analysisBoard, settings(), context);
+    const r = rk.find(x => x.id === h.id);
+    const edge = roadEdge(h.id);
+    if (r) out.push({ r, g: grade(r, rk, state.players), diff: compare(rk[0], r), n: context.mine.length + 1, road: edge === undefined ? null : gradeRoad(analysisBoard, settings(), h.id, edge, context) });
   }
   return out;
 }
 const gradePosition = g => `#${g.rank} of ${g.total} · ${g.pct === null ? `${g.gap.toFixed(2)} point gap` : `${g.pct}% of best`}`;
-const verdictCard = ({ r, g, diff, n }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>${gradePosition(g)}</span></h2>
+const verdictCard = ({ r, g, diff, n, road }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>${gradePosition(g)}</span></h2>
       <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
       ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
-      <div class="stat"><span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span></div></div>`;
+      <div class="stat"><span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span></div>${roadSection(r.id, road)}</div>`;
+// The starting road you placed for this settlement, graded (R13). During blind practice a placed road gets a
+// neutral confirmation until both your settlements are down, then only its grade: where it leads and how the
+// other directions compare wait for the hint switch, so road feedback cannot point at a future target.
+function roadSection(id, road) {
+  const movable = canPlaceRoad() && roadSides().some(s => s.vid === id);
+  if (!road) return movable ? `<p class="sub road-prompt">Place your starting road: click or tap a side of this settlement on the board${reveal() ? ' to see how it compares with the other directions' : ''}.</p>` : '';
+  const move = movable ? '<p class="sub">Click or tap another side of the settlement to move it.</p>' : '';
+  if (!reveal() && state.me.length < 2) return `<div class="road-grade placed"><p class="sub" id="road-grade-${id}" tabindex="-1">Your starting road is placed. Its grade appears once both settlements are down; turn on <b>Show best</b> to see how it compares now.</p>${move}</div>`;
+  const why = reveal() ? ` — ${esc(road.why)}` : '';
+  const more = reveal() ? `${road.detail ? `<p class="sub">${esc(road.detail)}</p>` : ''}<p class="sub">Judged as of this settlement’s turn; later placements do not change it.</p>`
+    : '<p class="sub">Turn on <b>Show best</b> to see why.</p>';
+  // Blind practice keeps the bare grade in neutral colours: quality styling is part of the hint.
+  return `<div class="road-grade ${reveal() ? road.tier : 'placed'}"><p class="grade" id="road-grade-${id}" tabindex="-1"><b>Your road: ${road.label}</b>${why}</p>${more}${move}</div>`;
+}
 const list = a => a.length <= 1 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const describe = r => `${list(Object.entries(r.prod).map(([k, p]) => `${p} ${k}`))}${r.numbers.length ? ' · numbers ' + r.numbers.slice().sort((a, b) => a - b).join(', ') : ''}`;
 function cornerDesc(id) {

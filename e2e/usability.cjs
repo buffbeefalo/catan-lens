@@ -126,7 +126,8 @@ test('first-pick feedback keeps future road hints hidden during blind practice',
 });
 
 test('an unavailable two-road hint explains its search limit', async t => {
-  const page = await open(t, { width: 390, height: 844 }, '?players=4&seed=4&seat=4&me=8,32&opp=2,44,42,33,18,30&seq=o2,o44,o42,m8,m32,o33,o18,o30');
+  // the marks that leave the second settlement without a two-road target are down before it (a kept settlement's road is judged on its own turn)
+  const page = await open(t, { width: 390, height: 844 }, '?players=4&seed=4&seat=4&me=8,32&opp=2,44,42,33,18,30&seq=o2,o44,o42,m8,o33,o18,o30,m32');
   const text = await page.locator('.verdict .road').last().innerText();
   assert.match(text, /No legal settlement site is open two roads away/);
   assert.match(text, /does not check longer routes/);

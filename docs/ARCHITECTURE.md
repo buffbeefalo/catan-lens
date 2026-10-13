@@ -13,7 +13,9 @@ public/
   board.js          board generation (official variable setup, seeded), Your-board encoding in links,
                     official-box checks
   score.js          the heuristic: scoreVertex (rules R1-R12), rankSpots, grade, compare,
-                    simulateDraft (snake draft projection), suggestRoad (R13), openingFacts
+                    simulateDraft (snake draft projection), suggestRoad and gradeRoad (R13, both built
+                    on roadOptions), placementContext (the position a kept settlement was placed in,
+                    from the history), openingFacts
   drill.js          the 16-level ladder: stages, seat resolution, seed search, pass/fail,
                     saved-progress validation and pending-action replay
   style.css         all styling (system fonts only); every color is a token with a light and a dark value
@@ -151,6 +153,41 @@ opponent conflicts as projected setup choices, and flag a target also assigned t
 unplaced second settlement. This adds no score term or direction preference. `roadLine` shares the
 existing `reveal()` guard with road drawing, so a first-pick verdict cannot expose future road targets
 during blind second-pick practice. Committed-pick grading remains visible.
+A starting road the player places is a history entry `{ k: 'road', id, at, to }`, written to `seq` as
+`r<settlement>-<corner>`. The reader dispatches on the prefix (`m` mine, `o` opponent, `r` road) and drops
+anything else, so a malformed road can never become a settlement; an app version without roads reads no
+corner number from the token and drops it too. Replay keeps a road only when its settlement is an earlier own
+settlement and its far corner is adjacent and free; the latest valid road for a settlement wins. Road entries
+never enter the settlement lists, placement counts, draft simulation or verdict replay. A later road for the
+same settlement moves it, so Undo restores the previous side; the side already chosen is a no-op.
+`roadOptions` (score.js) is the one direction evaluation behind both `suggestRoad` and `gradeRoad`.
+`placementContext` (score.js) reads the position a kept settlement was placed in from the placement
+history: your settlements before it and every settlement before it, roads skipped. Its verdict, its road grade
+and, in free play and Your board, its drawn suggestion (map line and card text) all use that position, so late
+entry, later marks and later moves change none of them, and the drawn road always grades Great. A settlement
+with no history entry of its own gets no position, and its road advice and grade are withheld rather than read
+from a truncated or live list; every current path records a settlement and its entry together, so this is a
+guard. Listing the settlement itself would change nothing, because `roadOptions` adds it to both lists first.
+The 2026-10-12 road council (run 4299c6d4) required the drawn suggestion to use the grade's inputs, and the
+published app did not: computed from the board as it stands, the suggestion pointed elsewhere by the end of
+setup for 322 of 2,094 kept settlements (seeds 1-150, 3 and 4 players, every seat, all players following the
+projection; a unit test pins both counts). Two follow-up councils on that mismatch (runs 6f2bc821 and d9912dfa)
+ended without a mutual decision, one escalated with its leaderboard ruling unavailable and one stopped when a
+seat ran out of turns; every position they produced backed this design, and it was adopted on that basis, not
+as a ratified decision. The settlement's own turn is also when the benchmark asks for its road. Previews and
+the best-corner card still use the board as it is, and so does Drill, which has no road placement and rebuilds
+its history with every opponent first. Before a road is placed the suggestion keeps its solid style; afterwards
+your road is a solid accent piece, and the suggestion is drawn dashed beside it only when hints are shown and
+your road grades Fair or Weak, never beside a Great road. A Great road on a different side tied for best also
+loses the card's sentence about the suggested side, so nothing reads as a correction.
+Road slots appear only in free play and Your board, in Place mine mode without a pending preview; Drill has
+none. Each side's tap region starts a quarter of the way out from the settlement and is checked before corner
+snapping, so a tap there lays the road and never reaches a corner; every legal corner lies at least 0.55
+edge lengths outside that region. Keyboard users Tab to a side and press Enter or Space.
+With hints hidden, the card only confirms that the road is placed until both of your settlements are kept,
+then shows the bare tier in neutral colours with a pointer to Show best; Undo below two settlements hides it
+again. The reason, destination, counts, projection wording and any better direction stay behind `reveal()`,
+and the slot labels describe position only.
 Both the expansion factor and road hint check destinations exactly two edges away. A missing destination
 can mean a corner is blocked by the settlement distance rule, not occupied. Their messages state that
 limit; neither infers that longer routes are impossible.

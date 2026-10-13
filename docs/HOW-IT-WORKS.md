@@ -155,6 +155,19 @@ stays dominant.
   following that opening would occupy the site during setup. With **Show best** off, road hints stay
   hidden in both the map and earlier verdicts until you reveal them; committed-pick grades remain available.
   When no two-road destination is legal, the card states that limit. The hint does not check longer routes.
+- **Your starting road.** After keeping a settlement, tap one of its sides on the board to place its
+  starting road (by keyboard, Tab to a side and press Enter). The card grades that direction with the
+  same reasoning as the suggestion: **Great** for the best direction (exact ties share it), **Fair** when
+  its best two-road target scores at least 90% of the best direction's, **Weak** for anything lower or
+  when nothing that way survives the projected opening. If no direction has an open site two roads
+  away, the card explains that limit instead of grading. Tap another side to move the road; Undo puts
+  it back. The road is judged as of its settlement's turn, so marking opponents afterwards does not
+  change its grade, and outside Drill the road suggested for a kept settlement is worked out as of that
+  turn too: following it always earns Great. If your road grades Fair or Weak, the suggested side is drawn
+  dashed beside it; a Great road, even on another side tied for best, is never shown a different one. With **Show best** off, the card only confirms that the road is placed
+  until both of your settlements are down; then it shows the bare grade. Why, what lies that way and how the
+  other directions compare wait for **Show best**. Opponents' roads are not entered, and routes longer than
+  two roads are not checked. Drill does not use roads.
 
 ### What your opening can produce and build
 

@@ -6,7 +6,7 @@
   "description": "Where to place your first two Catan settlements: every legal corner scored with expert-sourced rules and explained in plain English.",
   "scripts": {
     "start": "node serve.js",
-    "test": "node --test test/*.test.js",
+    "test": "node --test test/*.test.js test/*.test.mjs",
     "e2e": "node e2e/run-all.cjs",
     "report": "node bench/production-report.mjs"
   },
