@@ -16,6 +16,13 @@ const mobile = ENGINE !== 'firefox';
     const m = await page.evaluate(() => ({ boardW: Math.round(document.querySelector('#svg').getBoundingClientRect().width), cols: getComputedStyle(document.querySelector('.wrap')).gridTemplateColumns, docW: document.documentElement.scrollWidth, vw: innerWidth }));
     console.log(name, w + 'x' + h, JSON.stringify(m));
     assert.ok(m.docW <= m.vw, `${name}: no horizontal page scroll`);
+    if (single) {   // touch screens: every visible button and disclosure row is at least a 44 px tap target
+      const coarse = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+      const small = await page.$$eval('button, summary, .btn', els => els.filter(e => e.offsetParent).map(e => ({ e: e.id || e.textContent.trim().slice(0, 24), r: e.getBoundingClientRect() }))
+        .filter(({ r }) => r.height > 0 && (r.height < 44 || r.width < 44)).map(({ e, r }) => `${e} ${Math.round(r.width)}x${Math.round(r.height)}`));
+      if (coarse) assert.deepEqual(small, [], `${name}: every button and disclosure row is a 44 px tap target`);
+      else console.log(`${name}: ${ENGINE} reports no touch pointer here, so tap sizes are not checked`);
+    }
     // free play: no lead card, the board comes first in the column
     assert.equal(await page.$('.card.lead'), null, `${name}: free play has no lead card`);
     // drill setup card

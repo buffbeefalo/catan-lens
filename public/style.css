@@ -246,4 +246,6 @@ details p{font-size:12px;color:var(--mut);margin:8px 0}
 .picture-notes li{margin:2px 0}
 .picture-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
 .picture-actions .btn:disabled{opacity:.45;cursor:default}
+/* Touch screens: every disclosure row is at least a 44 px tap target, like the buttons */
+@media (pointer:coarse){details:not(.table-settings)>summary{padding-top:12px;padding-bottom:12px;min-height:44px;box-sizing:border-box}.seg button{min-width:44px}}
 .hex.check{stroke:var(--red);stroke-width:.07;stroke-dasharray:.16 .1}
