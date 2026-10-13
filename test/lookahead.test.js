@@ -82,8 +82,8 @@ test('the projection is the classic draft: same order, consumption of placed pie
   let states = 0;
   for (const players of [3, 4, 5, 6]) for (let seed = 1; seed <= 4; seed++) {
     const b = generateBoard({ setup: players >= 5 ? 'ext56' : 'base', seed });
-    for (let seat = 1; seat <= players; seat++) for (const cak of [false, true]) {
-      const s = { players, seat, cak }, full = simulateDraft(b, s);
+    for (let seat = 1; seat <= players; seat++) for (const [cak, plan] of [[false, undefined], [true, undefined], [false, seat % 2 ? 'road' : 'ows']]) {
+      const s = { players, seat, cak, ...(plan ? { plan } : {}) }, full = simulateDraft(b, s);
       for (let k = 0; k <= full.length; k += 3) {
         const me = full.slice(0, k).filter(d => d.you).map(d => d.id), opp = full.slice(0, k).filter(d => !d.you).map(d => d.id);
         assert.deepEqual(projectDraft(b, s, { me, opp }), simulateDraft(b, s, { me, opp }));
@@ -91,7 +91,7 @@ test('the projection is the classic draft: same order, consumption of placed pie
       }
     }
   }
-  assert.ok(states > 300);
+  assert.ok(states > 450);
 });
 
 test('first-pick ranking matches the exhaustive reference exactly: every seat, three players, Cities & Knights, both plans', () => {

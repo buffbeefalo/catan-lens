@@ -36,10 +36,34 @@ const portName = t => (t === '3:1' ? 'the 3:1 port' : `the 2:1 ${t} port`);
 
 // ---- Other seats ----------------------------------------------------------------------------------------------
 
+// The classic top corner, exactly rankSpots(...)[0] but faster. A corner's score with nothing else on the board is an
+// upper bound on its score now (more pieces only take harbour and room-to-grow targets away), so corners are scored
+// in order of that bound and the search stops once no remaining bound can reach the best score found.
+const BOUNDS = new WeakMap();
+function topSpot(board, settings, mine, occupied) {
+  let memo = BOUNDS.get(board);
+  if (!memo) BOUNDS.set(board, memo = new Map());
+  const key = `${settings.players}|${settings.seat}|${!!settings.cak}|${settings.plan ?? ''}|${mine.join(',')}`;
+  let byBound = memo.get(key);
+  if (!byBound) {
+    byBound = board.graph.vertices.map(v => { const s = scoreVertex(board, settings, v.id, { mine, occupied: [], explain: false }); return { id: v.id, bound: s.score, pips: s.pips }; })
+      .sort((a, b) => b.bound - a.bound || b.pips - a.pips || a.id - b.id);
+    memo.set(key, byBound);
+  }
+  const legal = new Set(legalVertices(board.graph, occupied));
+  let best = null;
+  for (const o of byBound) {
+    if (best && o.bound < best.score) break;
+    if (!legal.has(o.id)) continue;
+    const s = scoreVertex(board, settings, o.id, { mine, occupied, explain: false });
+    if (!best || s.score > best.score || (s.score === best.score && (s.pips > best.pips || (s.pips === best.pips && s.id < best.id)))) best = s;
+  }
+  return best;
+}
+
 // Another seat's projected pick: the classic model with that seat's own plan. A plan the user chose for their own
 // seat never carries over to the other seats.
-const classicPick = (board, settings, seat, mine, occupied) =>
-  rankSpots(board, { players: settings.players, seat, cak: settings.cak }, { mine, occupied, explain: false })[0] || null;
+const classicPick = (board, settings, seat, mine, occupied) => topSpot(board, { players: settings.players, seat, cak: settings.cak }, mine, occupied);
 
 // Report-only opponent styles for a stability check. They change how the other seats are imagined to pick and never
 // feed the look-ahead's own ranking, which always projects them with the classic model.
@@ -77,7 +101,7 @@ export function projectDraft(board, settings, { me = [], opp = [] } = {}, choose
     else if (oi < opp.length) id = opp[oi++];
     if (id === undefined) {
       const mine = round === 2 && firsts[seat] !== undefined ? [firsts[seat]] : [];
-      const pick = seat === S ? (chooseMine ? chooseMine([...occupied], mine) : rankSpots(board, settings, { mine, occupied, explain: false })[0])
+      const pick = seat === S ? (chooseMine ? chooseMine([...occupied], mine) : topSpot(board, settings, mine, occupied))
         : STYLES[style](board, settings, seat, mine, occupied);
       if (!pick) return;
       id = pick.id; actual = false; score = pick.score; occupied.push(id);
