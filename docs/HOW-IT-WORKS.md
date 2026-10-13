@@ -280,6 +280,12 @@ The rules come from expert advice, but advice is not proof, so the repository te
 are Catanatron's value-function bot; one seat has its opening chosen by a different strategy, then plays the rest of
 the game exactly like the others. A fair seat wins 25%.
 
+The newest test, on **12 October 2026**, measured the experimental look-ahead (both settlements and their roads)
+against the classic ranking, the bot's own opening and taking the most pips: 32,000 games on 8,000 fresh
+boards, every policy fixed beforehand. The look-ahead won **23.9%**, classic Lens
+**25.3%**, the bot's own opening **25.3%** and most pips **16.8%**.
+The look-ahead won fewer games than the classic ranking: −1.3 percentage points (95% interval: −2.1 to −0.5; exact p = 0.0047). The look-ahead is withdrawn from the page and kept only for study, as the plan required; the owner makes the final call. [Plan, raw games and every comparison](../bench/catanatron/results.md#look-ahead-policy-2026-10-12).
+
 The current policy completes the search for legal harbour destinations two roads away, including
 approaches from inland. Its separate 24,000-game test gave corrected Lens **1,981 wins out of 8,000**,
 versus **1,980** immediately before the correction and **2,015** for the bot's own opening. The primary

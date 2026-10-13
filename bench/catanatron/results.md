@@ -1,8 +1,60 @@
 # Benchmark results
 
-Every comparison below records its frozen policy. The newest test isolates complete harbour
-reachability; both versions already contain the owned-harbour and rounding corrections. It does not
-measure those earlier changes separately. No test outcomes tuned the policies, and the tests are not pooled.
+Every comparison below records its frozen policy. The newest test compares an experimental look-ahead
+ranking with the classic policy, which stays the app's ranking; the look-ahead lost and was withdrawn from the
+page. No test outcomes tuned the policies, and the tests are not pooled.
+
+## Look-ahead policy, 2026-10-12
+
+Policy `draft-aware-2026-10-12` is the experimental look-ahead ranking (rule R14 in
+[RESEARCH.md](../../docs/RESEARCH.md)): both opening settlements and their starting roads, against the classic
+Catan Lens policy, the bot's own opening and taking the most pips. The [plan](evidence/draft-aware-plan-2026-10-12.json)
+was recorded at **2026-10-13T02:29:33Z**, before any game, for commit
+[`2df98bc`](https://github.com/buffbeefalo/catan-lens/tree/2df98bc8c3c0d174a5fb9f882e533661871cf805). It fixes the source files by hash, the
+seeds, the arms, the analysis and the decision rule. A timing pilot on separate seeds printed no win rates.
+
+Hash seeds **401 to 420** and board seeds **4,000,000 to 4,007,999** are new. Each arm plays the same 8,000 boards and
+subject seats, in 20 clusters of 400 boards. All 32,000 games finished. There were no outcome-based retries.
+
+| Opening chosen by | Wins / games | Win rate (95% interval) |
+|---|---|---|
+| Catan Lens look-ahead (experimental) settlements and road | 1,915 / 8,000 | 23.9% ± 1.3 |
+| Catan Lens classic settlements and road | 2,021 / 8,000 | 25.3% ± 1.1 |
+| The bot's own opening | 2,020 / 8,000 | 25.3% ± 1.5 |
+| Most pips | 1,346 / 8,000 | 16.8% ± 0.8 |
+
+Each comparison subtracts arms within each cluster and uses a two-sided approximate 95% Student t interval over the
+20 differences (19 degrees of freedom), alongside an exact two-sided McNemar test on the boards whose win or loss
+changed. As the plan states, a difference counts as significant only when both agree (with fewer than 100 changed
+pairs, the exact test governs).
+
+| Comparison | Difference (percentage points) | 95% interval | Changed pairs (favour first / second) | Exact p | Reading |
+|---|---|---|---|---|---|
+| Look-ahead minus the classic ranking (primary) | −1.3 | −2.1 to −0.5 | 1,380 (637 / 743) | 0.0047 | significant loss |
+| Look-ahead minus the bot's own opening (secondary) | −1.3 | −2.7 to +0.1 | 2,719 (1,307 / 1,412) | 0.046 | no significant difference |
+| Look-ahead minus taking the most pips (descriptive) | +7.1 | +6.0 to +8.3 | 2,187 (1,378 / 809) | below 0.000001 | significant gain |
+
+Against the bot's own opening, the exact test alone (p = 0.046) would call the difference significant, but the
+interval includes zero, so under the plan it is not. The primary comparison shows a significant loss. The look-ahead
+is withdrawn from the page and kept only for study, as the plan required; the owner makes the final call.
+
+Descriptive figures: the look-ahead's first settlement differed from the classic one on 3,888 of
+8,000 boards (48.6%). At its first settlement it projected every later pick; the
+bots took the projected corner in 8,453 of 36,048 other-seat picks
+(23.4%), and its own second settlement matched the projection in
+4,103 of 8,000 games (51.3%).
+The look-ahead plans the second settlement around the other seats picking by the classic model. The bots took a
+projected corner in only 23.4% of their picks, and the second settlement was the planned one in 51.3% of games.
+That mismatch is a plausible reason for the loss; this test does not isolate it.
+
+The [report](evidence/draft-aware-2026-10-12.json) and the [raw games](evidence/draft-aware-2026-10-12.jsonl.gz)
+(SHA-256 `16178bf1365b3aa0d464b2afd146ba7ad747235bcd88fa1947e44fafb3cfdbee`) are archived. `python3 bench/catanatron/verify_draft_aware.py`
+recomputes every figure above from the archive with the standard library; continuous integration runs it. To
+replay the games, check out the plan's commit, then use the pinned environment and
+`python3 bench/catanatron/draft_aware.py run --parallel 4`.
+
+These are bot games in the four-player base game. They do not predict a person's win rate or cover other table
+sizes or Cities & Knights.
 
 ## Exact tests on changed pairs, 2026-10-12
 

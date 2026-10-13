@@ -100,52 +100,18 @@ Knights guide, an IEEE paper on Catan agents).
 
 ## Does following it win?
 
-Advice is not proof, so this repository tests it. [`bench/catanatron`](bench/catanatron) plays complete four-player
-games in [Catanatron](https://github.com/bcollazo/catanatron), an open-source Catan engine with strong bots. Every
-seat is Catanatron's value-function bot; one seat's opening settlements come from a different strategy, then it plays
-on exactly like the others. Every strategy sees the same boards and seat orders, and the whole benchmark is repeated
-under 20 different bot tie-breaking orders, with intervals computed across those runs (see
-[HOW-IT-WORKS](docs/HOW-IT-WORKS.md#5-does-following-it-actually-win-games) for why). A fair seat wins 25%.
-
-The current policy also counts legal two-road harbour approaches from inland. Its separate 24,000-game
-comparison produced **1,981 wins out of 8,000**, versus **1,980** immediately before the correction and
-**2,015** for the bot's own opening. The primary paired difference is +0.0125 percentage points
-(approximate 95% interval: −0.7705 to +0.7955). This does not establish an advantage or prove equal
-performance. Both versions already include consistent rounding and the owned-harbour fix below.
-[Frozen inputs and all games](bench/catanatron/results.md#harbour-reachability-correction-2026-10-09)
-keep this comparison separate from the earlier evidence; none of its outcomes tuned the policy.
-
-The earlier owned-harbour policy removes credit for a harbour type you already own. Its separate 24,000-game
-comparison produced **1,972 wins out of 8,000**, versus **1,976** before the correction and **1,985**
-for the bot's own opening. The correction's four fewer wins give a −0.05 percentage-point difference;
-the planned approximate 95% interval is −0.098 to −0.002. Only four win/loss pairs changed, so this
-estimate rests on sparse differences. It shows no win-rate gain and is not proof of equal policies.
-The [full comparison and raw records](bench/catanatron/results.md#owned-harbour-correction-2026-10-09)
-preserve the frozen inputs and explain the limits.
-
-The arithmetic repair makes rounding consistent when the same board is turned. The newest comparison
-contains that repair in both versions, so it does not isolate the repair's effect on winning chances.
-
-The table shows the **earlier policy's fresh-seed test on 2026-10-09**, frozen beforehand with no
-tuning on its outcomes. All 40,000 games finished. The [methods and raw records](bench/catanatron/results.md)
-also preserve the earlier benchmark and its same-seed replication.
+In 8,000 four-player games per strategy against Catanatron's value-function bots, Catan Lens openings won
+25.3%, versus 25.3% for the bots' own opening and 16.8% for taking the most pips.
 
 | Opening chosen by | Win rate (95% interval) | Games |
 |---|---|---|
-| Catan Lens settlements and road | 24.3% ± 1.1 | 8,000 |
-| Catan Lens settlements, bot's roads | 23.5% ± 1.2 | 8,000 |
-| The bot's own opening | 24.5% ± 1.2 | 8,000 |
-| Most pips | 16.4% ± 1.1 | 8,000 |
-| Random corner | 1.5% ± 0.2 | 8,000 |
+| Catan Lens (classic, the app's ranking) | 25.3% ± 1.1 | 8,000 |
+| Catan Lens look-ahead (tested, then withdrawn) | 23.9% ± 1.3 | 8,000 |
+| The bot's own opening | 25.3% ± 1.5 | 8,000 |
+| Most pips | 16.8% ± 0.8 | 8,000 |
 
-Across matched runs, Lens led most-pips by **7.9 percentage points** (95% interval: 6.5 to 9.3). Its
-difference from the bot's own opening was −0.2 points (−1.8 to +1.3): no clear advantage, and no proof
-of equal performance. These are four-player base-game bot results; they do not predict a person's win
-rate or validate other table sizes or Cities & Knights.
-
-A deterministic report of what each strategy's opening looks like (`npm run report`) describes the
-resource tradeoffs: taking the most pips wins raw production, as it must by construction, while Lens
-covers more resources, spreads across more numbers, and holds more of the wheat/ore pair that builds cities.
+Bot games in the four-player base game, 12 October 2026; not a prediction of your own win rate, other table sizes or Cities & Knights.
+[Methods, raw games and every earlier test](bench/catanatron/results.md).
 
 ## Run it
 

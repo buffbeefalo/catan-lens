@@ -157,9 +157,13 @@
   <p><b>Your starting road.</b> Placing it is optional. After you keep a settlement, click or tap one of its sides (or Tab to a side and press Enter); choose another side to move it, and Undo puts it back. The road is judged as of that settlement's turn, so later placements do not change its grade: <b>Great</b> for the best direction, <b>Fair</b> when the best open corner two roads that way scores at least 90% of the best direction's (a teaching convention the author chose, not a measured cutoff), <b>Weak</b> otherwise. If no direction has an open settlement site two roads away, there is no grade. Opponents' roads are not entered, and longer routes are not checked. With <b>Show best</b> off, the grade appears only once both of your settlements are down, and the reasons wait for Show best. Drill practises settlements only.</p>
 
   <h2>Does following it win games?</h2>
-  <p id="policy-version-note">The current version counts legal inland approaches to harbours, excludes trading access you already own, and rounds the same physical board consistently. The latest comparison isolates the harbour-reachability correction; both versions already contain the ownership and rounding fixes. Each earlier test keeps its own frozen policy. No weights were tuned on these outcomes.</p>
+  <p id="policy-version-note">The classic ranking is the app&#39;s ranking. An experimental look-ahead ranking lost to it in the newest test below and was withdrawn. The classic policy counts legal inland approaches to harbours, excludes trading access you already own, and rounds the same physical board consistently. Each earlier test keeps its own frozen policy. No weights were tuned on these outcomes.</p>
   <p><a href="https://github.com/bcollazo/catanatron">Catanatron</a>'s value-function bot plays every seat. One seat's opening is chosen by each strategy, then it plays on like everyone else. Strategies face the same boards and seat orders. An evenly matched seat would win 25%.</p>
   <p id="results-status" role="status">Loading benchmark results…</p>
+  <h3>Look-ahead ranking · 12 October 2026</h3>
+  <p>This test finished 32,000 games on 8,000 fresh boards. It compares an experimental look-ahead ranking with the classic ranking, the bot's own opening and taking the most pips. Every policy was fixed before its games began.</p>
+  <table id="draft-aware-results"></table>
+  <p id="draft-aware-comparison">The look-ahead won fewer games than the classic ranking: −1.3 percentage points (95% interval: −2.1 to −0.5; exact p = 0.0047). Against the bot&#39;s own opening the difference was −1.3 percentage points (95% interval: −2.7 to +0.1; exact p = 0.046), not a significant difference either way. The exact test alone would call it significant, but the interval includes zero, so under the plan it is not. The look-ahead is withdrawn from the page and kept only for study, as the plan required; the owner makes the final call.</p>
   <h3>Complete harbour reachability · 9 October 2026</h3>
   <p>This separate test finished 24,000 games on 8,000 fresh boards. It compares the correction for previously missed inland harbour routes with the policy immediately before it. Both versions were fixed before their games began.</p>
   <table id="reachable-harbour-results"></table>
@@ -233,12 +237,14 @@
       data.arms.map(a => `<tr><td>${a.label}</td><td class="n">${a.win.toFixed(1)}% ± ${a.ci.toFixed(1)}${a.wins === undefined ? '' : `<br><small>${a.wins.toLocaleString('en-US')} wins</small>`}</td></tr>`).join('') + '</tbody>';
   };
   fetch('media/results.json').then(r => { if (!r.ok) throw new Error('Results unavailable'); return r.json(); }).then(res => {
+    showResults('draft-aware-results', res.draftAware);
     showResults('results', res);
     showResults('holdout-results', res.holdout);
     showResults('owned-harbour-results', res.ownedHarbour);
     showResults('reachable-harbour-results', res.reachableHarbour);
     document.getElementById('results-status').hidden = true;
   }).catch(() => {
+    document.getElementById('draft-aware-results').textContent = '';
     document.getElementById('results').textContent = '';
     document.getElementById('holdout-results').textContent = '';
     document.getElementById('owned-harbour-results').textContent = '';
