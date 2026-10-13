@@ -52,6 +52,9 @@ The [report](evidence/draft-aware-2026-10-12.json) and the [raw games](evidence/
 recomputes every figure above from the archive with the standard library; continuous integration runs it. To
 replay the games, check out the plan's commit, then use the pinned environment and
 `python3 bench/catanatron/draft_aware.py run --parallel 4`.
+A later commit fixed two look-ahead faults that arise only when seats before you have not placed yet. They cannot
+arise in these games, where every earlier seat has placed when the subject picks; a unit test shows that the
+ranking then projects no seat ahead of you, so the archived decisions are unchanged.
 
 These are bot games in the four-player base game. They do not predict a person's win rate or cover other table
 sizes or Cities & Knights.

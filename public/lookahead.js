@@ -112,9 +112,17 @@ export function projectDraft(board, settings, { me = [], opp = [] } = {}, choose
   return out;
 }
 
-// The picks the seats before my next turn would make if they have not placed yet, in turn order.
+// The picks the seats before my next turn would make if they have not placed yet, in turn order. A seat that picks
+// before one of my settlements in the order picks without it, as at a real table, so keeping the recommendation before
+// those seats are marked leaves the opening it was valued with unchanged. If that would put a seat on or next to a
+// settlement of mine (a corner the projection gave to an earlier seat, kept anyway), every seat picks around my pieces.
 function aheadOfMe(board, settings, { me, opp }, style) {
-  const N = settings.players, S = settings.seat, occupied = [...me, ...opp], firsts = {}, out = [];
+  const inOrder = picksAhead(board, settings, { me, opp }, style, false);
+  const clash = inOrder.some(id => me.some(m => m === id || board.graph.vertices[m].neighbors.includes(id)));
+  return clash ? picksAhead(board, settings, { me, opp }, style, true) : inOrder;
+}
+function picksAhead(board, settings, { me, opp }, style, mineFromStart) {
+  const N = settings.players, S = settings.seat, occupied = mineFromStart ? [...me, ...opp] : [...opp], firsts = {}, out = [];
   let mi = 0, oi = 0;
   for (const [slot, seat] of order(N).entries()) {
     const round = slot < N ? 1 : 2;
@@ -122,6 +130,7 @@ function aheadOfMe(board, settings, { me, opp }, style) {
     if (seat === S) {
       if (mi >= me.length) break;   // my next turn
       id = me[mi++];
+      if (!mineFromStart) occupied.push(id);
     } else if (oi < opp.length) id = opp[oi++];
     else {
       const pick = STYLES[style](board, settings, seat, round === 2 && firsts[seat] !== undefined ? [firsts[seat]] : [], occupied);
@@ -320,7 +329,11 @@ export function rankLookahead(board, settings, { me = [], opp = [] } = {}, { sty
 export function projectionFor(board, settings, { me = [], opp = [] } = {}, id) {
   const ranked = rankLookahead(board, settings, { me, opp }).find(r => r.id === id);
   if (ranked) return ranked.projection;
-  return projectDraft(board, settings, { me: [...me, id], opp }, null, 'classic', new Set([...me, ...opp]));
+  // Not ranked: the other seats pick around it, and my unplaced second is chosen the look-ahead way, as the ranking
+  // recommends it once this corner is kept.
+  const real = new Set([...me, ...opp]);
+  const second = (occupied, mine) => (mine.length ? rankSecond(board, settings, mine[0], occupied, { explain: false, real })[0] : null) || null;
+  return projectDraft(board, settings, { me: [...me, id], opp }, second, 'classic', real);
 }
 
 // Explain why a higher-ranked look-ahead choice beats a pick: the second-settlement outlook (first picks) or the

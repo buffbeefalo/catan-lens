@@ -261,6 +261,54 @@ test('road advice and road grades follow the look-ahead projection and agree wit
   assert.ok(differ > 0, 'the look-ahead projection changes some road advice, so this test is not vacuous');
 });
 
+// Keeping the recommendation before the seats ahead of you are marked: they still pick before it, so the second
+// settlement the card promised is the one recommended next (seeds 1 to 60, three and four players, every later seat).
+test('keeping the recommendation with earlier seats unmarked keeps the promised second', () => {
+  let checked = 0;
+  for (let seed = 1; seed <= 60; seed++) for (const players of [3, 4]) for (let seat = 2; seat <= players; seat++) {
+    const b = generateBoard({ seed }), s = S({ players, seat });
+    const top = rankLookahead(b, s, { me: [], opp: [] })[0];
+    if (!top?.second) continue;
+    const next = rankLookahead(b, s, { me: [top.id], opp: [] })[0];
+    assert.equal(next?.id, top.second.id, `seed ${seed}, ${players} players, seat ${seat}: kept ${top.id}`);
+    checked++;
+  }
+  assert.ok(checked > 250, `${checked} positions`);
+});
+
+// In the benchmark every seat before you has placed when you pick, so no seat is projected ahead of you and the ranking
+// is rankFirst or rankSecond on the real position. The fix above changes only unplaced earlier seats, so it leaves those
+// decisions unchanged.
+test('with every earlier seat placed, nothing is projected ahead of you', () => {
+  for (let seed = 1; seed <= 30; seed++) for (let seat = 1; seat <= 4; seat++) {
+    const b = generateBoard({ seed }), s = S({ seat }), opp = before(b, s);
+    const first = rankLookahead(b, s, { me: [], opp });
+    assert.deepEqual(first, rankFirst(b, s, { opp, real: new Set(opp) }), `seed ${seed} seat ${seat}: first pick`);
+    // The second turn: every seat between my picks has placed as the look-ahead's own projection had it.
+    const mine = first[0].id, proj = first[0].projection, mySlot = proj.findIndex(d => d.you), second = proj.findIndex(d => d.you && d.round === 2);
+    if (second < 0) continue;
+    const all = [...opp, ...proj.slice(mySlot + 1, second).map(d => d.id)];
+    assert.deepEqual(rankLookahead(b, s, { me: [mine], opp: all }), rankSecond(b, s, mine, [mine, ...all], { all: true, real: new Set([mine, ...all]) }), `seed ${seed} seat ${seat}: second pick`);
+  }
+});
+
+// A corner the projection gives to an earlier seat can still be kept. The projection used for it (road advice) must
+// name the same second settlement the ranking recommends once it is kept.
+test('an unranked corner kept anyway: its projection names the second the ranking then recommends', () => {
+  let checked = 0;
+  for (let seed = 1; seed <= 40; seed++) for (let seat = 2; seat <= 4; seat++) {
+    const b = generateBoard({ seed }), s = S({ seat });
+    const ranked = new Set(rankLookahead(b, s, { me: [], opp: [] }).map(r => r.id));
+    for (const id of legalVertices(b.graph, []).filter(v => !ranked.has(v)).slice(0, 3)) {
+      const promised = projectionFor(b, s, { me: [], opp: [] }, id).find(d => d.you && d.round === 2)?.id;
+      const best = rankLookahead(b, s, { me: [id], opp: [] })[0]?.id;
+      assert.equal(promised, best, `seed ${seed}, seat ${seat}: kept unranked ${id}`);
+      checked++;
+    }
+  }
+  assert.ok(checked > 100, `${checked} kept corners`);
+});
+
 test('deterministic, and inputs are never modified', () => {
   const b = generateBoard({ seed: 12 }), s = Object.freeze(S({ seat: 3 }));
   const opp = Object.freeze(before(b, s));
