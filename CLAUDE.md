@@ -1,9 +1,10 @@
 # Catan Lens: notes for coding agents
 
 Catan Lens is a static, browser-only app (plain ES modules in `public/`, no build, zero runtime dependencies) that
-ranks Catan opening settlement corners with rules sourced from strong players (`docs/RESEARCH.md`). Two ranking
-policies: classic (`public/score.js`, the default, the one the published benchmark measured) and the experimental
-look-ahead (`public/lookahead.js`, policy `draft-aware-2026-10-12`).
+ranks Catan opening settlement corners with rules sourced from strong players (`docs/RESEARCH.md`). The page uses
+the classic ranking (`public/score.js`). The look-ahead (`public/lookahead.js`, policy `draft-aware-2026-10-12`) lost
+to it in its predeclared benchmark and is withdrawn from the page (`LOOKAHEAD_OFFERED` in `public/app.js`); its code
+stays for study, the opening report, diagnostics and the benchmark.
 
 ## Commands
 - `npm test`: unit tests (`node --test test/*.test.js`).

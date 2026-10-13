@@ -2,6 +2,7 @@
 // default http://127.0.0.1:8080/). For each table size it opens boards at the start of the draft and late in it,
 // then times switching the ranking to Look-ahead (the full recompute and redraw, measured inside the page), with
 // Chromium's CPU at full speed and throttled 4x. A 4x throttle on a desktop is a rough phone proxy, not a phone.
+// The 2026-10-12 measurements in the docs were taken while the page still offered the look-ahead.
 const { chromium } = require('playwright');
 const BASE = (process.env.CATAN_URL || 'http://127.0.0.1:8080/').replace(/\/?$/, '/');
 (async () => {
@@ -10,6 +11,12 @@ const BASE = (process.env.CATAN_URL || 'http://127.0.0.1:8080/').replace(/\/?$/,
   const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROMIUM_PATH || undefined });
   const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
   const cdp = await page.context().newCDPSession(page);
+  // The page offers the look-ahead only while LOOKAHEAD_OFFERED is true in public/app.js; it was withdrawn on 2026-10-12.
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  if (!await page.evaluate(() => [...document.querySelectorAll('#policy button')].some(b => b.textContent === 'Look-ahead'))) {
+    console.error('This page does not offer the look-ahead (withdrawn on 2026-10-12). To time it, set LOOKAHEAD_OFFERED = true in public/app.js on a local copy.');
+    process.exit(2);
+  }
   console.log(`Chromium ${browser.version()}, ${require('node:os').cpus().length} logical CPUs (${require('node:os').cpus()[0].model.trim()})`);
   console.log('| Throttle | Players | Draft stage | Positions | Median ms | 90th pct ms | Max ms |\n|---|---|---|---|---|---|---|');
   for (const rate of [1, 4]) {

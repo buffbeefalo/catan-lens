@@ -6,6 +6,10 @@ sources live in [RESEARCH.md](RESEARCH.md); benchmark evidence lives in
 
 ## 2026-10-12
 
+**Look-ahead withdrawn.** As the benchmark's plan required, the page no longer offers the look-ahead ranking. A link
+that asks for it opens the classic ranking and says so once. Its code, tests and evidence stay for study; nothing
+about the classic ranking changed.
+
 **Look-ahead benchmark.** A predeclared 32,000-game test on new seeds compared the look-ahead with the classic ranking: 23.9% against 25.3% wins. The look-ahead won fewer games than the classic ranking: −1.3 percentage points (95% interval: −2.1 to −0.5; exact p = 0.0047). The look-ahead is withdrawn from the page and kept only for study, as the plan required; the owner makes the final call. [Evidence](../bench/catanatron/results.md#look-ahead-policy-2026-10-12).
 
 **Exact tests and an erratum.** Every archived paired comparison now also has an exact two-sided McNemar test on

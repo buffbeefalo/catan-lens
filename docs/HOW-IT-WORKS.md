@@ -216,34 +216,21 @@ the second settlement; changing its order changes the immediate options without 
 The comparison uses the starting hand before rolls or trades, and buying still needs your turn. In a
 real draft, mark opponents first to check which locations remain available.
 
-### Your plan and the look-ahead ranking
+### Your plan, and a look-ahead that was tested and withdrawn
 
 **Your plan.** By seat follows R10: early seats chase ore, wheat and sheep for cities and development
 cards, later seats lean on wood, brick and harbours. Under **Your plan** in Table settings, choose
 **Cities** or **Roads** to rank your own corners for that plan instead. The other seats keep the seat rule
 in every projection, and Cities & Knights keeps its own weighting.
 
-**Look-ahead (experimental).** The classic ranking scores one corner at a time. Under **Ranking**, choose
-**Look-ahead** and your next settlement is ranked for your turn by the opening it leads to: the corner plus
-the best second settlement the projected draft leaves you, the safe second pick strong players describe.
-Seats that pick before you and have not placed are projected first, so a corner they are expected to take
-is not ranked; you can still try it. Each settlement keeps its classic score, except that its harbour and
-room-to-grow credits count only a spot still open when setup ends, and a corner or harbour type both
-settlements could use counts once.
-
-The card shows both settlements' parts, names the projected second settlement and a credible alternative
-with the resource tradeoff, and says what the projection assumes: every seat that has not placed picks by
-the classic model, in turn order. A real table can differ. Road advice, and the grade of a road you place, use the same projection. **Other ways the table could pick** ranks the same
-position again with those seats taking the most pips, or the most new resources, and says where the
-recommendation lands; it never changes the ranking. Grades and percentages compare opening values. The
-look-ahead is for the base game: in Cities & Knights your second piece is a city, which it does not model.
-Drill always uses the classic ranking.
-
-Why add it: in 1,200 simulated four-player positions (300 boards, every seat), taking the best corner
-alone and then the best second corner left gave a weaker two-settlement opening, by the model's own
-scoring, on 45.3% to 64.7% of boards depending on the seat. The room-to-grow corner credited to the classic
-top choice was taken or blocked by another seat by the end of setup 77.0% of the time
-(`node bench/draft-diagnostics.mjs 300`). These are model diagnostics, not game results.
+**Look-ahead (withdrawn).** A second ranking was built and tested on 12 October 2026 (rule R14 in
+RESEARCH.md, policy `draft-aware-2026-10-12`). It ranked your next settlement for your turn by the whole
+opening it leads to: the corner plus the best second settlement the projected draft leaves you, with the other
+seats picking by the classic model. In model diagnostics the classic ranking's greedy choice gave a weaker
+two-settlement opening, by the model's own scoring, on 45.3% to 64.7% of boards depending on the seat
+(`node bench/draft-diagnostics.mjs 300`). In the predeclared game test it won fewer games than the classic
+ranking (section 5), so the page no longer offers it, as the test's plan required. A link that asks for it
+opens the classic ranking and says so. Its code, tests and evidence stay in the repository for study.
 
 ## 4. Drill mode
 

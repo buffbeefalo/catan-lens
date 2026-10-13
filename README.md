@@ -61,8 +61,8 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 resources, your starting hand and the cards still needed for each first build. Preview the same facts
 before committing a second corner; blind practice keeps them hidden until you choose.
 
-**Choose your plan, or look ahead.** Rank your own corners for a cities or a roads plan instead of the seat rule,
-or switch the ranking to Look-ahead (experimental), which values a corner by the whole opening it leads to.
+**Choose your plan.** Rank your own corners for a cities or a roads plan instead of the seat rule. A look-ahead
+ranking that values a corner by the whole opening it leads to was tested and withdrawn: it won fewer bot games.
 
 Light and dark themes: it follows your device, or pick one with the switch in the header. No account, no tracking,
 no analysis backend: the app is plain HTML, CSS and JavaScript modules with zero runtime dependencies.

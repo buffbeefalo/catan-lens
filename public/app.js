@@ -7,6 +7,9 @@ import { setupThemeSwitch } from './theme.js';
 import { openPictureReader, closePictureReader } from './picture.js';
 
 const $ = s => document.querySelector(s);
+// The look-ahead ranking lost to the classic ranking in its predeclared benchmark (2026-10-12,
+// bench/catanatron/results.md), so the page no longer offers it. Its code stays for study; true restores the control.
+const LOOKAHEAD_OFFERED = false;
 const initialState = () => ({ setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], seq: null, mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check', policy: 'classic', policyNotice: false, plan: 'auto', checkHexes: [] });
 const state = initialState();
 let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
@@ -29,9 +32,10 @@ function readUrl() {
   state.portMode = ['ignore', 'entered'].includes(q.get('ports')) ? q.get('ports') : 'check';
   state.randomSeat = q.get('rseat') === '1';
   // Links name the look-ahead by its dated id, so a link keeps its meaning if a later version changes the policy.
-  // Absent: the classic ranking. Unknown: the classic ranking, and the page says so once.
-  state.policy = q.get('policy') === POLICY ? 'draft' : 'classic';
-  state.policyNotice = q.has('policy') && !['classic', POLICY].includes(q.get('policy'));
+  // Absent: the classic ranking. The withdrawn look-ahead, or an unknown id: the classic ranking, and the page says so once.
+  const asked = q.get('policy');
+  state.policy = LOOKAHEAD_OFFERED && asked === POLICY ? 'draft' : 'classic';
+  state.policyNotice = q.has('policy') && asked !== 'classic' && state.policy === 'classic' ? (asked === POLICY ? 'withdrawn' : 'unknown') : false;
   state.plan = PLAN_CHOICES.includes(q.get('plan')) ? q.get('plan') : 'auto';
   state.drill = q.get('drill') === '1';
   state.drillSetup = state.drill && q.get('setup') === '1';
@@ -765,7 +769,7 @@ function render() {
   const plan = PLANS[planFor(settings())];
   const chosenPlan = !state.cak && settings().plan;
   const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';
-  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only: no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR}${state.cak && state.policy === 'draft' && !state.drill ? ' · look-ahead off: in Cities & Knights your second piece is a city' : ''} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
+  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only: no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR}${state.cak && state.policy === 'draft' && !state.drill ? ' · look-ahead off: in Cities & Knights your second piece is a city' : ''} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice === 'withdrawn' ? ' · this link asks for the look-ahead ranking, which was withdrawn after testing, so the classic ranking is shown' : state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
   drawMarks();
   const panel = $('#panel');
   const active = panel.querySelector(':focus');
@@ -981,7 +985,8 @@ const POLICY_OPTIONS = [['classic', 'Classic', 'Score each corner on its own: th
   ['draft', 'Look-ahead', 'Experimental: value each corner by the opening it leads to, including your projected second settlement']];
 function controls() {
   choices('#plan', PLAN_OPTIONS, state.plan, v => { state.plan = v; controls(); recompute(); });
-  choices('#policy', POLICY_OPTIONS, state.policy, v => { state.policy = v; state.policyNotice = false; controls(); recompute(); });
+  $('#policy').closest('.ctl').hidden = !LOOKAHEAD_OFFERED;
+  if (LOOKAHEAD_OFFERED) choices('#policy', POLICY_OPTIONS, state.policy, v => { state.policy = v; state.policyNotice = false; controls(); recompute(); });
   for (const b of $('#plan').querySelectorAll('button')) b.disabled = state.drill || state.cak || !!state.linkError;
   for (const b of $('#policy').querySelectorAll('button')) b.disabled = state.drill || state.cak || !!state.linkError;
   seg('#players', [3, 4, 5, 6], state.players, setPlayers);

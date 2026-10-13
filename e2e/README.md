@@ -12,8 +12,8 @@ and starting-road suites. Set `CATAN_URL` to test another deployment instead; se
 - `custom.cjs`: Your board: paint, numbers, ports, box check, link round-trip, blank board, hostile links
 - `fold.cjs`: layout at phone, foldable, tablet and desktop widths: no sideways scroll; setup and paint tools
   above the board in single column
-- `lookahead.cjs`: the experimental look-ahead ranking and plan choice: ring, Best card, projected rows and road agree;
-  links round-trip; old and hostile links stay classic; Drill locks both controls; blind practice reveals nothing early
+- `lookahead.cjs`: plan choice and the withdrawn look-ahead: no Ranking control; a look-ahead link opens the classic
+  ranking and says so once; plan links round-trip; Cities & Knights and Drill lock the plan; hostile values fall back
 - `pwa.cjs`: the installable app: manifest and icons, the offline copy taking control, and a board link and the
   help page opening with the network cut (automated browsers skip the offline copy unless a test turns it on;
   see Engines for how the network is cut)

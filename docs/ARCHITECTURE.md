@@ -20,7 +20,8 @@ public/
                     saved-progress validation and pending-action replay
   style.css         all styling (system fonts only); every color is a token with a light and a dark value
   theme.js          light/dark switch: follows the device until the viewer picks, remembers the pick
-  lookahead.js      the experimental look-ahead policy (draft-aware-2026-10-12): projectDraft, rankFirst,
+  lookahead.js      the look-ahead policy (draft-aware-2026-10-12), withdrawn from the page after its benchmark
+                    (LOOKAHEAD_OFFERED in app.js) and kept for study: projectDraft, rankFirst,
                     rankSecond, rankLookahead (for your turn, remembered per board), projectionFor,
                     compareLookahead, stability (report-only opponent styles)
   imageread.js      reading a board from a picture: four-tap perspective map, tile colours under the box's
@@ -213,10 +214,10 @@ the saved copy only when the network fails, so a refresh or a cold start offline
 videos always need a connection. History navigation clears per-board editing and answer state, while keeping
 pending local progress actions available for Retry saving.
 
-Every ranking, look-ahead included, is computed synchronously from the current state whenever it changes, so a
-result on screen always belongs to the board and settings on screen; nothing runs in the background to finish
-late. The slowest measured look-ahead case (six players at a 4x CPU slowdown, `bench/lookahead-latency.cjs`)
-took about 230 ms, so there is no Web Worker, work budget or cancellation.
+Every ranking is computed synchronously from the current state whenever it changes, so a result on screen always
+belongs to the board and settings on screen; nothing runs in the background to finish late. While the page offered
+the look-ahead, its slowest measured case (six players at a 4x CPU slowdown, `bench/lookahead-latency.cjs`) took
+about 230 ms, so it needed no Web Worker, work budget or cancellation either.
 
 The HTML contains a startup message before loading any application module. A small inline handler
 preserves the query in the help link and shows a retry message when the module download or initial
@@ -275,7 +276,8 @@ Rapid full-board entry previously exhausted WebKit's limit and interrupted rende
   `python3 bench/catanatron/verify_holdout.py` checks the frozen raw data and public holdout figures;
   CI runs it without installing the simulation engine. Do not retune on a dataset labelled holdout.
 - **A drill level**: the `STAGES` table in `drill.js`.
-- **The look-ahead policy**: `lookahead.js`, with `test/lookahead.test.js` (an independent exhaustive reference,
+- **The look-ahead policy** (withdrawn from the page; `LOOKAHEAD_OFFERED` in `app.js` restores the Ranking control
+  for study): `lookahead.js`, with `test/lookahead.test.js` (an independent exhaustive reference,
   exact pruning, the projection equal to the classic draft, reflection, determinism) and `test/plans.test.js`.
   Opponents are always projected with the classic model, so the policy never calls itself; classic `score.js`
   behaviour must not change (its `explain: false` option only skips sentences). Two exact shortcuts keep it quick:

@@ -992,7 +992,12 @@ test('the evidence page separates the harbour corrections from earlier benchmark
     assert.match(await reachable.innerText(), /2,015 wins/);
     assert.match(await page.locator('#reachable-harbour-comparison').innerText(), /one more win/i);
     assert.match(await page.locator('#reachable-harbour-comparison').innerText(), /−0\.77 to \+0\.80/);
-    assert.match(await page.locator('#policy-version-note').innerText(), /both versions already contain the ownership and rounding fixes/);
+    assert.match(await page.locator('#policy-version-note').innerText(), /An experimental look-ahead ranking lost to it in the newest test below and was withdrawn\./);
+    const lookahead = page.locator('#draft-aware-results');
+    assert.equal(await lookahead.locator('tbody tr').count(), 4);
+    assert.match(await lookahead.innerText(), /1,915 wins/);
+    assert.match(await lookahead.innerText(), /2,021 wins/);
+    assert.match(await page.locator('#draft-aware-comparison').innerText(), /−2\.1 to −0\.5/);
     const corrected = page.locator('#owned-harbour-results');
     assert.equal(await corrected.locator('tbody tr').count(), 3);
     assert.match(await corrected.innerText(), /1,972 wins/);

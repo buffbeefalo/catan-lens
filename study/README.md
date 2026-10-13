@@ -12,7 +12,7 @@ This folder holds the materials for two separate studies of Catan Lens's opening
 The two policies:
 
 - **Classic**: the ranking the app shows (`public/score.js`).
-- **Look-ahead**: `public/lookahead.js`, policy `draft-aware-2026-10-12`, which also weighs what the other players are likely to take before your next turn.
+- **Look-ahead**: `public/lookahead.js`, policy `draft-aware-2026-10-12`, which also weighs what the other players are likely to take before your next turn. It lost to the classic ranking in its 2026-10-12 bot benchmark and is withdrawn from the app; it remains here for study.
 
 Neither policy has been checked against human experts or against human learning. These materials are how that check would be done.
 
