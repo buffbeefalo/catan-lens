@@ -14,10 +14,15 @@ the changes were sparse; 16 of the 20 cluster differences were exactly zero, so 
 The exact test on the four changed pairs (none favour the correction) gives p = 0.125: no significant difference.
 The conclusion (no demonstrated gain, no proof of equivalence) is unchanged.
 
-**Look-ahead ranking, experimental (policy `draft-aware-2026-10-12`).** A second ranking, off by default, values your
-next settlement by the opening it leads to: a first settlement is its own score plus the best second settlement the
-projected draft leaves you, and room to grow (R8) counts only a corner still open when setup ends (rule R14). The
-classic ranking, its weights and its published results are unchanged; old links keep it. Drill stays classic.
+**Look-ahead ranking, experimental (policy `draft-aware-2026-10-12`).** A second ranking, off by default, ranks your
+next settlement for your turn by the opening it leads to (rule R14). Seats before you that have not placed are
+projected first; a first settlement is valued with the best second settlement the projected draft leaves you, and
+that second is the one that makes the whole opening best. Each settlement keeps its classic score, but its harbour
+(R7) and room-to-grow (R8) credits count only spots still open when the projected setup ends, and a corner or harbour
+type both settlements could use counts once. It is offered for the base game only (a Cities & Knights second piece is
+a city). A report-only check shows where the recommendation lands if the other seats pick by most pips or by new
+resources. The classic ranking, its weights and its published results are unchanged; old links keep it. Drill stays
+classic.
 
 **Plan choice.** You can choose the plan for your own seat (Cities: ore, wheat and sheep; Roads: wood, brick and
 harbours) instead of the seat rule (R10). No coefficient changed; the other seats keep the seat rule.

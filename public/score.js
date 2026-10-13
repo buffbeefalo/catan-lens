@@ -13,8 +13,8 @@ export const PLANS = {
 const COMMODITY_HEXES = new Set(['wood', 'sheep', 'ore']);
 const PAIR_BONUS = { woodbrick: 0.6, wheatore: 0.9 };   // R4 (scaled by the weaker half, full at 3+ pips)
 const REPEAT_PENALTY = 0.75;                            // R6
-const PORT = { generic: 1.0, matched: 1.5, unmatched: 0.25, matchPips: 5, farMul: 0.5 }; // R7
-const EXPANSION = 0.10;                                 // R8
+export const PORT = { generic: 1.0, matched: 1.5, unmatched: 0.25, matchPips: 5, farMul: 0.5 }; // R7
+export const EXPANSION = 0.10;                          // R8
 const COMPLEMENT = { any: 1.0, key: 1.5 };              // R9
 
 // R10 picks the plan from your seat. You can also choose one of the two plans for your own seat (strategy

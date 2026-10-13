@@ -1,10 +1,10 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
 import { hexCorners, legalVertices, nearestVertex, nearestCoastalEdge } from './geometry.js';
 import { suggestRoad, gradeRoad, placementContext, rankSpots, compare, grade, simulateDraft, openingFacts, PLANS, PLAN_CHOICES, planFor } from './score.js';
-import { rankLookahead, projectionFor, projectDraft, compareLookahead, POLICY } from './lookahead.js';
+import { rankLookahead, projectionFor, projectDraft, compareLookahead, POLICY, stability } from './lookahead.js';
 import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel, normalizeProgress, applyProgressActions } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
-import { openPictureReader } from './picture.js';
+import { openPictureReader, closePictureReader } from './picture.js';
 
 const $ = s => document.querySelector(s);
 const initialState = () => ({ setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], seq: null, mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check', policy: 'classic', policyNotice: false, plan: 'auto', checkHexes: [] });
@@ -107,6 +107,7 @@ function keepPreviousBoard(kind = state.linkError ? 'link' : 'board') {
   return true;
 }
 addEventListener('popstate', () => {
+  closePictureReader();   // a picture read for the board you just left must not land on the restored one
   restoreLocation();
   const heading = $('#panel h2');
   if (heading) {
@@ -120,7 +121,8 @@ addEventListener('popstate', () => {
 // ---- Model -----------------------------------------------------------------
 // Drill always ranks with the classic policy and the seat rule; everywhere else the chosen plan and ranking apply.
 function settings() { return { players: state.players, seat: state.seat, cak: state.cak, ...(!state.drill && state.plan !== 'auto' ? { plan: state.plan } : {}) }; }
-const lookahead = () => state.policy === 'draft' && !state.drill;
+// Base game only: in Cities & Knights the second setup piece is a city, which the look-ahead does not model.
+const lookahead = () => state.policy === 'draft' && !state.drill && !state.cak;
 const HARBOURLESS = new WeakMap();   // one harbour-free copy per board, so remembered look-ahead results stay valid
 const harbourless = b => { let copy = HARBOURLESS.get(b); if (!copy) HARBOURLESS.set(b, copy = { ...b, harbors: {} }); return copy; };
 const table = () => ({ players: state.players, cak: state.cak });   // the drill table you chose before starting
@@ -174,7 +176,7 @@ function recompute() {
     ranking = rankSpots(analysisBoard, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp] });
     draft = simulateDraft(analysisBoard, settings(), { me: state.me, opp: state.opp });
   }
-  if (state.pick !== null && !ranking.some(r => r.id === state.pick)) state.pick = null;
+  if (state.pick !== null && !openNow().includes(state.pick)) state.pick = null;
   writeUrl(); render();
 }
 // Starting roads you placed live in the placement history as { k: 'road', id: edge, at: settlement, to: corner }.
@@ -547,8 +549,11 @@ function place(id) {
   if (state.me.length >= 2) return;
   previewPick(id);
 }
+// Corners a settlement can go on right now. With the look-ahead, a corner the projection gives to a seat that picks
+// before your turn is open now but not ranked; it can still be previewed and kept.
+function openNow() { return entry.ready ? legalVertices(board.graph, [...state.me, ...state.opp]) : []; }
 function previewPick(id) {
-  if (!canPlace() || !ranking.some(r => r.id === id)) return;
+  if (!canPlace() || !openNow().includes(id)) return;
   state.pick = id; render();
   requestAnimationFrame(() => {
     const keep = $('#keep');
@@ -611,22 +616,38 @@ function placedVerdicts() {
     const rk = lookahead() ? rankLookahead(analysisBoard, settings(), { me: context.mine, opp: context.occupied.filter(x => !context.mine.includes(x)) })
       : rankSpots(analysisBoard, settings(), context);
     const r = rk.find(x => x.id === h.id);
-    const edge = roadEdge(h.id);
-    if (r) out.push({ r, g: grade(r, rk, state.players, lookahead() ? 'opening' : 'corner'), diff: (lookahead() ? compareLookahead : compare)(rk[0], r), n: context.mine.length + 1, road: edge === undefined ? null : gradeRoad(analysisBoard, settings(), h.id, edge, roadContext(h.id)) });
+    const edge = roadEdge(h.id), road = edge === undefined ? null : gradeRoad(analysisBoard, settings(), h.id, edge, roadContext(h.id));
+    if (r) out.push({ r, g: grade(r, rk, state.players, lookahead() ? 'opening' : 'corner'), diff: (lookahead() ? compareLookahead : compare)(rk[0], r), n: context.mine.length + 1, road });
+    else if (lookahead()) {   // the projection gave this corner to an earlier seat: grade it the classic way instead
+      const ck = rankSpots(analysisBoard, settings(), context), c = ck.find(x => x.id === h.id);
+      if (c) out.push({ r: c, g: grade(c, ck, state.players), diff: compare(ck[0], c), n: context.mine.length + 1, road, note: 'The look-ahead expected another seat to take or block this corner before your turn, so it is graded with the classic ranking.' });
+    }
   }
   return out;
 }
 const gradePosition = g => `#${g.rank} of ${g.total} · ${g.pct === null ? `${g.gap.toFixed(2)} point gap` : `${g.pct}% of best`}`;
-// A look-ahead first pick shows both parts of its opening value; everything else shows its own score.
-const scoreStats = (r, stage) => r.second
-  ? `<span>Opening value <b>${r.score.toFixed(2)}</b></span><span>This corner <b>${r.own.toFixed(2)}</b></span><span>Second pick <b>${r.second.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span>`
-  : `<span>Score <b>${r.score.toFixed(2)}</b></span><span>Pips <b>${r.pips}</b></span>${stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : ''}`;
+// A look-ahead pick shows both settlements' parts of its opening value (they add up to it); a classic pick shows its
+// own score.
+function stat(label, x) { return `<span>${label} <b>${x.toFixed(2)}</b></span>`; }
+const scoreStats = (r, stage) => {
+  const cards = stage === 'second' ? `<span>Starting cards <b>${esc(list(r.startingCards) || 'none')}</b></span>` : '';
+  if (r.second) return stat('Opening value', r.score) + stat('This corner', r.own) + stat('Second pick', r.second.score) + `<span>Pips <b>${r.pips}</b></span>`;
+  if (r.first) return stat('Opening value', r.score) + stat('First settlement', r.first.score) + stat('This corner', r.own) + `<span>Pips <b>${r.pips}</b></span>` + cards;
+  return stat('Score', r.score) + `<span>Pips <b>${r.pips}</b></span>` + cards;
+};
+// Which seat the projection expects to take or block a corner before your turn.
+function takenBefore(id) {
+  const g = board.graph, next = draft.filter(d => d.you)[state.me.length], upTo = next ? draft.slice(0, draft.indexOf(next)) : draft;
+  const d = upTo.find(x => !x.you && !x.actual && (x.id === id || g.vertices[x.id].neighbors.includes(id)));
+  return d ? `the projection expects seat ${d.seat} to ${d.id === id ? 'take' : 'block'} this corner before your turn.` : 'the projection expects another seat to take or block this corner before your turn.';
+}
 // The look-ahead's credible alternative, from computed values only: the classic ranking's choice when it differs,
 // otherwise the next best opening; then how the two openings' production differs, resource by resource.
 function alternativeNote(best) {
   if (!lookahead() || ranking.length < 2) return '';
   const classicTop = rankSpots(analysisBoard, settings(), { mine: state.me.slice(0, 1), occupied: [...state.me, ...state.opp], explain: false })[0];
   const classic = classicTop && classicTop.id !== best.id, alt = classic ? ranking.find(r => r.id === classicTop.id) : ranking[1];
+  if (classic && !alt) return `<p class="sub alternative-note">Alternative: the classic ranking’s first choice (${esc(cornerDesc(classicTop.id))}) is not ranked here: ${esc(takenBefore(classicTop.id))}</p>`;
   if (!alt) return '';
   const pair = r => (state.me.length ? [state.me[0], r.id] : [r.id, r.second?.id]).filter(v => v !== undefined);
   const prod = r => {
@@ -644,16 +665,25 @@ function alternativeNote(best) {
     : best.first ? `makes an opening worth ${alt.score.toFixed(2)}` : `scores ${alt.score.toFixed(2)} as your second settlement`;
   return `<p class="sub alternative-note">Alternative: ${classic ? 'the classic ranking’s first choice' : `the next best ${state.me.length ? 'second settlement' : 'opening'}`} (${esc(cornerDesc(alt.id))}) ${worth}, against ${best.score.toFixed(2)} for this one. ${tradeoff}</p>`;
 }
+// Report-only: where the look-ahead's choice lands if the seats that have not placed pick in other styles. Computed
+// only when opened; the ranking on screen never changes.
+function fillStability(details) {
+  const id = Number(details.dataset.id), what = state.me.length ? 'second settlement' : 'opening';
+  const who = { pips: 'If the seats that have not placed take the corner with the most pips', coverage: 'If they take the corner that adds the most new resources, then the most pips' };
+  const lines = stability(analysisBoard, settings(), { me: state.me, opp: state.opp }, id).map(({ style, top, rank, total }) =>
+    `<li>${who[style]}: ${!top ? 'no corner is open.' : top.id === id ? `this is still the best ${what}.` : rank === null ? `this corner would go to another seat first, and the best ${what} would be ${esc(cornerDesc(top.id))}.` : `this ranks #${rank} of ${total}, and the best ${what} would be ${esc(cornerDesc(top.id))}.`}</li>`);
+  details.querySelector('.stability-body').innerHTML = `<ul class="why">${lines.join('')}</ul><p class="sub">A check, not a forecast: the ranking above is unchanged.</p>`;
+}
 // Said once, with the look-ahead's choice: what the projection assumes, and which seats have not placed yet.
 function assumptionNote() {
   if (!lookahead()) return '';
   const next = draft.filter(d => d.you)[state.me.length], before = next ? draft.slice(0, draft.indexOf(next)) : [];
-  const waiting = before.filter(d => !d.you && !d.actual).map(d => d.seat);
-  const unplaced = waiting.length ? `${waiting.length > 1 ? `Seats ${list(waiting.map(String))} have` : `Seat ${waiting[0]} has`} not placed yet, so this counts your settlement as placed now and has ${waiting.length > 1 ? 'them' : 'it'} pick around it. ` : '';
+  const waiting = [...new Set(before.filter(d => !d.you && !d.actual).map(d => d.seat))];
+  const unplaced = waiting.length ? `${waiting.length > 1 ? `Seats ${list(waiting.map(String))} have` : `Seat ${waiting[0]} has`} not finished placing, so this ranks your settlement for your turn, after ${waiting.length > 1 ? 'they pick' : 'it picks'}. ` : '';
   return `<p class="sub lookahead-note">${unplaced}The projection assumes every seat that has not placed picks by this model, in turn order. Real players differ; mark pieces as they go down.</p>`;
 }
-const verdictCard = ({ r, g, diff, n, road }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>${gradePosition(g)}</span></h2>
-      <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>
+const verdictCard = ({ r, g, diff, n, road, note }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>${gradePosition(g)}</span></h2>
+      <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>${note ? `<p class="sub">${esc(note)}</p>` : ''}
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
       ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
       <div class="stat">${scoreStats(r)}</div>${roadSection(r.id, road)}</div>`;
@@ -735,7 +765,7 @@ function render() {
   const plan = PLANS[planFor(settings())];
   const chosenPlan = !state.cak && settings().plan;
   const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';
-  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
+  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR}${state.cak && state.policy === 'draft' && !state.drill ? ' · look-ahead off: in Cities & Knights your second piece is a city' : ''} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
   drawMarks();
   const panel = $('#panel');
   const active = panel.querySelector(':focus');
@@ -822,11 +852,17 @@ function render() {
       ${best.second ? `<p class="sub" id="best-second">Then your second settlement: ${esc(cornerDesc(best.second.id))}, if the other seats pick by this model.</p>` : ''}
       ${state.mode === 'me' && !state.tool ? '<button class="btn ghost preview-best" id="preview-best">Try this corner</button>' : ''}
       <details class="analysis-details" data-disclosure="best"><summary>Why this corner?</summary>
-      ${reasons(best)}${alternativeNote(best)}${assumptionNote()}${roadLine(best.id)}
+      ${reasons(best)}${alternativeNote(best)}${assumptionNote()}${lookahead() ? `<details class="stability" data-disclosure="stability" data-id="${best.id}"><summary>Other ways the table could pick</summary><div class="stability-body"></div></details>` : ''}${roadLine(best.id)}
       <div class="stat">${scoreStats(best, stage)}</div></details></div>`;
   }
 
-  if (state.pick !== null && stage !== 'done') {
+  if (state.pick !== null && stage !== 'done' && !ranking.some(x => x.id === state.pick)) {
+    out += html`<div class="card pick-card"><h2>Your pick <span>${reveal() ? 'not ranked' : 'preview'}</span></h2>
+      ${reveal() ? `<p class="grade"><b>Not ranked</b>: ${esc(takenBefore(state.pick))}</p>` : ''}
+      <p class="sub" id="pick-resources">${esc(cornerDesc(state.pick))}</p>
+      <div class="pick-actions"><button class="btn" id="keep" data-corner="${state.pick}" aria-describedby="pick-resources">Keep as ${stage} settlement</button><button class="btn ghost" id="cancel-pick">Cancel</button></div>
+      ${reveal() ? '<p class="sub">Mark the other seats’ pieces as they go down to rank it with them, or choose the classic ranking.</p>' : `<p class="sub">${state.drill ? 'Score and reasons appear once you commit.' : 'Turn on <b>Show best</b> for the score and reasons, or commit to see the verdict.'}</p>`}</div>`;
+  } else if (state.pick !== null && stage !== 'done') {
     const r = ranking.find(x => x.id === state.pick);
     const idx = ranking.indexOf(r) + 1;
     const diff = (lookahead() ? compareLookahead : compare)(best, r);
@@ -854,12 +890,12 @@ function render() {
     const canPick = d => !d.actual && state.mode === 'me' && stage !== 'done' && !(state.drill && state.answered !== null);
     out += html`<div class="card"><details class="draft-details" data-disclosure="draft"><summary>Projected placements</summary>
       <p class="sub">Seats pick 1 to ${state.players}, then back from ${state.players} to 1. Solid badges are first settlements, dashed are second. Your settlements and opponent marks are counted in turn order; the rest shows this model’s choices. Players may choose differently.${lookahead() ? ' With the look-ahead ranking, your rows are its choices and the other seats follow the classic model.' : ''}</p>
-      <ol class="rank draft">${draft.map(d => `<li data-id="${canPick(d) ? d.id : ''}" class="${d.you ? 'you' : ''}${canPick(d) ? '' : ' fixed'}" aria-current="${state.pick === d.id}" >${canPick(d) ? '<button class="draft-choice">' : ''}<span class="n">${d.seat}${d.round === 2 ? '′' : ''}</span><span>${d.you ? '<b>You</b> · ' : ''}${esc(cornerDesc(d.id))}</span><span class="s">${d.actual ? 'placed' : d.score.toFixed(2)}</span>${canPick(d) ? '</button>' : ''}</li>`).join('')}</ol></details></div>`;
+      <ol class="rank draft">${draft.map(d => `<li data-id="${canPick(d) ? d.id : ''}" class="${d.you ? 'you' : ''}${canPick(d) ? '' : ' fixed'}" aria-current="${state.pick === d.id}" >${canPick(d) ? '<button class="draft-choice">' : ''}<span class="n">${d.seat}${d.round === 2 ? '′' : ''}</span><span>${d.you ? '<b>You</b> · ' : ''}${esc(cornerDesc(d.id))}</span><span class="s">${d.actual ? 'placed' : d.score === null ? '' : d.score.toFixed(2)}</span>${canPick(d) ? '</button>' : ''}</li>`).join('')}</ol></details></div>`;
   }
 
   out += html`<div class="card"><details data-disclosure="method"><summary>How the ranking works</summary>
     <p>Production (pips on the surrounding number tokens) is the base score, weighted by how valuable each resource is under the ${esc(plan.label.toLowerCase())} and how scarce it is on this particular board. Bonuses are small on purpose: wood+brick or wheat+ore together, a port you can actually feed, room to grow two roads away, and (for the second settlement) covering resources your first one lacks. Repeating a number costs a little. No robber penalty: game data shows 6s and 8s deliver their pips. The Cities &amp; Knights switch only re-weights these same terms (ore, wheat, wood and commodity hexes up, brick and ports down); it does not simulate the starting city, commodities, knights or barbarians. The ordering principles are the experts'; the exact weights are ours, tuned so production stays dominant.</p>
-    <p><b>Look-ahead (experimental).</b> Choose it under Ranking in Table settings. It values your next settlement by the opening it leads to: the corner itself plus the best second settlement the projected draft leaves you, the safe second pick strong players describe. Room to grow then counts only a corner still open when setup ends. The other seats follow the classic model, so real tables can differ. The published bot test covers the classic ranking in four-player base games; other player counts and Cities &amp; Knights are not comparably tested. Drill always uses the classic ranking, and passing a level means matching it, not proof of real-game skill.</p>
+    <p><b>Look-ahead (experimental).</b> Choose it under Ranking in Table settings. It ranks your next settlement for your turn by the opening it leads to: the corner plus the best second settlement the projected draft leaves you, the safe second pick strong players describe. Harbour and room-to-grow credits count only spots still open when setup ends, and a spot both settlements could use counts once. It is for the base game: in Cities &amp; Knights your second piece is a city, which it does not model. The other seats follow the classic model, so real tables can differ. The published bot test covers the classic ranking in four-player base games; other player counts and Cities &amp; Knights are not comparably tested. Drill always uses the classic ranking, and passing a level means matching it, not proof of real-game skill.</p>
     <p>Every rule comes from what strong players publish — the King of Catan expert group, Colonist.io guides, the Cities &amp; Knights strategy guide and a 400-game statistical check. The full source table is in <a href="docs/RESEARCH.md" target="_blank" rel="noopener">docs/RESEARCH.md</a>. This is an opening heuristic, not a win probability.</p></details></div>`;
 
   panel.innerHTML = out;
@@ -873,6 +909,7 @@ function render() {
       const changed = disclosures.get(key) !== details.open;
       disclosures.set(key, details.open);
       if (key === 'draft' && changed) drawMarks();
+      if (key === 'stability' && details.open) fillStability(details);
     });
   }
   if (!state.drill) {
@@ -921,7 +958,7 @@ function setPlayers(players) {
   const setup = players >= 5 ? 'ext56' : 'base';
   if (setup !== state.setup) {
     if (!state.drill && !keepPreviousBoard()) return;
-    if (state.custom) { state.customHexes = []; state.customHarbors = {}; state.numHex = null; state.portMode = 'check'; }
+    if (state.custom) { state.customHexes = []; state.customHarbors = {}; state.numHex = null; state.portMode = 'check'; state.checkHexes = []; }
     state.me = []; state.opp = []; state.history = []; state.seq = null; state.pick = null;
   }
   state.players = players; state.setup = setup; state.seat = Math.min(state.seat, players);
@@ -946,7 +983,7 @@ function controls() {
   choices('#plan', PLAN_OPTIONS, state.plan, v => { state.plan = v; controls(); recompute(); });
   choices('#policy', POLICY_OPTIONS, state.policy, v => { state.policy = v; state.policyNotice = false; controls(); recompute(); });
   for (const b of $('#plan').querySelectorAll('button')) b.disabled = state.drill || state.cak || !!state.linkError;
-  for (const b of $('#policy').querySelectorAll('button')) b.disabled = state.drill || !!state.linkError;
+  for (const b of $('#policy').querySelectorAll('button')) b.disabled = state.drill || state.cak || !!state.linkError;
   seg('#players', [3, 4, 5, 6], state.players, setPlayers);
   seg('#seat', Array.from({ length: state.players }, (_, i) => i + 1), state.seat, v => { state.seat = v; controls(); recompute(); });
   for (const b of $('#seat').querySelectorAll('button')) b.disabled = state.randomSeat;

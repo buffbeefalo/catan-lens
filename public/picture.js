@@ -11,6 +11,9 @@ const svg = (tag, attrs = {}) => { const e = document.createElementNS('http://ww
 
 let dialog = null;
 
+// Closes the reader without applying anything (Cancel does the same).
+export function closePictureReader() { if (dialog?.open) dialog.close(); }
+
 function build() {
   dialog = document.createElement('dialog');
   dialog.className = 'picture-dialog';

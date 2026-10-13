@@ -224,11 +224,19 @@ cards, later seats lean on wood, brick and harbours. Under **Your plan** in Tabl
 in every projection, and Cities & Knights keeps its own weighting.
 
 **Look-ahead (experimental).** The classic ranking scores one corner at a time. Under **Ranking**, choose
-**Look-ahead** and your next settlement is ranked by the opening it leads to: the corner plus the best
-second settlement the projected draft leaves you, the safe second pick strong players describe. Room to
-grow then counts only a corner still open when setup ends. The card shows both parts, names the projected
-second settlement, and says what the projection assumes: every seat that has not placed picks by the
-classic model, in turn order. A real table can differ. Grades and percentages then compare opening values.
+**Look-ahead** and your next settlement is ranked for your turn by the opening it leads to: the corner plus
+the best second settlement the projected draft leaves you, the safe second pick strong players describe.
+Seats that pick before you and have not placed are projected first, so a corner they are expected to take
+is not ranked; you can still try it. Each settlement keeps its classic score, except that its harbour and
+room-to-grow credits count only a spot still open when setup ends, and a corner or harbour type both
+settlements could use counts once.
+
+The card shows both settlements' parts, names the projected second settlement and a credible alternative
+with the resource tradeoff, and says what the projection assumes: every seat that has not placed picks by
+the classic model, in turn order. A real table can differ. **Other ways the table could pick** ranks the same
+position again with those seats taking the most pips, or the most new resources, and says where the
+recommendation lands; it never changes the ranking. Grades and percentages compare opening values. The
+look-ahead is for the base game: in Cities & Knights your second piece is a city, which it does not model.
 Drill always uses the classic ranking.
 
 Why add it: in 1,200 simulated four-player positions (300 boards, every seat), taking the best corner
