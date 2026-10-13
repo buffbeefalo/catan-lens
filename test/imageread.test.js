@@ -1,7 +1,8 @@
 // Reading a board from a picture (public/imageread.js), checked against synthetic boards with known truth drawn by
 // scripts/make-board-fixtures.cjs: the app's own look, another online renderer's look, a photo-like version (tilted,
-// unevenly lit, blurred, noisy, JPEG-compressed) and a palette no board uses. Each picture is read with exact taps
-// and with jittered taps, and the accuracy table is printed with the test output.
+// unevenly lit, blurred, noisy, JPEG-compressed) and a palette no board uses; the first three also with every token
+// turned at a random angle, as on a real table, and one photo of a board turned sideways. Each picture is read with
+// exact taps and with jittered taps, and the accuracy table is printed with the test output.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -101,13 +102,20 @@ test('every reading respects the box: tile counts always match, deserts never ca
 // flat 0.6%, photo-like 12.1% (mostly 5 or 9 and 6 or 8, told apart only by holes that blur). Other jitter draws,
 // and jitter up to 15% of the token spacing, gave 99.6% to 100% of photo-like numbers, and every wrong read was
 // flagged. The limits leave a little room for another font renderer, never room for a confident mistake.
-const LIMITS = { app: { resources: 1, numbers: 0.99, flagged: 0.05 }, flat: { resources: 1, numbers: 0.99, flagged: 0.05 }, photo: { resources: 0.97, numbers: 0.96, flagged: 0.25 } };
+// Turned tokens: app and flat 100% with 0% flagged, photo-like 99.2% with 4.8% flagged (a 6 read as 8, flagged).
+// 23 more turned pictures drawn with other seeds (not kept) gave app 100%, flat 100% with 5.3% flagged, photo-like
+// 98.5% with 12.2% flagged and no confident mistake, about as good as reading each token at its true turn.
+const LIMITS = {
+  app: { resources: 1, numbers: 0.99, flagged: 0.05 }, flat: { resources: 1, numbers: 0.99, flagged: 0.05 }, photo: { resources: 0.97, numbers: 0.96, flagged: 0.25 },
+  'app turned': { resources: 1, numbers: 0.99, flagged: 0.05 }, 'flat turned': { resources: 1, numbers: 0.99, flagged: 0.08 }, 'photo turned': { resources: 0.97, numbers: 0.96, flagged: 0.25 },
+};
 
 test('accuracy per style with tap jitter', t => {
   const rows = {};
   for (const { shot, out } of allReadings()) {
-    if (!LIMITS[shot.style]) continue;
-    const s = rows[shot.style] ||= { pictures: new Set(), tiles: 0, tokens: 0, resources: 0, numbers: 0, flagged: 0, silent: 0 };
+    const style = shot.style + (shot.turned ? ' turned' : '');
+    if (!LIMITS[style]) continue;
+    const s = rows[style] ||= { pictures: new Set(), tiles: 0, tokens: 0, resources: 0, numbers: 0, flagged: 0, silent: 0 };
     s.pictures.add(shot.file);
     shot.hexes.forEach((truth, i) => {
       const got = out.hexes[i], flagged = out.uncertain.includes(i);
@@ -118,8 +126,8 @@ test('accuracy per style with tap jitter', t => {
   }
   const pct = x => `${(100 * x).toFixed(1)}%`.padStart(7);
   t.diagnostic(`Exact taps plus ${TRIALS} jittered tap sets per picture (each tap moved up to ${JITTER * 100}% of the token spacing on each axis):`);
-  t.diagnostic('style  pictures  tiles  resources  numbers  flagged  wrong but not flagged');
-  for (const [style, s] of Object.entries(rows)) t.diagnostic(`${style.padEnd(6)} ${String(s.pictures.size).padStart(8)} ${String(s.tiles).padStart(6)} ${pct(s.resources / s.tiles).padStart(10)} ${pct(s.numbers / s.tokens).padStart(8)} ${pct(s.flagged / s.tiles).padStart(8)} ${String(s.silent).padStart(22)}`);
+  t.diagnostic('style         pictures  tiles  resources  numbers  flagged  wrong but not flagged');
+  for (const [style, s] of Object.entries(rows)) t.diagnostic(`${style.padEnd(12)} ${String(s.pictures.size).padStart(9)} ${String(s.tiles).padStart(6)} ${pct(s.resources / s.tiles).padStart(10)} ${pct(s.numbers / s.tokens).padStart(8)} ${pct(s.flagged / s.tiles).padStart(8)} ${String(s.silent).padStart(22)}`);
   assert.deepEqual(Object.keys(rows).sort(), Object.keys(LIMITS).sort(), 'every style has fixtures');
   for (const [style, s] of Object.entries(rows)) {
     const lim = LIMITS[style];
@@ -128,6 +136,60 @@ test('accuracy per style with tap jitter', t => {
     assert.ok(s.flagged / s.tiles <= lim.flagged, `${style}: flagged ${pct(s.flagged / s.tiles)}`);
     assert.equal(s.silent, 0, `${style}: every wrong read is flagged`);
   }
+});
+
+// A copy of the picture with a disc turned half a turn about the pixel that holds (x, y), pixel for pixel: the token
+// there now lies upside down.
+function halfTurn(img, x, y, radius) {
+  const out = { width: img.width, height: img.height, data: Uint8ClampedArray.from(img.data) };
+  const ci = Math.floor(x), cj = Math.floor(y), R = Math.ceil(radius), inside = (i, j) => i >= 0 && j >= 0 && i < img.width && j < img.height;
+  for (let j = cj - R; j <= cj + R; j++) for (let i = ci - R; i <= ci + R; i++) {
+    const si = 2 * ci - i, sj = 2 * cj - j, from = (sj * img.width + si) * 4;
+    if ((i - ci) ** 2 + (j - cj) ** 2 <= radius * radius && inside(i, j) && inside(si, sj)) out.data.set(img.data.subarray(from, from + 4), (j * img.width + i) * 4);
+  }
+  return out;
+}
+
+test('a 6 or a 9 lying upside down is read by its pips and its red ink, not by its shape', () => {
+  for (const file of ['app-base-1.png', 'flat-base-5.png', 'photo-base-9.png']) {
+    const shot = shots.find(s => s.file === file), flipped = [];
+    let img = picture(file);
+    shot.hexes.forEach((h, i) => {
+      if (h.number !== 6 && h.number !== 9) return;
+      const spacing = Math.min(...shot.hexes.filter(o => o !== h).map(o => Math.hypot(o.x - h.x, o.y - h.y)));   // to the nearest tile
+      img = halfTurn(img, h.x, h.y, 0.26 * spacing);
+      flipped.push(i);
+    });
+    assert.equal(flipped.length, 4, `${file} has two 6s and two 9s`);
+    const out = readBoard(img, shot.setup, exactTaps(shot));
+    for (const i of flipped) assert.equal(out.hexes[i].number, shot.hexes[i].number, `${file} tile ${i + 1}`);
+    shot.hexes.forEach((h, i) => { if (out.hexes[i].number !== h.number) assert.ok(out.uncertain.includes(i), `${file} tile ${i + 1} is wrong and must be flagged`); });
+  }
+});
+
+test('with exact taps every number on the upright pictures reads right', () => {
+  for (const { shot, out } of allReadings().filter(r => !r.shot.turned && r.trial === 0)) {
+    shot.hexes.forEach((h, i) => assert.equal(out.hexes[i].number, h.number, `${shot.file} tile ${i + 1}`));
+  }
+});
+
+test('a 1 that looks like a row of pips does not fool the turn: every 10, 11 and 12 on the photo-like pictures reads right', () => {
+  for (const { shot, out } of allReadings().filter(r => r.shot.style === 'photo' && r.trial === 0)) {
+    shot.hexes.forEach((h, i) => { if (h.number > 9) assert.equal(out.hexes[i].number, h.number, `${shot.file} tile ${i + 1}`); });
+  }
+});
+
+test('a number is only as sure as its token: a disc unlike the others lowers the confidence, not the reading', () => {
+  const shot = shots.find(s => s.file === 'app-base-1.png'), i = 4, h = shot.hexes[i], img = picture(shot.file);
+  const before = allReadings().find(r => r.shot === shot && r.trial === 0).out.hexes[i];
+  // Tint the middle of the disc (less green and blue, as under a coloured light) without touching its rim.
+  const tinted = { width: img.width, height: img.height, data: Uint8ClampedArray.from(img.data) }, R = 0.17 * Math.hypot(h.x - shot.hexes[i + 1].x, h.y - shot.hexes[i + 1].y);
+  for (let y = Math.floor(h.y - R); y <= h.y + R; y++) for (let x = Math.floor(h.x - R); x <= h.x + R; x++) {
+    if ((x + 0.5 - h.x) ** 2 + (y + 0.5 - h.y) ** 2 <= R * R) { const o = (y * img.width + x) * 4; tinted.data[o + 1] *= 0.7; tinted.data[o + 2] *= 0.7; }
+  }
+  const after = readBoard(tinted, shot.setup, exactTaps(shot)).hexes[i];
+  assert.deepEqual([h.number, before.number, before.numberConfidence, after.number], [10, 10, 1, 10]);
+  assert.ok(after.numberConfidence <= 0.8, `confidence ${after.numberConfidence}`);
 });
 
 test('an unseen palette produces flags and a warning, not confident guesses', () => {
@@ -179,5 +241,7 @@ test('bad input fails with a clear error', () => {
   const big = shots.find(s => s.setup === 'ext56' && s.style === 'app');
   cases.push([() => readBoard(picture(big.file), 'base', exactTaps(big)), /19-tile board.*board size is right \(19 or 30 tiles\)/]);
   cases.push([() => readBoard(img, 'ext56', taps), /30-tile board.*board size is right/]);
+  // Names every object has are not board layouts either.
+  for (const name of ['constructor', 'toString', '__proto__']) cases.push([() => readBoard(img, name, taps), /Unknown board layout/], [() => referenceTiles(name), /Unknown board layout/]);
   for (const [run, message] of cases) assert.throws(run, message);
 });

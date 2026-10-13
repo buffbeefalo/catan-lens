@@ -8,7 +8,8 @@
 // refine the map, starting near the taps and working outwards; (3) tile colours are sampled in a ring between
 // the token and the tile's edge and given resources with the box's tile counts as a hard rule (an optimal
 // assignment), starting from known board palettes and then re-estimating each colour from the picture itself;
-// (4) each token is read from its marks: the pips (dots), how many digits, holes inside the digits, and red ink.
+// (4) each token is turned upright by its row of pips (tokens lie at any angle on a table) and read from its marks:
+// the pips (dots), how many digits, holes inside the digits, and red ink.
 //
 // Picture coordinates are pixels from the top-left corner, as a tap on a canvas gives them: the first pixel
 // covers 0 to 1, so its centre is (0.5, 0.5). Notes count tiles from 1 (like the board editor's "Hex 1"),
@@ -32,9 +33,9 @@ const PALETTES = {
 
 // The four tiles whose number tokens the user taps, in tap order, with their board coordinates.
 export function referenceTiles(setup) {
-  const spec = SETUPS[setup];
-  if (!spec) throw new Error(`Unknown board layout "${setup}": use "base" (19 tiles) or "ext56" (30 tiles).`);
-  const { hexes, rows } = buildGraph(spec.layout);
+  // An own key only: names every object has (constructor, toString, __proto__) are not layouts.
+  if (!Object.prototype.hasOwnProperty.call(SETUPS, setup)) throw new Error(`Unknown board layout "${setup}": use "base" (19 tiles) or "ext56" (30 tiles).`);
+  const { hexes, rows } = buildGraph(SETUPS[setup].layout);
   const ids = [0, rows[0] - 1, hexes.length - 1, hexes.length - rows[rows.length - 1]];
   return ids.map((id, i) => ({ id, corner: CORNERS[i], x: hexes[id].x, y: hexes[id].y }));
 }
@@ -119,13 +120,15 @@ export function readBoard(image, setup, taps) {
 
   const colours = tileColours(image, map, graph, centres, present, radius);
   const res = classify(colours, present, SETUPS[setup].tiles);
-  const marks = graph.hexes.map((h, i) => (present[i] >= 0.5 ? measureToken(image, map, centres[i], radius) : null));
+  const marks = graph.hexes.map((h, i) => (present[i] >= 0.5 ? readToken(image, map, centres[i], radius) : null));
   const nums = readNumbers(marks);
 
-  // A desert never has a number; for a desert, numberConfidence says how sure we are that no token is there.
+  // A desert never has a number; for a desert, numberConfidence says how sure we are that no token is there. A number
+  // is only as sure as its token: a faint or odd disc may not be where it was looked for, and trying several turns
+  // of such a patch can find a number that fits by chance.
   const hexes = graph.hexes.map((h, i) => {
     const resource = res.resource[i], r = resource === 'desert' ? null : nums[i];
-    return { resource, number: r ? r.number : null, resourceConfidence: round2(res.confidence[i]), numberConfidence: round2(resource === 'desert' ? 1 - present[i] : r ? r.confidence : 0) };
+    return { resource, number: r ? r.number : null, resourceConfidence: round2(res.confidence[i]), numberConfidence: round2(resource === 'desert' ? 1 - present[i] : r ? r.confidence * present[i] : 0) };
   });
   return { hexes, ...explain(hexes, res, nums, present, SETUPS[setup]) };
 }
@@ -314,9 +317,59 @@ function classify(colours, present, tiles) {
 
 const RC = 26;   // token radius in the reading patch, in pixels
 
-// Marks on one token: ink is anything clearly darker than the disc; red ink is ink well redder than the disc.
-function measureToken(img, H, centre, r) {
-  const n = RC, p = boardPatch(img, H, centre.x, centre.y, RC / r, n), size = p.size, N = size * size;
+// A token can lie at any turn on the table, and a picture of a turned board turns every token with it. The pips sit
+// in a row below the digits, so each row of pips found says which way is down: the token is measured again with its
+// patch turned to match, and readNumbers keeps the turn that reads best. With no row found (a token without pips,
+// or pips too faint) the token is measured as it lies. Returns the marks at each turn, or null when there is no ink.
+function readToken(img, H, centre, r) {
+  const p = boardPatch(img, H, centre.x, centre.y, RC / r, RC), ink = inkOf(p);
+  if (!ink) return null;
+  const sharp = r * scaleAt(H, centre.x, centre.y), turns = rowTurns(components(ink.mask, p.size).filter(c => c.area >= Math.max(2, 0.003 * RC * RC)));
+  const marks = (turns.length ? turns : [UPRIGHT]).map(t => measureToken(t === UPRIGHT ? p : boardPatch(img, H, centre.x, centre.y, RC / r, RC, t), sharp));
+  return marks.some(Boolean) ? marks.filter(Boolean) : null;
+}
+
+// Each row of pips found gives a turn to try, the biggest row first (at most four). Candidates are thin pieces of
+// ink away from the centre: a pip, or pips blurred into a bar. On the test boards pips are about 0.1 to 0.24 of the
+// token radius thick and 0.6 to 0.85 of it from the centre; the limits leave room for a token found a little off
+// centre. Pieces closer than a pip gap are one row. The row's side of the centre is down, made exact by the row's
+// own line once it is longer than it is thick. A turn is [cos, sin] of the angle, clockwise on the board, that the
+// token is turned by.
+const AWAY = 0.38 * RC, UPRIGHT = [1, 0];
+function rowTurns(comps) {
+  const cand = comps.map(c => ({ ...c, ...spread(c) })).filter(c => c.thick <= 0.27 * RC && c.long <= 1.4 * RC && c.area <= 0.3 * RC * RC && len(c.cx - RC, c.cy - RC) >= AWAY);
+  const row = cand.map((_, k) => k), root = k => (row[k] === k ? k : (row[k] = root(row[k])));
+  cand.forEach((a, k) => cand.slice(0, k).forEach((b, m) => { if (len(a.cx - b.cx, a.cy - b.cy) - (a.long + b.long) / 2 < 0.2 * RC) row[root(m)] = root(k); }));
+  const rows = [];
+  cand.forEach((c, k) => {
+    const g = rows.find(x => x.id === root(k));
+    if (!g) rows.push({ id: root(k), area: c.area, sx: c.sx, sy: c.sy, sxx: c.sxx, syy: c.syy, sxy: c.sxy });
+    else for (const key of ['area', 'sx', 'sy', 'sxx', 'syy', 'sxy']) g[key] += c[key];
+  });
+  return rows.map(g => ({ area: g.area, ...spread(g) })).filter(g => len(g.cx - RC, g.cy - RC) >= AWAY).sort((a, b) => b.area - a.area).slice(0, 4).map(g => {
+    const { l1, l2, ex, ey, long } = g, x = g.cx - RC, y = g.cy - RC, d = len(x, y);
+    // Down is the row's direction from the centre, or the normal to the row's line: each is trusted in proportion to
+    // the square of its baseline (the row's distance from the centre, the row's length).
+    const w = l1 > 2.5 * Math.max(l2, 0.5) ? (long * long) / (long * long + d * d) : 0, side = -ey * x + ex * y < 0 ? -1 : 1;
+    const dx = (1 - w) * (x / d) - w * side * ey, dy = (1 - w) * (y / d) + w * side * ex, e = len(dx, dy);
+    // Turned clockwise by angle a, down (0, 1) becomes (-sin a, cos a). Within about 3 degrees of upright (all a
+    // screenshot can be, and about what the row tells) the token is read as it lies.
+    return Math.abs(dx / e) <= 0.05 && dy > 0 ? UPRIGHT : [dy / e, -dx / e];
+  });
+}
+
+// Centroid and spread of a piece of ink from its moments: the variances along its long and short axes (l1, l2), the
+// long axis (ex, ey), and its length and thickness in pixels (a bar's length, a dot's diameter).
+function spread(c) {
+  const cx = c.sx / c.area, cy = c.sy / c.area, xx = c.sxx / c.area - cx * cx, yy = c.syy / c.area - cy * cy, xy = c.sxy / c.area - cx * cy;
+  const half = (xx + yy) / 2, d = Math.sqrt(Math.max(0, half * half - xx * yy + xy * xy)), l1 = half + d, l2 = Math.max(0, half - d);
+  const a = [xy, l1 - xx], b = [l1 - yy, xy], [ax, ay] = len(a[0], a[1]) >= len(b[0], b[1]) ? a : b, e = len(ax, ay);
+  return { cx, cy, l1, l2, ex: e ? ax / e : 1, ey: e ? ay / e : 0, long: Math.sqrt(12 * l1), thick: 4 * Math.sqrt(l2) };
+}
+
+// Ink is anything clearly darker than the disc; red ink is ink well redder than the disc.
+function inkOf(p) {
+  const n = RC, size = p.size, N = size * size;
   const inside = new Uint8Array(N), lim = 0.88 * 0.88 * RC * RC, rim = 0.55 * 0.55 * RC * RC, bgL = [], bgA = [];
   for (let j = 0, k = 0; j < size; j++) for (let i = 0; i < size; i++, k++) {
     const d2 = (i - n) * (i - n) + (j - n) * (j - n);
@@ -326,8 +379,16 @@ function measureToken(img, H, centre, r) {
   for (let k = 0; k < N; k++) if (inside[k]) dark.push(L0 - p.L[k]);
   const core = quantile(dark, 0.96);
   if (!(core >= 10)) return null;
-  const T = Math.max(6, 0.45 * core), ink = new Uint8Array(N), red = new Uint8Array(N);
-  for (let k = 0; k < N; k++) if (inside[k] && L0 - p.L[k] > T) { ink[k] = 1; if (p.A[k] - A0 > 12) red[k] = 1; }
+  const T = Math.max(6, 0.45 * core), mask = new Uint8Array(N), red = new Uint8Array(N);
+  for (let k = 0; k < N; k++) if (inside[k] && L0 - p.L[k] > T) { mask[k] = 1; if (p.A[k] - A0 > 12) red[k] = 1; }
+  return { inside, core, mask, red };
+}
+
+// Marks on one token, upright in its patch (sharp: the token's radius in picture pixels).
+function measureToken(p, sharp) {
+  const got = inkOf(p);
+  if (!got) return null;
+  const { inside, core, mask: ink, red } = got, n = RC, size = p.size;
   const comps = components(ink, size, ink, red).filter(c => c.area >= Math.max(2, 0.003 * RC * RC));
   const tall = comps.filter(c => c.y1 - c.y0 + 1 >= 0.3 * RC);
   if (!tall.length) return null;
@@ -367,7 +428,7 @@ function measureToken(img, H, centre, r) {
   const gaps = singles.slice(1).map((c, k) => (c.cx - singles[k].cx) / RC).filter(g => g < 0.6);
   return {
     glyphs: Math.min(2, count), holes, red: inkArea ? redArea / inkArea : 0, gaps,
-    pips: pips.map(c => ({ w: c.x1 - c.x0 + 1, h: c.y1 - c.y0 + 1 })), sharp: r * scaleAt(H, centre.x, centre.y),
+    pips: pips.map(c => ({ w: c.x1 - c.x0 + 1, h: c.y1 - c.y0 + 1 })), sharp,
   };
 }
 
@@ -433,28 +494,40 @@ function pipSpacing(marks) {
   return best.s;
 }
 
-// Combine the cues: pips pick the pair {2,12} {3,11} {4,10} {5,9} {6,8}; digit count, holes and red split it.
-function readNumbers(marks) {
-  const spacing = pipSpacing(marks), read = marks.filter(Boolean);
-  // How deep clear holes are in this picture: the deepest hole of each token that has one (most boards have
-  // eight or more: every 4, 6, 8, 9 and 10). Sharp renders give about 0.9, blurred photos 0.3 to 0.5.
-  const deepest = read.map(m => Math.max(0, ...m.holes.map(h => h.depth))).filter(d => d >= 0.15);
-  const clarity = deepest.length >= 3 ? median(deepest) : 0.5, sharp = median(read.map(m => m.sharp));
-  return marks.map(m => {
-    if (!m) return null;
-    const pips = m.pips.reduce((s, c) => s + (c.w <= 1.7 * c.h ? 1 : 1 + (c.w - c.h) / spacing), 0);
-    const red = clamp((m.red - 0.1) / 0.3, 0, 1);
-    // Trust a missing hole less in a blurry picture, on tokens smaller than the board's typical one (far away), and
-    // on tokens only a few pixels across.
-    const trust = clamp((clarity - 0.1) / 0.4, 0.3, 1) * clamp(m.sharp / sharp, 0.6, 1) * clamp((m.sharp - 7) / 6, 0.3, 1);
-    const costs = NUMBERS.map(v => ({
-      v, c: Math.abs(pips - PIPS[v]) + 2 * Math.abs(m.glyphs - (v > 9 ? 2 : 1)) + 3 * Math.abs(red - (v === 6 || v === 8 ? 1 : 0)) + holeCost(v, m.holes, clarity, trust),
-    })).sort((a, b) => a.c - b.c || a.v - b.v);
-    // Pips closer than about 3 picture pixels blur into each other, so counts below that are guesses.
-    const legible = clamp(((spacing / RC) * m.sharp - 1.6) / 0.8, 0, 1);
-    const margin = costs[1].c - costs[0].c, fit = clamp(1 - (costs[0].c - 0.8) / 1.5, 0, 1);
-    return { number: costs[0].v, alternative: costs[1].v, confidence: clamp(margin / 1.5, 0, 1) * fit * legible, legible, pips };
-  });
+// Combine the cues: pips pick the pair {2,12} {3,11} {4,10} {5,9} {6,8}; digit count, holes and red split it. Each
+// token comes measured at one or more turns (readToken) and the turn whose best number costs least wins. The
+// picture's pip spacing and hole depth are learnt from each token's likeliest turn (its biggest row of pips), then
+// again from the winning turns.
+function readNumbers(tokens) {
+  let chosen = tokens.map(t => t && t[0]), out;
+  for (let pass = 0; pass < 2; pass++) {
+    const spacing = pipSpacing(chosen), read = chosen.filter(Boolean);
+    // How deep clear holes are in this picture: the deepest hole of each token that has one (most boards have
+    // eight or more: every 4, 6, 8, 9 and 10). Sharp renders give about 0.9, blurred photos 0.3 to 0.5.
+    const deepest = read.map(m => Math.max(0, ...m.holes.map(h => h.depth))).filter(d => d >= 0.15);
+    const clarity = deepest.length >= 3 ? median(deepest) : 0.5, sharp = median(read.map(m => m.sharp));
+    const score = m => {
+      const pips = m.pips.reduce((s, c) => s + (c.w <= 1.7 * c.h ? 1 : 1 + (c.w - c.h) / spacing), 0);
+      const red = clamp((m.red - 0.1) / 0.3, 0, 1);
+      // Trust a missing hole less in a blurry picture, on tokens smaller than the board's typical one (far away), and
+      // on tokens only a few pixels across.
+      const trust = clamp((clarity - 0.1) / 0.4, 0.3, 1) * clamp(m.sharp / sharp, 0.6, 1) * clamp((m.sharp - 7) / 6, 0.3, 1);
+      const costs = NUMBERS.map(v => ({
+        v, c: Math.abs(pips - PIPS[v]) + 2 * Math.abs(m.glyphs - (v > 9 ? 2 : 1)) + 3 * Math.abs(red - (v === 6 || v === 8 ? 1 : 0)) + holeCost(v, m.holes, clarity, trust),
+      })).sort((a, b) => a.c - b.c || a.v - b.v);
+      return { m, pips, costs };
+    };
+    out = tokens.map(t => {
+      if (!t) return null;
+      const { m, pips, costs } = t.map(score).reduce((a, b) => (b.costs[0].c < a.costs[0].c ? b : a));
+      // Pips closer than about 3 picture pixels blur into each other, so counts below that are guesses.
+      const legible = clamp(((spacing / RC) * m.sharp - 1.6) / 0.8, 0, 1);
+      const margin = costs[1].c - costs[0].c, fit = clamp(1 - (costs[0].c - 0.8) / 1.5, 0, 1);
+      return { marks: m, number: costs[0].v, alternative: costs[1].v, confidence: clamp(margin / 1.5, 0, 1) * fit * legible, legible, pips };
+    });
+    chosen = out.map(r => r && r.marks);
+  }
+  return out;
 }
 
 // ---- notes for the user -------------------------------------------------------------------------------------
@@ -616,13 +689,16 @@ function rgbAt(img, x, y, out) {
 
 // A square patch of the picture laid out in board coordinates (ppu pixels per board unit, centre pixel at the
 // board point), as CIELAB planes. Each patch pixel averages several picture samples when the picture is sharper.
-function boardPatch(img, H, cx, cy, ppu, n) {
+// `turn` ([cos, sin] of an angle, clockwise on the board) turns the patch with it: what is drawn turned by that
+// angle comes out upright.
+function boardPatch(img, H, cx, cy, ppu, n, turn = [1, 0]) {
   const size = 2 * n + 1, L = new Float32Array(size * size), A = new Float32Array(size * size), B = new Float32Array(size * size);
-  const ss = clamp(Math.round(scaleAt(H, cx, cy) / ppu), 1, 3), rgb = [0, 0, 0];
+  const ss = clamp(Math.round(scaleAt(H, cx, cy) / ppu), 1, 3), rgb = [0, 0, 0], [c, s] = turn;
   for (let j = 0, k = 0; j < size; j++) for (let i = 0; i < size; i++, k++) {
     let r = 0, g = 0, b = 0;
     for (let sj = 0; sj < ss; sj++) for (let si = 0; si < ss; si++) {
-      const bx = cx + (i - n + (si + 0.5) / ss - 0.5) / ppu, by = cy + (j - n + (sj + 0.5) / ss - 0.5) / ppu, w = H[6] * bx + H[7] * by + H[8];
+      const u = (i - n + (si + 0.5) / ss - 0.5) / ppu, v = (j - n + (sj + 0.5) / ss - 0.5) / ppu;
+      const bx = cx + c * u - s * v, by = cy + s * u + c * v, w = H[6] * bx + H[7] * by + H[8];
       rgbAt(img, (H[0] * bx + H[1] * by + H[2]) / w, (H[3] * bx + H[4] * by + H[5]) / w, rgb);
       r += lin(rgb[0]); g += lin(rgb[1]); b += lin(rgb[2]);
     }
@@ -637,15 +713,16 @@ function at(P, size, x, y) {
   return (P[k] * (1 - tx) + P[k + 1] * tx) * (1 - ty) + (P[k + size] * (1 - tx) + P[k + size + 1] * tx) * ty;
 }
 
-// 4-connected components of a mask: area, bounding box, centroid and how many pixels are also in `strong` and `red`.
+// 4-connected components of a mask: area, bounding box, centroid, sums for the second moments, and how many pixels
+// are also in `strong` and `red`.
 function components(mask, size, strong, red) {
   const label = new Int32Array(mask.length), out = [], stack = [];
   for (let s = 0; s < mask.length; s++) if (mask[s] && !label[s]) {
-    const c = { area: 0, x0: Infinity, x1: -1, y0: Infinity, y1: -1, sx: 0, sy: 0, strong: 0, red: 0 };
+    const c = { area: 0, x0: Infinity, x1: -1, y0: Infinity, y1: -1, sx: 0, sy: 0, sxx: 0, syy: 0, sxy: 0, strong: 0, red: 0 };
     label[s] = out.length + 1; stack.push(s);
     while (stack.length) {
       const k = stack.pop(), i = k % size, j = (k / size) | 0;
-      c.area++; c.sx += i; c.sy += j; if (strong && strong[k]) c.strong++; if (red && red[k]) c.red++;
+      c.area++; c.sx += i; c.sy += j; c.sxx += i * i; c.syy += j * j; c.sxy += i * j; if (strong && strong[k]) c.strong++; if (red && red[k]) c.red++;
       if (i < c.x0) c.x0 = i; if (i > c.x1) c.x1 = i; if (j < c.y0) c.y0 = j; if (j > c.y1) c.y1 = j;
       for (const q of [i > 0 ? k - 1 : -1, i < size - 1 ? k + 1 : -1, k - size, k + size]) if (q >= 0 && q < mask.length && mask[q] && !label[q]) { label[q] = out.length + 1; stack.push(q); }
     }

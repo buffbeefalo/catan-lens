@@ -6,7 +6,9 @@
 // Looks: app (Catan Lens itself, colours read from public/style.css, light and dark theme), flat (another
 // online renderer: different palette, smaller bold tokens, dark outlines, a robber and pieces), photo (a
 // printed board with texture and pieces, then tilted, unevenly lit, blurred, noisy and JPEG-compressed) and
-// unseen (colours no Catan board uses, to check that the reader admits it is guessing).
+// unseen (colours no Catan board uses, to check that the reader admits it is guessing). Turned pictures turn
+// each token's digits and pips together by a seeded random angle, as tokens lie on a real table; the sideways
+// photo also turns the whole board about a quarter turn.
 const { chromium } = require('playwright');
 const { deflateSync, constants } = require('node:zlib');
 const { mkdirSync, writeFileSync, readFileSync, readdirSync, unlinkSync } = require('node:fs');
@@ -25,6 +27,10 @@ const PLAN = [
   ['flat', 'base', 5, { scale: 52 }], ['flat', 'ext56', 7, { scale: 46 }], ['flat', 'ext56', 8, { scale: 44 }],
   ['photo', 'base', 9, { scale: 96 }], ['photo', 'base', 10, { scale: 90 }], ['photo', 'ext56', 11, { scale: 84 }],
   ['unseen', 'base', 13, { theme: 'light', scale: 52 }],
+  ['app', 'base', 21, { theme: 'light', scale: 56, turned: true }], ['app', 'ext56', 22, { theme: 'dark', scale: 46, turned: true }],
+  ['flat', 'base', 23, { scale: 52, turned: true }], ['flat', 'ext56', 24, { scale: 46, turned: true }],
+  ['photo', 'base', 25, { scale: 96, turned: true }], ['photo', 'ext56', 26, { scale: 84, turned: true }],
+  ['photo', 'base', 27, { scale: 92, turned: true, sideways: true }],
 ];
 
 // ---- colours ---------------------------------------------------------------------------------------------
@@ -62,14 +68,14 @@ function look(name, theme, css) {
 }
 
 // ---- drawing ---------------------------------------------------------------------------------------------
-function boardSvg(lib, board, lk, scale, seed) {
+function boardSvg(lib, board, lk, scale, seed, turned) {
   const { hexCorners, PIPS, rng } = lib, g = board.graph;
   const xs = g.vertices.map(v => v.x), ys = g.vertices.map(v => v.y), pad = 0.8;
   const minX = Math.min(...xs) - pad, minY = Math.min(...ys) - pad;
   const width = Math.ceil((Math.max(...xs) + pad - minX) * scale), height = Math.ceil((Math.max(...ys) + pad - minY) * scale);
   const f = n => +n.toFixed(4);
   const out = [`<rect x="${minX}" y="${minY}" width="${width / scale}" height="${height / scale}" fill="${lk.bg}"/>`];
-  const rand = rng(seed * 7919 + 17);
+  const rand = rng(seed * 7919 + 17), spin = turned ? rng(seed * 4241 + 9) : null, turns = {};
   for (const h of board.hexes) {
     out.push(`<polygon points="${hexCorners(h.x, h.y).map(p => p.map(f).join(',')).join(' ')}" fill="${lk.tiles[h.resource]}" stroke="${lk.hexStroke}" stroke-width="${lk.hexStrokeWidth}"/>`);
     if (lk.texture) for (let k = 0; k < 18; k++) {   // printed tile art: soft blobs a little lighter or darker than the tile
@@ -83,9 +89,11 @@ function boardSvg(lib, board, lk, scale, seed) {
     const t = lk.token, red = h.number === 6 || h.number === 8, ink = red ? t.red : t.ink;
     if (t.shadow) out.push(`<circle cx="${f(h.x + 0.025)}" cy="${f(h.y + 0.035)}" r="${t.r + 0.01}" fill="rgba(0,0,0,.28)"/>`);
     out.push(`<circle cx="${f(h.x)}" cy="${f(h.y)}" r="${t.r}" fill="${t.fill}" stroke="${t.stroke}" stroke-width="${t.strokeWidth}"/>`);
+    if (spin) { turns[h.id] = Math.floor(spin() * 360); out.push(`<g transform="rotate(${turns[h.id]} ${f(h.x)} ${f(h.y)})">`); }   // degrees clockwise
     out.push(`<text x="${f(h.x)}" y="${f(h.y + t.dy)}" font-family="${t.font}" font-weight="${t.weight}" font-size="${t.size}" text-anchor="middle" fill="${ink}">${h.number}</text>`);
     const n = PIPS[h.number];
     for (let i = 0; i < n; i++) out.push(`<circle cx="${f(h.x + (i - (n - 1) / 2) * t.pipGap)}" cy="${f(h.y + t.pipDy)}" r="${t.pipR}" fill="${ink}"/>`);
+    if (spin) out.push('</g>');
   }
   for (const [eid, type] of Object.entries(board.harbors)) {   // harbours out at sea, as each look draws them
     const e = g.edges[eid], [a, b] = e.v.map(i => g.vertices[i]), own = board.hexes[e.hexes[0]];
@@ -111,7 +119,7 @@ function boardSvg(lib, board, lk, scale, seed) {
     });
   }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="${minX} ${minY} ${width / scale} ${height / scale}">${out.join('')}</svg>`;
-  return { svg, width, height, toPx: (x, y) => [(x - minX) * scale, (y - minY) * scale] };
+  return { svg, width, height, turns, toPx: (x, y) => [(x - minX) * scale, (y - minY) * scale] };
 }
 
 // ---- pixels ----------------------------------------------------------------------------------------------
@@ -146,15 +154,18 @@ const SRGB = l => 255 * (l <= 0.0031308 ? l * 12.92 : 1.055 * Math.max(0, l) ** 
 
 // A phone photo of the board: perspective tilt and a small turn, uneven warm or cool light with a vignette,
 // slight blur and sensor noise, cropped to the board (`box`, in flat pixels) plus a margin. JPEG compression is
-// applied afterwards in the browser.
-function photograph(lib, flat, seed, box) {
+// applied afterwards in the browser. Sideways, the board lies a quarter turn anticlockwise: its top row runs up
+// the left of the picture.
+function photograph(lib, flat, seed, box, sideways) {
   const rand = lib.rng(seed * 104729 + 3), j = s => (rand() * 2 - 1) * s;
-  const W = Math.round(flat.width * 0.86), H = Math.round(flat.height * 0.8);
+  const [fw, fh] = sideways ? [flat.height, flat.width] : [flat.width, flat.height];
+  const W = Math.round(fw * 0.86), H = Math.round(fh * 0.8);
   const turn = j(0.07), cx = W / 2, cy = H / 2;
   const quad = [[0.15 + j(0.03), 0.05 + j(0.02)], [0.85 + j(0.03), 0.05 + j(0.02)], [0.99 + j(0.01), 0.95 + j(0.02)], [0.01 + j(0.01), 0.95 + j(0.02)]]
     .map(([u, v]) => { const x = u * W - cx, y = v * H - cy; return [cx + x * Math.cos(turn) - y * Math.sin(turn), cy + x * Math.sin(turn) + y * Math.cos(turn)]; })
     .map(([x, y]) => [cx + (x - cx) * 0.92, cy + (y - cy) * 0.92]);
-  const corners = [[0, 0], [flat.width, 0], [flat.width, flat.height], [0, flat.height]];
+  let corners = [[0, 0], [flat.width, 0], [flat.width, flat.height], [0, flat.height]];
+  if (sideways) corners = [...corners.slice(1), corners[0]];   // the board's top right corner goes to the picture's top left
   const toPhoto = solveHomography(corners, quad), toFlat = solveHomography(quad, corners);
   const img = { width: W, height: H, data: new Uint8ClampedArray(W * H * 4) };
   const s = [0, 0, 0], acc = [0, 0, 0];
@@ -263,7 +274,7 @@ function encodePng({ width, height, data }) {
   let bytes = 0;
   for (const [style, setup, seed, opt] of PLAN) {
     const board = generateBoard({ setup, seed });
-    const lk = look(style, opt.theme, css), drawn = boardSvg(lib, board, lk, opt.scale, seed);
+    const lk = look(style, opt.theme, css), drawn = boardSvg(lib, board, lk, opt.scale, seed, opt.turned);
     await page.setViewportSize({ width: drawn.width, height: drawn.height });
     await page.setContent(`<!doctype html><html><head><style>html,body{margin:0}svg{display:block}</style></head><body>${drawn.svg}</body></html>`);
     await page.evaluate(() => document.fonts.ready);
@@ -272,14 +283,16 @@ function encodePng({ width, height, data }) {
     if (style === 'photo') {
       const corners = board.graph.vertices.map(v => drawn.toPx(v.x, v.y));
       const box = [Math.min(...corners.map(p => p[0])), Math.min(...corners.map(p => p[1])), Math.max(...corners.map(p => p[0])), Math.max(...corners.map(p => p[1]))];
-      const shot = photograph(lib, img, seed, box);
+      const shot = photograph(lib, img, seed, box, opt.sideways);
       img = await jpegRoundTrip(page, shot.img, 0.6);
       toImage = (x, y) => shot.toPhoto(...drawn.toPx(x, y));
     }
-    const file = `${style}-${setup}-${seed}.png`, png = encodePng(img);
+    const file = `${style}${opt.sideways ? '-sideways' : opt.turned ? '-turned' : ''}-${setup}-${seed}.png`, png = encodePng(img);
     writeFileSync(path.join(OUT, file), png); bytes += png.length;
-    const hexes = board.hexes.map(h => { const [x, y] = toImage(h.x, h.y); return { resource: h.resource, number: h.number, x: +x.toFixed(2), y: +y.toFixed(2) }; });
-    truth.push({ file, style, setup, seed, theme: opt.theme || null, width: img.width, height: img.height, hexes });
+    // turn: how far the token's digits and pips are turned, in degrees clockwise on the board (turned pictures only).
+    const hexes = board.hexes.map(h => { const [x, y] = toImage(h.x, h.y); return { resource: h.resource, number: h.number, x: +x.toFixed(2), y: +y.toFixed(2), ...(h.id in drawn.turns && { turn: drawn.turns[h.id] }) }; });
+    const extra = { ...(opt.turned && { turned: true }), ...(opt.sideways && { sideways: true }) };
+    truth.push({ file, style, setup, seed, theme: opt.theme || null, width: img.width, height: img.height, ...extra, hexes });
     console.log(`${file}: ${img.width}x${img.height}, ${(png.length / 1024).toFixed(0)} KB`);
   }
   await browser.close();
