@@ -12,6 +12,11 @@ about the classic ranking changed.
 
 **Look-ahead benchmark.** A predeclared 32,000-game test on new seeds compared the look-ahead with the classic ranking: 23.9% against 25.3% wins. The look-ahead won fewer games than the classic ranking: −1.3 percentage points (95% interval: −2.1 to −0.5; exact p = 0.0047). The look-ahead is withdrawn from the page and kept only for study, as the plan required; the owner makes the final call. [Evidence](../bench/catanatron/results.md#look-ahead-policy-2026-10-12).
 
+**Starting-road grades (release v1.2.5).** After keeping a settlement you can place its starting road by tapping one of
+its sides. The road is graded Great, Fair or Weak with the same direction-by-direction evaluation as the suggested
+road (R13), judged in the position that settlement was placed in, so later placements do not change it. Blind practice
+holds the grade until both settlements are down. No score or ranking changed.
+
 **Exact tests and an erratum.** Every archived paired comparison now also has an exact two-sided McNemar test on
 its changed win/loss pairs, recomputed from the raw games in continuous integration
 ([exact tests](../bench/catanatron/results.md#exact-tests-on-changed-pairs-2026-10-12)). Erratum for the
