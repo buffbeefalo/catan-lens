@@ -339,12 +339,15 @@ identical situations on 500 boards and every seat, without playing the game:
 
 | Policy | Cards per roll | Resources covered (of 5) | All five covered | Different numbers | Wheat/ore pair (pips of the weaker) | Pips: wood / brick / wheat / sheep / ore |
 |---|---|---|---|---|---|---|
-| lens | 0.57 | 4.27 | 36% | 5.34 | 2.56 | 4.6 / 3.6 / 4.8 / 3.9 / 3.7 |
-| pips | 0.61 | 3.62 | 7% | 5.03 | 1.40 | 4.7 / 3.4 / 4.4 / 6.2 / 3.2 |
-| random | 0.30 | 2.73 | 1% | 3.30 | 0.56 | 2.4 / 1.8 / 2.4 / 2.6 / 1.7 |
+| lens | 0.57 | 4.25 | 35% | 5.35 | 2.53 | 4.5 / 3.6 / 4.7 / 4.0 / 3.7 |
+| lens-draft | 0.57 | 4.33 | 40% | 5.46 | 2.44 | 4.7 / 3.7 / 4.5 / 4.0 / 3.6 |
+| pips | 0.61 | 3.61 | 7% | 4.99 | 1.41 | 4.7 / 3.4 / 4.3 / 6.1 / 3.2 |
+| random | 0.30 | 2.75 | 2% | 3.30 | 0.60 | 2.4 / 1.8 / 2.3 / 2.6 / 1.7 |
 
 Taking the most pips wins raw production, as it must by construction. The openings Catan Lens picks cover more
-resources, spread across more numbers, and hold more of the wheat/ore pair that builds cities. This report
+resources, spread across more numbers, and hold more of the wheat/ore pair that builds cities. The look-ahead's openings (lens-draft) cover 4.33 resources on average against 4.25 for the classic
+ranking, and all five in 40% of openings against 35%. They use 5.46 different numbers against 5.35,
+with 2.44 pips on the weaker half of the wheat/ore pair against 2.53, at the same 0.57 cards per roll. This report
 describes the tradeoffs; the game benchmark measures their combined effect.
 
 What this says, and what it does not:
