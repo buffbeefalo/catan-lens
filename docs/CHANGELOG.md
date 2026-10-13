@@ -31,10 +31,13 @@ harbours) instead of the seat rule (R10). No coefficient changed; the other seat
 
 **Read a board from a picture.** In Your board, a screenshot or a top-down photo plus four taps on the corner
 tiles' number tokens gives a guess for every tile and number. Nothing changes until you accept; unsure tiles are
-outlined, and harbours are not read. The picture stays on the device. On nine generated test pictures (app
-screenshots, flat drawings and photo-like renders at an angle with uneven light, blur, noise and compression), read
-with exact and with slightly misplaced taps, every tile and number came out right. A tenth picture in colours the
-reader does not know had every tile flagged. Real photos have not been measured, so check every tile.
+outlined, and harbours are not read. The picture stays on the device. Tokens may be turned at any angle. On 16
+generated test pictures (app screenshots, flat drawings and photo-like renders at an angle with uneven light, blur,
+noise and compression, half of them with turned tokens), read with exact and slightly misplaced taps, every tile type
+was right, every number on upright tokens was right and 99.2% to 100% on turned ones, and no wrong number went
+unflagged; a picture in colours the reader does not know had every tile flagged. On two real photos from Wikimedia
+Commons every tile type was right; the numbers were right on 12 of 19 tiles of a modern board photographed sideways
+and 5 of 19 on an older edition whose tokens have no pips, and every wrong number was flagged. Check every tile.
 
 **Faster scoring, same scores.** Per-board caches and a narrower legality check. 8,600 rankings (483,874 corner
 scores with every part and sentence), 900 projected drafts and 3,100 road hints matched the previous code exactly.

@@ -94,6 +94,13 @@ async function readPicture(page, file, { touch = false } = {}) {
   await page.locator(`polygon.hex[data-hex="${outlined[0]}"]`).click({ force: true });
   assert.equal((await editorTiles(page)).find(t => t.id === outlined[0]).check, false, 'painting a tile clears its outline');
 
+  // A photo of a board turned about 90 degrees, with every token turned too: still every tile and number.
+  await page.goto(BASE + '?seed=5&players=4', { waitUntil: 'networkidle' });
+  await page.locator('#custom').click();
+  const sideways = await readPicture(page, 'photo-sideways-base-27.png');
+  await page.locator('#picture-use').click();
+  assert.deepEqual((await editorTiles(page)).map(t => t.title), sideways.hexes.map(h => `${NAMES[h.resource]}${h.number ? ' ' + h.number : ''}`));
+
   // The 30-tile layout taps its own corner tiles.
   await page.goto(BASE + '?seed=4&players=6', { waitUntil: 'networkidle' });
   await page.locator('#custom').click();
