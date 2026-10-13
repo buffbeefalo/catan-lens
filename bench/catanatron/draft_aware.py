@@ -208,7 +208,8 @@ def analyse(rows):
             if d['actual']:
                 continue
             if seat == r['seat']:
-                own_second[0] += int(d['id'] == vertex); own_second[1] += 1
+                if d['round'] == 2:   # my first settlement is the recommendation itself, not a projection
+                    own_second[0] += int(d['id'] == vertex); own_second[1] += 1
                 continue
             hit = int(d['id'] == vertex)
             hits += hit; total += 1

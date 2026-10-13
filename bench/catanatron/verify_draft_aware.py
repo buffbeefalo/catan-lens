@@ -128,8 +128,9 @@ def main():
             if d['actual']:
                 continue
             if seat == r['seat']:
-                own_hits += d['id'] == vertex
-                own_total += 1
+                if d['round'] == 2:   # my first settlement is the recommendation itself, not a projection
+                    own_hits += d['id'] == vertex
+                    own_total += 1
             else:
                 hits += d['id'] == vertex
                 total += 1
