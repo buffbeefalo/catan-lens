@@ -188,7 +188,7 @@ def analyse(rows):
         to_b = sum(1 for x in boards.values() if x[b]['win'] and not x[a]['win'])
         p = mcnemar_exact(to_a, to_b)
         out['exactTests'][name] = {'changedPairs': to_a + to_b, 'favoursFirst': to_a, 'favoursSecond': to_b, 'pExact': [str(p.numerator), str(p.denominator)],
-                                   'pValue': float(f'{float(p):.6g}'), 'governs': 'exact test' if to_a + to_b < 100 else 'both must agree'}
+                                   'pValue': float(f'{float(p):.6g}')}
         out['recordChanges'][name] = {'winChanged': to_a + to_b, 'recordedOutcomeChanged': sum(1 for x in boards.values() if any(x[a][k] != x[b][k] for k in ('win', 'vp', 'turns')))}
     out['subjectSeatCounts'] = dict(sorted(Counter(str(b['lens']['seat']) for b in boards.values()).items()))
     # How often the look-ahead's first settlement differs from the classic one on the same board and seat.
@@ -233,9 +233,9 @@ def cmd_report(args):
         'runs': len(HASH_SEEDS), 'totalGames': len(rows), **result,
         'rawData': {'file': ARCHIVE.name, 'gzipSha256': hashlib.sha256(compressed).hexdigest(), 'jsonlSha256': hashlib.sha256(raw).hexdigest(),
                     'records': len(rows), 'normalization': 'Sorted by hash seed, board seed and arm order; JSON keys sorted.'},
-        'method': f'Predeclared two-sided approximate 95% Student t intervals over 20 cluster means, df 19, t={T19}. Paired differences subtract arms '
-                  'within each cluster (percentage points). Exact two-sided McNemar tests on changed win/loss pairs; the exact test governs when fewer '
-                  'than 100 pairs change, otherwise a conclusion must agree with both.',
+        'method': f'Two-sided approximate 95% Student t intervals over 20 cluster means, df 19, t={T19}. Paired differences subtract arms '
+                  'within each cluster (percentage points). Exact two-sided McNemar tests on the changed win/loss pairs of the same boards.',
+        'analysis': plan['analysis'], 'decisionRule': plan['decisionRule'],
         'rounding': 'Displayed win rates use decimal half-up rounding to one decimal from exact win counts. Inference uses unrounded cluster means.',
         'environment': plan['environment'],
     }
