@@ -53,6 +53,13 @@ const assert = require('node:assert/strict');
   await page.reload({ waitUntil: 'networkidle' });
   assert.ok(await page.evaluate(() => !!navigator.serviceWorker.controller), 'the reloaded page is served through the offline copy');
 
+  // Several board links later, the offline copy still holds one copy of each file (no query strings), so going offline
+  // can never pair an old saved page with newer scripts.
+  for (const q of ['?seed=3&players=4&seat=1', '?seed=11&players=4&seat=3']) await page.goto(app + q, { waitUntil: 'networkidle' });
+  const keys = await page.evaluate(async () => (await (await caches.open('catan-lens-v2')).keys()).map(r => r.url));
+  assert.ok(keys.length >= 10 && keys.every(k => !k.includes('?')), `one saved copy per file: ${keys.filter(k => k.includes('?')).join(', ')}`);
+  assert.equal(new Set(keys).size, keys.length);
+
   // Network cut (the doorway and its open connections): a different board link still opens and shows a playable board.
   door.close(); door.closeAllConnections(); cut = true;
   await assert.rejects(fetch(app), 'the doorway must be shut');
