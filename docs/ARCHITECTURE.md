@@ -276,6 +276,8 @@ Rapid full-board entry previously exhausted WebKit's limit and interrupted rende
   pair's value with everything still open bounds its value at the end of setup (pruning second picks).
   `bench/draft-diagnostics.mjs` reproduces the outside review's findings, `bench/lookahead-diagnostics.mjs` measures
   the policy itself, and `bench/lookahead-latency.cjs` times it in a browser at full speed and 4x CPU throttling.
+  Starting roads in look-ahead mode take its projection through the `projection` option of `roadOptions` (passed
+  on by `suggestRoad` and `gradeRoad`; `roadContext` in `app.js`); the classic path passes none.
 - **The offline copy**: add every new page file to `SHELL` in `public/sw.js`; `test/pwa.test.js` fails otherwise.
   Automated browsers skip the service worker (`navigator.webdriver`), so request-interception tests reach the network;
   `e2e/pwa.cjs` turns it on and cuts a real proxy to test the offline path.

@@ -24,6 +24,10 @@ a city). A report-only check shows where the recommendation lands if the other s
 resources. The classic ranking, its weights and its published results are unchanged; old links keep it. Drill stays
 classic.
 
+**Starting roads in the look-ahead.** With the look-ahead on, the suggested starting road and the grade of a road you
+place use the projection the look-ahead valued that settlement with, at its own setup turn, so the hint, the grade and
+the map badges describe the same projected opening. Classic road advice and grades are unchanged.
+
 **Plan choice.** You can choose the plan for your own seat (Cities: ore, wheat and sheep; Roads: wood, brick and
 harbours) instead of the seat rule (R10). No coefficient changed; the other seats keep the seat rule.
 

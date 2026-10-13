@@ -141,6 +141,20 @@ const assert = require('node:assert/strict');
   assert.equal(await page.locator('.verdict').first().locator('.road').innerText(), roadBefore, 'the kept settlement keeps its road');
   assert.equal(await page.locator('.best-card .sub').first().innerText(), promised, 'the promised second is the one now recommended');
 
+  // Your own starting road is graded with the same projection as the hint. Seed 7, seat 2, seat 1's first settlement
+  // down: for corner 20 the look-ahead aims the road at corner 21 (side 25) and the classic ranking at corner 13 (side 24).
+  const roadGrade = () => page.locator('.road-grade .grade').first().innerText();
+  for (const [policy, great, weak] of [['&policy=draft-aware-2026-10-12', 25, 24], ['', 24, 25]]) {
+    await page.goto(BASE + `?players=4&seed=7&seat=2&opp=15&seq=o15${policy}`, { waitUntil: 'networkidle' });
+    await page.locator('#hits .vx[aria-label="Corner 20"]').press('Enter'); await page.locator('#keep').click();
+    await page.locator(`#svg .road-hit[data-edge="${weak}"]`).press('Enter');
+    assert.match(await roadGrade(), /^Your road: Weak road/, `${policy || 'classic'}: side ${weak}`);
+    assert.equal(await page.locator('#svg .road.me.hinted').count(), 1, 'the suggestion is drawn beside your road');
+    await page.locator(`#svg .road-hit[data-edge="${great}"]`).press('Enter');
+    assert.match(await roadGrade(), /^Your road: Great road/, `${policy || 'classic'}: side ${great}`);
+    assert.equal(await page.locator('#svg .road.me').count(), 0, 'on the suggested side your road shows alone');
+  }
+
   // Six players on the large board: time the switch.
   await page.goto(BASE + '?players=6&seed=11&seat=1', { waitUntil: 'networkidle' });
   await showSettings(page);

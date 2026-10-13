@@ -76,7 +76,7 @@ const MUTATIONS = [
     old: "${ownSecond?.id === t.id ? ' The opening projection also uses this target for your second settlement, so it would already be occupied when setup ends.' : ''}${contested",
     new: "${''}${contested" },
   { name: 'road graded on the live board', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'placed late, or moved later',
-    old: 'gradeRoad(analysisBoard, settings(), h.id, edge, context)', new: 'gradeRoad(analysisBoard, settings(), h.id, edge, { mine: state.me, occupied: [...state.me, ...state.opp] })' },
+    old: 'gradeRoad(analysisBoard, settings(), h.id, edge, roadContext(h.id))', new: 'gradeRoad(analysisBoard, settings(), h.id, edge, { mine: state.me, occupied: [...state.me, ...state.opp] })' },
   { name: 'kept settlement advice from the live board', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'suggested road is the one|original order of the search-limit|without a placement order',
     old: '!state.drill && state.me.includes(id) ? placementContext(state.history, id) : {', new: 'false ? placementContext(state.history, id) : {' },
   { name: 'a link without a placement order advised from the live board', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'without a placement order',

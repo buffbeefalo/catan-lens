@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateBoard, boardFrom, PIPS } from '../public/board.js';
-import { rankSpots, scoreVertex, simulateDraft, grade, PLANS, planFor } from '../public/score.js';
+import { rankSpots, scoreVertex, simulateDraft, grade, suggestRoad, gradeRoad, PLANS, planFor } from '../public/score.js';
 import { legalVertices } from '../public/geometry.js';
 import { POLICY, projectDraft, projectionFor, rankFirst, rankSecond, rankLookahead, compareLookahead, stability, OPPONENT_STYLES } from '../public/lookahead.js';
 
@@ -239,6 +239,26 @@ test('production stays first: the look-ahead pick is within 4 raw pips of the bo
       assert.ok(la[0].pips >= classic[0].pips - 6, `seed ${seed} ${setup} seat ${seat}: ${la[0].pips} vs ${classic[0].pips}`);
     }
   }
+});
+
+// Starting roads (R13) in look-ahead mode take the look-ahead's projection, like the map badges: the suggested side and
+// the grade of a road you place judge the same projected opening.
+test('road advice and road grades follow the look-ahead projection and agree with each other', () => {
+  let roads = 0, differ = 0;
+  for (let seed = 1; seed <= 60; seed++) for (const seat of [1, 2, 3, 4]) {
+    const b = generateBoard({ seed }), s = S({ seat }), opp = before(b, s);
+    const top = rankLookahead(b, s, { me: [], opp })[0];
+    const context = { mine: [], occupied: opp, projection: projectionFor(b, s, { me: [], opp }, top.id) };
+    const hint = suggestRoad(b, s, top.id, context);
+    if (!hint) continue;
+    roads++;
+    assert.equal(gradeRoad(b, s, top.id, hint.edge, context).tier, 'great', `seed ${seed} seat ${seat}: the suggested side grades Great with the same projection`);
+    const others = context.projection.filter(d => !d.you && !d.actual).map(d => d.id);
+    if (!/contested/.test(hint.text)) assert.ok(legalVertices(b.graph, [...opp, top.id, ...others]).includes(hint.target.id), `seed ${seed} seat ${seat}: the target survives the projection`);
+    if (hint.edge !== suggestRoad(b, s, top.id, { mine: [], occupied: opp }).edge) differ++;
+  }
+  assert.ok(roads > 200);
+  assert.ok(differ > 0, 'the look-ahead projection changes some road advice, so this test is not vacuous');
 });
 
 test('deterministic, and inputs are never modified', () => {
