@@ -1,0 +1,81 @@
+{
+ "predeclaredAt": "2026-10-13T02:29:33.297122+00:00",
+ "purpose": "Measure whether the experimental look-ahead opening policy (draft-aware-2026-10-12: both settlements and their starting roads) wins more simulated four-player base games than the classic Catan Lens policy, the bots' own opening and taking the most pips, against Catanatron's value-function bots. No outcome of this run is used to tune anything.",
+ "sourceCommit": "2df98bc8c3c0d174a5fb9f882e533661871cf805",
+ "files": {
+  "package.json": "873f9ae8d9f4bfd51ac20b5b5f2101c1c8286fdf34a01ee01df5621c61fd4d2a",
+  "public/board.js": "ec03693c641915b9824350fbf3cc855a572b39750c4bf465958ae65ba7a6bf50",
+  "public/geometry.js": "79cd75931fdc1238513995063bfa7566c32c051f35d1bb52f64a427eb36f0935",
+  "public/score.js": "3236584ba045c7c1a61fcdc983cf9afb51698bae734695f9e1e7cbb70ac392a3",
+  "public/lookahead.js": "54461d0ce7e4478799ffe2b240ffe0bffb291ff73dbee607d88bb5bbd98e47a0",
+  "bench/lens-bridge.mjs": "255f5ce051f1fbfe4e1f80f741c710f279891519ce6eada4dde67e0c4516b596",
+  "bench/catanatron/catanatron_bench.py": "8aaa40c2d8ec529eefd46dc160176f5e1c351d0117544feabdf0f18592319764",
+  "bench/catanatron/requirements.txt": "b4afebd40f8c2e620c0db5589ae87b0662de7b5fc032b8bbdca8cbb7382df3ce",
+  "bench/catanatron/draft_aware.py": "2fdf567a86b7102a4431318c10e3d8dd6f1d4eeb12078608359a5e26f5c40b45"
+ },
+ "arms": [
+  "lens-draft",
+  "lens",
+  "value",
+  "pips"
+ ],
+ "armLabels": {
+  "lens-draft": "Catan Lens look-ahead (experimental) settlements and road",
+  "lens": "Catan Lens classic settlements and road",
+  "value": "The bot's own opening",
+  "pips": "Most pips"
+ },
+ "hashSeeds": [
+  401,
+  402,
+  403,
+  404,
+  405,
+  406,
+  407,
+  408,
+  409,
+  410,
+  411,
+  412,
+  413,
+  414,
+  415,
+  416,
+  417,
+  418,
+  419,
+  420
+ ],
+ "boardSeeds": [
+  4000000,
+  4007999
+ ],
+ "gamesPerArm": 8000,
+ "totalGames": 32000,
+ "pilot": {
+  "hashSeed": 499,
+  "boardStart": 4900000,
+  "gamesPerArm": 40
+ },
+ "comparisons": [
+  {
+   "comparison": "lens-draft-minus-lens",
+   "role": "primary"
+  },
+  {
+   "comparison": "lens-draft-minus-value",
+   "role": "secondary"
+  },
+  {
+   "comparison": "lens-draft-minus-pips",
+   "role": "descriptive"
+  }
+ ],
+ "analysis": "Every arm plays the same 8,000 boards and seats: 20 bot tie-breaking seeds (hash seeds 401 to 420) times 400 boards (board seeds 4,000,000 to 4,007,999). Primary: lens-draft minus lens; secondary: lens-draft minus value; descriptive: lens-draft minus pips. Each comparison reports the two-sided approximate 95% Student t interval over the 20 cluster (hash seed) mean differences, df 19, in percentage points, and the exact two-sided McNemar test on the boards whose win or loss changed. Following the rule in results.md, a difference counts as significant only when both agree: the interval excludes zero and the exact p is below 0.05 in the same direction (with fewer than 100 changed pairs, the exact test governs). First-pick differences and projection accuracy are descriptive.",
+ "decisionRule": "Classic stays the default in this release whatever the result. If the primary comparison shows a significant loss (as defined in the analysis), the look-ahead is withdrawn from the page and kept only for study; otherwise it ships as an experimental option. It may later be proposed as the default only after a significant primary gain. The owner makes the final call in every case. The result is published either way.",
+ "environment": {
+  "python": "3.12.3",
+  "requirements": "requirements-2026-10-09.txt"
+ }
+}
