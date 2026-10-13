@@ -78,7 +78,7 @@ test('a starting road you place is graded, moves, undoes and survives a reload',
   assert.equal(seqOf(page), `m43,${token(sides[0])}`);
   await page.locator('#cancel-pick').click();
   await page.locator(`#svg .road-hit[data-edge="${suggested}"]`).press('Enter');
-  assert.match(await roadGrade(page), /Your road: Great road — the best direction/);
+  assert.match(await roadGrade(page), /Your road: Great road\. The best direction/);
   assert.equal(await page.locator(`#svg .road-hit[data-edge="${suggested}"]`).getAttribute('aria-pressed'), 'true');
   assert.equal(await page.locator('#svg .road.me').count(), 0, 'on the suggested side your road shows alone');
   assert.equal(seqOf(page), `m43,${token(sides[0])},${token(suggested)}`);
@@ -142,7 +142,7 @@ test('blind practice holds a placed road’s grade until both settlements are do
   assert.equal(await page.locator('.road-grade.great, .road-grade.fair, .road-grade.weak').count(), 0);
   await page.locator('#showbest').click();
   assert.match(await roadGrade(page), ROAD_GRADE);
-  assert.match(await page.locator('.road-grade').first().innerText(), / — .*\n+.*\d+-pip corner/, 'with hints on, the card says why and names the corner that way');
+  assert.match(await page.locator('.road-grade').first().innerText(), /Your road: \w+ road\. .*\n+.*\d+-pip corner/, 'with hints on, the card says why and names the corner that way');
   await page.locator('#svg .vx.legal').first().press('Enter'); await page.locator('#keep').click();
   await page.locator('#showbest').click();   // hints off again after viewing them: back to the bare grade, nothing more
   assert.match(await page.locator('.road-grade').first().innerText(), /^Your road: (Great|Fair|Weak) road\n+Turn on Show best to see why\./);
@@ -272,7 +272,7 @@ test('a settlement with no two-road target gets no grade, with hints on or off',
   const page = await open(t, { width: 1400, height: 900 }, query);
   await page.locator('#svg .road-hit[aria-label*="second settlement"]').first().press('Enter');
   const card = page.locator('.verdict:has(#verdict-2) .road-grade');
-  assert.match(await card.innerText(), /^Your road: No two-road target — no direction from this settlement has an open settlement site two roads away\. Longer routes are not checked\./);
+  assert.match(await card.innerText(), /^Your road: No two-road target\. No direction from this settlement has an open settlement site two roads away\. Longer routes are not checked\./);
   assert.equal(await page.locator('.road-grade.great, .road-grade.fair, .road-grade.weak').count(), 0);
   await page.locator('#showbest').click();
   assert.match(await page.locator('.verdict:has(#verdict-2) .road-grade').innerText(), /^Your road: No two-road target\n+Turn on Show best to see why\.\n+Click or tap another side of the settlement to move it\.$/);
@@ -329,7 +329,8 @@ test('a link without a placement order lists opponents first, and roads are advi
   const side = board.graph.vertices[43].edges.find(e => e !== road.edge && ['fair', 'weak'].includes(gradeRoad(board, S, 43, e, position)?.tier));
   await page.locator(`#svg .road-hit[data-edge="${side}"]`).press('Enter');
   const shown = async p => [await roadGrade(p), (await p.locator('.verdict:has(#verdict-1) .road').innerText()).trim(), await drawnEdges(p, board, 'me')];
-  const expected = [`Your road: ${gradeRoad(board, S, 43, side, position).label} — ${gradeRoad(board, S, 43, side, position).why}`, road.text, [road.edge, second.edge].sort((a, b) => a - b)];
+  const why = gradeRoad(board, S, 43, side, position).why;
+  const expected = [`Your road: ${gradeRoad(board, S, 43, side, position).label}. ${why[0].toUpperCase() + why.slice(1)}`, road.text, [road.edge, second.edge].sort((a, b) => a - b)];
   assert.deepEqual(await shown(page), expected);
   await reloadInBrowser(page); await page.waitForFunction(() => document.documentElement.dataset.appReady === 'true');
   assert.deepEqual(await shown(page), expected, 'after a reload');

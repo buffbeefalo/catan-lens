@@ -21,6 +21,13 @@ function* openings({ seeds, players }) {
     }
   }
 }
+// The punctuation pass of 2026-10-12 rewrote the dashes in the scorer's sentences after this copy was frozen. The same
+// rewrites are applied to the frozen copy's sentences, so everything else must still match exactly.
+const PUNCTUATION = [[' pips of production — ', ' pips of production, '], ['so it trades cheaply — counted at a discount.', 'so it trades cheaply and counts at a discount.'],
+  ['Wood and brick together — ', 'Wood and brick together: '], ['Wheat and ore together — ', 'Wheat and ore together: '], [' — extra production', ': extra production'],
+  ['the 3:1 port — the flexible port', 'the 3:1 port, the flexible port'], ['to feed it — a private trading post', 'to feed it: a private trading post'],
+  [' — the wheat/ore you need for cities', ' (the wheat/ore you need for cities)'], [') — a city here also produces', '): a city here also produces']];
+const plain = ranking => ranking.map(r => ({ ...r, parts: r.parts.map(x => ({ ...x, text: PUNCTUATION.reduce((t, [a, b]) => t.split(a).join(b), x.text) })) }));
 // The pieces down before `vid` when the projected opening places it.
 function turnOf(board, settings, vid) {
   const draft = simulateDraft(board, settings), mine = draft.filter(d => d.you).map(d => d.id);
@@ -38,7 +45,7 @@ test('suggested roads, settlement scores and rankings match the original scorer 
   let n = 0;
   for (const { board, settings, vid, context } of openings({ seeds: 300, players: 4 })) {
     assert.deepEqual(suggestRoad(board, settings, vid, context), before.suggestRoad(board, settings, vid, context));
-    assert.deepEqual(rankSpots(board, settings, context), before.rankSpots(board, settings, context));
+    assert.deepEqual(rankSpots(board, settings, context), plain(before.rankSpots(board, settings, context)));
     n++;
   }
   assert.equal(n, 2400);

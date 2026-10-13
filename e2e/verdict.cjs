@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
   await showDraft(page); await page.click('#panel .rank li:nth-child(1)');
   let t = await text(); assert.match(t, /Your pick[\s\S]*#1 of \d+ · 100% of best[\s\S]*Great pick/);
   await page.click('#keep');
-  t = await text(); assert.match(t, /Your first settlement[\s\S]*#1 of \d+ · 100% of best[\s\S]*Great pick — the best open corner/);
+  t = await text(); assert.match(t, /Your first settlement[\s\S]*#1 of \d+ · 100% of best[\s\S]*Great pick: the best open corner/);
   assert.match(t, /Your first settlement[\s\S]*Road: point it toward the \d+-pip corner/);             // R13 starting road, in words
   assert.equal(await page.$$eval('#svg line.road.me', a => a.length), 1, 'one suggested road drawn for the kept settlement');
   console.log('great first pick, verdict persists, starting road suggested');

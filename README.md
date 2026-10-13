@@ -44,7 +44,7 @@ and explains the best spot in plain sentences. Free, open source, and it runs en
 <td width="50%"><img src="docs/media/feature-draft.jpg" alt="Starting-road advice explains a destination and a nearby corner blocked in the projected opening"></td>
 </tr>
 <tr>
-<td><b>The best corner, explained.</b> Random boards follow the official setup (3–4 players, or the 5–6 player board). A gold ring marks the best open corner; <i>Why this corner?</i> gives the reasons in plain sentences. Click any other corner for a grade and an explanation of the tradeoffs behind its score.</td>
+<td><b>The best corner, explained.</b> Random boards follow the official setup (3 or 4 players, or the larger board for 5 or 6). A gold ring marks the best open corner; <i>Why this corner?</i> gives the reasons in plain sentences. Click any other corner for a grade and an explanation of the tradeoffs behind its score.</td>
 <td><b>Plays out the draft.</b> Mark opponents as they place and the ranking only counts what is still open. <i>Projected placements</i> shows the model's snake-draft choices; starting-road advice explains conflicts and destinations those choices would occupy. Tap a side of your settlement to place your own road and see how it compares.</td>
 </tr>
 <tr>

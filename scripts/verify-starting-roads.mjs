@@ -114,7 +114,7 @@ const MUTATIONS = [
   { name: 'blind grade before the second settlement', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'blind practice holds',
     old: 'if (!reveal() && state.me.length < 2) return', new: 'if (!reveal() && state.me.length < 1) return' },
   { name: 'blind grade carries its reason', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'blind practice holds',
-    old: "const why = reveal() ? ` — ${esc(road.why)}` : '';", new: 'const why = ` — ${esc(road.why)}`;' },
+    old: "const why = reveal() ? `. ${esc(road.why[0].toUpperCase() + road.why.slice(1))}` : '';", new: 'const why = `. ${esc(road.why[0].toUpperCase() + road.why.slice(1))}`;' },
   { name: 'blind grade in quality colours', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'blind practice holds',
     old: "reveal() ? road.tier : 'placed'", new: 'road.tier' },
   { name: 'road slots in Drill', file: 'public/app.js', kind: 'browser', suite: 'starting-roads.cjs', tests: 'out of opponent marking',

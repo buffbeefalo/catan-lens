@@ -39,7 +39,7 @@ once.
 
 ## 1. The board
 
-The app draws the standard 19-hex board (or the 30-hex 5–6 player board), following the official
+The app draws the standard 19-hex board (or the 30-hex board for 5 or 6 players), following the official
 "variable setup": shuffle the land tiles, lay the number tokens in the official spiral order, deal the
 harbours around the coast. With **Balanced setup** on, it keeps red numbers (6 and 8) from touching, as the
 rulebook asks. A generated-board link reopens its seed using the app's current setup rules; a Your board
@@ -247,7 +247,7 @@ top choice was taken or blocked by another seat by the end of setup 77.0% of the
 
 ## 4. Drill mode
 
-Sixteen levels, easy to hard, on a table you choose first (3–6 players, base game or Cities & Knights
+Sixteen levels, easy to hard, on a table you choose first (3 to 6 players, base game or Cities & Knights
 weighting). Hints stay hidden until you commit. Early levels accept any of the top three corners on boards
 with an obvious winner; later levels demand the exact best corner on near-ties, from any seat, for the
 first or the second settlement. Miss, and you get a new board at the same level.

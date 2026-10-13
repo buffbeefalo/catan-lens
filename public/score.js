@@ -5,7 +5,7 @@ import { legalVertices } from './geometry.js';
 
 export const PLANS = {
   // R2 / R10: seats 1-2 chase wheat+ore (Ore-Wheat-Sheep); later seats lean wood/brick + ports.
-  ows:  { label: 'Ore–Wheat–Sheep plan', weights: { wheat: 1.15, ore: 1.15, wood: 1.0, brick: 1.0, sheep: 0.9 }, portMul: 1, lowTokenMul: 1, commodity: 0 },
+  ows:  { label: 'Ore-Wheat-Sheep plan', weights: { wheat: 1.15, ore: 1.15, wood: 1.0, brick: 1.0, sheep: 0.9 }, portMul: 1, lowTokenMul: 1, commodity: 0 },
   road: { label: 'Road-builder plan',    weights: { wood: 1.15, brick: 1.15, wheat: 1.0, ore: 0.95, sheep: 0.9 }, portMul: 1.5, lowTokenMul: 1, commodity: 0 },
   // R11: Cities & Knights re-values everything around ore, knights and commodities.
   cak:  { label: 'Cities & Knights plan', weights: { ore: 1.35, wheat: 1.15, wood: 1.1, sheep: 1.0, brick: 0.8 }, portMul: 0.5, lowTokenMul: 0.75, commodity: 0.5 },
@@ -141,17 +141,17 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     base += p * plan.weights[h.resource] * facts.scarcity[h.resource] * (p <= 2 ? plan.lowTokenMul : 1);
   }
   const rank = pips >= maxPips ? 'the most on the board' : pips >= maxPips - 1 ? 'within a pip of the best corner' : pips >= 10 ? 'a strong corner' : pips >= 8 ? 'a fair corner' : 'thin production';
-  parts.push({ k: 'production', v: round(base), text: explain && `${pips} pips of production — ${rank}: ${list(Object.entries(prod).map(([r, p]) => `${p} ${NAMES[r]}`))}.` });
+  parts.push({ k: 'production', v: round(base), text: explain && `${pips} pips of production, ${rank}: ${list(Object.entries(prod).map(([r, p]) => `${p} ${NAMES[r]}`))}.` });
   const scarce = resources.filter(r => facts.scarcity[r] >= 1.15 && prod[r] >= 3);
   if (scarce.length) parts.push({ k: 'scarcity', v: null, text: explain && `${cap(list(scarce.map(r => NAMES[r])))} ${scarce.length > 1 ? 'are' : 'is'} scarce on this board (${list(scarce.map(r => `${facts.pips[r]} pips of ${NAMES[r]} anywhere`))}), so this corner's share is worth a trading premium.` });
   const plentiful = resources.filter(r => facts.scarcity[r] <= 0.85 && prod[r] >= 3);
-  if (plentiful.length) parts.push({ k: 'plenty', v: null, text: explain && `${cap(list(plentiful.map(r => NAMES[r])))} ${plentiful.length > 1 ? 'are' : 'is'} plentiful on this board, so it trades cheaply — counted at a discount.` });
+  if (plentiful.length) parts.push({ k: 'plenty', v: null, text: explain && `${cap(list(plentiful.map(r => NAMES[r])))} ${plentiful.length > 1 ? 'are' : 'is'} plentiful on this board, so it trades cheaply and counts at a discount.` });
 
   // R4 complementary pairs
   let pair = 0;
   const pairScale = (a, b) => Math.min(1, Math.min(prod[a] || 0, prod[b] || 0) / 3);
-  if (prod.wood && prod.brick) { const v = round(PAIR_BONUS.woodbrick * pairScale('wood', 'brick')); pair += v; parts.push({ k: 'pair', v, text: 'Wood and brick together — every roll of either number moves you toward a road.' }); }
-  if (prod.wheat && prod.ore) { const v = round(PAIR_BONUS.wheatore * pairScale('wheat', 'ore')); pair += v; parts.push({ k: 'pair', v, text: 'Wheat and ore together — the city-building pair, and two thirds of a development card.' }); }
+  if (prod.wood && prod.brick) { const v = round(PAIR_BONUS.woodbrick * pairScale('wood', 'brick')); pair += v; parts.push({ k: 'pair', v, text: 'Wood and brick together: every roll of either number moves you toward a road.' }); }
+  if (prod.wheat && prod.ore) { const v = round(PAIR_BONUS.wheatore * pairScale('wheat', 'ore')); pair += v; parts.push({ k: 'pair', v, text: 'Wheat and ore together: the city-building pair, and two thirds of a development card.' }); }
 
   // R6 number repeats: a number of THIS corner that I already hold, or that appears twice on this corner.
   // (A duplicate inside my first settlement alone is not this corner's fault and is not charged here.)
@@ -160,15 +160,15 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   for (const n of numbers) { if (held.has(n) || seenHere.has(n)) repeated.push(n); seenHere.add(n); }
   const repeats = repeated.length;
   const repeatPen = repeats * REPEAT_PENALTY;
-  if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: explain && `Repeats ${list([...new Set(repeated)].map(String))} — extra production on the same number does not add another paying roll. A nudge, not a veto.` });
+  if (repeats) parts.push({ k: 'repeat', v: -repeatPen, text: explain && `Repeats ${list([...new Set(repeated)].map(String))}: extra production on the same number does not add another paying roll. A nudge, not a veto.` });
 
   // R7 ports (on the corner, or a potential settlement two roads away at half value)
   const minePips = mine.reduce((acc, m) => { const p = vertexProduction(board, m).prod; for (const r in p) acc[r] = (acc[r] || 0) + p[r]; return acc; }, {});
   const ownedPorts = new Set(mine.flatMap(m => portsAt(board, m)));
   const portValue = (type, mul, where) => {
-    if (type === '3:1') return { v: PORT.generic * mul, text: explain && `${where} the 3:1 port — the flexible port top players value most.` };
+    if (type === '3:1') return { v: PORT.generic * mul, text: explain && `${where} the 3:1 port, the flexible port top players value most.` };
     const have = (prod[type] || 0) + (minePips[type] || 0);
-    if (have >= PORT.matchPips) return { v: PORT.matched * mul, text: explain && `${where} the 2:1 ${NAMES[type]} port with ${have} pips of ${NAMES[type]} to feed it — a private trading post that never says no.` };
+    if (have >= PORT.matchPips) return { v: PORT.matched * mul, text: explain && `${where} the 2:1 ${NAMES[type]} port with ${have} pips of ${NAMES[type]} to feed it: a private trading post that never says no.` };
     return { v: PORT.unmatched * mul, text: explain && `${where} the 2:1 ${NAMES[type]} port, but with only ${have} pips of ${NAMES[type]} it will rarely be used.` };
   };
   const v = board.graph.vertices[vid];
@@ -209,7 +209,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
     const missing = RESOURCES.filter(r => !minePips[r]);
     const covers = resources.filter(r => missing.includes(r));
     for (const r of covers) complement += (r === 'wheat' || r === 'ore') ? COMPLEMENT.key : COMPLEMENT.any;
-    if (covers.length) parts.push({ k: 'complement', v: round(complement), text: explain && `Patches your first settlement: adds ${list(covers.map(r => NAMES[r]))}${covers.some(r => r === 'wheat' || r === 'ore') ? ' — the wheat/ore you need for cities' : ''}.` });
+    if (covers.length) parts.push({ k: 'complement', v: round(complement), text: explain && `Patches your first settlement: adds ${list(covers.map(r => NAMES[r]))}${covers.some(r => r === 'wheat' || r === 'ore') ? ' (the wheat/ore you need for cities)' : ''}.` });
     const stillMissing = missing.filter(r => !covers.includes(r));
     if (stillMissing.length) parts.push({ k: 'gap', v: null, text: explain && `You would still have no ${list(stillMissing.map(r => NAMES[r]))}.` });
   }
@@ -219,7 +219,7 @@ export function scoreVertex(board, settings, vid, { mine = [], occupied = [], fa
   if (plan.commodity) {
     const c = v.hexes.map(h => board.hexes[h]).filter(h => h.number && COMMODITY_HEXES.has(h.resource));
     commodity = c.length * plan.commodity;
-    if (c.length) parts.push({ k: 'commodity', v: commodity, text: explain && `${c.length} commodity hex${c.length > 1 ? 'es' : ''} (${list(c.map(h => NAMES[h.resource]))}) — a city here also produces ${list(c.map(h => ({ wood: 'paper', sheep: 'cloth', ore: 'coin' })[h.resource]))}.` });
+    if (c.length) parts.push({ k: 'commodity', v: commodity, text: explain && `${c.length} commodity hex${c.length > 1 ? 'es' : ''} (${list(c.map(h => NAMES[h.resource]))}): a city here also produces ${list(c.map(h => ({ wood: 'paper', sheep: 'cloth', ore: 'coin' })[h.resource]))}.` });
   }
 
   const score = round(base + pair - repeatPen + (port ? port.v : 0) + expansion + complement + commodity);
@@ -274,7 +274,7 @@ export function compare(best, pick) {
   return out;
 }
 
-// Grade a corner against the ranking it was chosen from. Presentation only — no effect on scores.
+// Grade a corner against the ranking it was chosen from. Presentation only: no effect on scores.
 // "good" = one of the top N corners where N is the player count: those are the corners an
 // N-player table will fight over, so landing one is a good outcome even if it is not #1.
 // The 90% share line between "fair" and "weak" is the author's choice (see RESEARCH.md).

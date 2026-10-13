@@ -28,6 +28,9 @@ classic.
 place use the projection the look-ahead valued that settlement with, at its own setup turn, so the hint, the grade and
 the map badges describe the same projected opening. Classic road advice and grades are unchanged.
 
+**Plain punctuation.** The explanations, the page and the documents no longer use long dashes, and a test keeps it
+that way. Sentences changed only where a dash had to go; no score, ranking or road changed.
+
 **Plan choice.** You can choose the plan for your own seat (Cities: ore, wheat and sheep; Roads: wood, brick and
 harbours) instead of the seat rule (R10). No coefficient changed; the other seats keep the seat rule.
 

@@ -267,7 +267,7 @@ function drawBoard() {
   if (state.custom && state.tool === 'port') for (const eid of board.graph.perimeter) {   // every coastal edge is a tap target for a harbour
     const [a, b] = board.graph.edges[eid].v.map(i => board.graph.vertices[i]);
     const hit = el('line', { class: 'coast-hit' + (board.harbors[eid] ? '' : ' empty') + (conflicts.has(eid) ? ' conflict' : ''), x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'data-edge': eid });
-    hit.append(el('title', {}, board.harbors[eid] ? `Harbour: ${board.harbors[eid]} — tap to change` : 'Tap to add a harbour'));
+    hit.append(el('title', {}, board.harbors[eid] ? `Harbour: ${board.harbors[eid]}. Tap to change` : 'Tap to add a harbour'));
     svgButton(hit, `Coastal edge ${eid}: ${board.harbors[eid] || 'no harbour'}. ${conflicts.has(eid) ? 'Shares a corner with another harbour. ' : ''}Change harbour`, event => { if (!event?.detail) cycleHarbor(eid); });
     g.append(hit);
   }
@@ -683,7 +683,7 @@ function assumptionNote() {
   return `<p class="sub lookahead-note">${unplaced}The projection assumes every seat that has not placed picks by this model, in turn order. Real players differ; mark pieces as they go down.</p>`;
 }
 const verdictCard = ({ r, g, diff, n, road, note }, heading) => html`<div class="card verdict ${g.tier}"><h2 id="verdict-${n}" tabindex="-1">${heading} <span>${gradePosition(g)}</span></h2>
-      <p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>${note ? `<p class="sub">${esc(note)}</p>` : ''}
+      <p class="grade"><b>${g.label}</b>: ${esc(g.why)}</p>${note ? `<p class="sub">${esc(note)}</p>` : ''}
       <p class="sub">${esc(describe(r))}</p>${reasons(r)}${roadLine(r.id)}
       ${diff.length ? `<p class="sub"><b>Why the top corner scores higher:</b></p><ul class="why">${diff.map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
       <div class="stat">${scoreStats(r)}</div>${roadSection(r.id, road)}</div>`;
@@ -695,7 +695,7 @@ function roadSection(id, road) {
   if (!road) return movable ? `<p class="sub road-prompt">Place your starting road: click or tap a side of this settlement on the board${reveal() ? ' to see how it compares with the other directions' : ''}.</p>` : '';
   const move = movable ? '<p class="sub">Click or tap another side of the settlement to move it.</p>' : '';
   if (!reveal() && state.me.length < 2) return `<div class="road-grade placed"><p class="sub" id="road-grade-${id}" tabindex="-1">Your starting road is placed. Its grade appears once both settlements are down; turn on <b>Show best</b> to see how it compares now.</p>${move}</div>`;
-  const why = reveal() ? ` — ${esc(road.why)}` : '';
+  const why = reveal() ? `. ${esc(road.why[0].toUpperCase() + road.why.slice(1))}` : '';
   const more = reveal() ? `${road.detail ? `<p class="sub">${esc(road.detail)}</p>` : ''}<p class="sub">Judged as of this settlement’s turn; later placements do not change it.</p>`
     : '<p class="sub">Turn on <b>Show best</b> to see why.</p>';
   // Blind practice keeps the bare grade in neutral colours: quality styling is part of the hint.
@@ -765,7 +765,7 @@ function render() {
   const plan = PLANS[planFor(settings())];
   const chosenPlan = !state.cak && settings().plan;
   const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';
-  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR}${state.cak && state.policy === 'draft' && !state.drill ? ' · look-ahead off: in Cities & Knights your second piece is a city' : ''} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
+  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only: no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR}${state.cak && state.policy === 'draft' && !state.drill ? ' · look-ahead off: in Cities & Knights your second piece is a city' : ''} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
   drawMarks();
   const panel = $('#panel');
   const active = panel.querySelector(':focus');
@@ -813,7 +813,7 @@ function render() {
     out += html`<div class="card drill ${a ? (a.pass ? 'pass' : 'fail') : ''}"><h2>Level ${state.stage}${state.stage <= STAGES.length ? ` of ${STAGES.length}` : ' · bonus'} <span>${esc(st.title)}${state.stage > STAGES.length ? ' · the hardest level repeats with new boards' : ''}</span></h2>
       <p class="sub">${st.players} players · you are seat ${st.seat}${st.cak ? ' · Cities &amp; Knights weighting' : ''}. ${before} Place your <b>${st.task}</b> settlement. To clear it: land on ${st.pass.top === 1 ? '<b>the best corner</b>' : `<b>one of the top ${st.pass.top} corners</b>`}.${state.attempts ? ` Attempt ${state.attempts + (a ? 0 : 1)}.` : ''}</p>
       ${stageFitsDifficulty ? '' : '<p class="sub" id="difficulty-note" role="status">This board is outside the level’s usual difficulty band. The pass rule above is unchanged. Choose New board for another try at the usual difficulty.</p>'}
-      ${a ? `<p class="grade" id="drill-result" tabindex="-1"><b>${a.pass ? 'Level cleared' : 'Not this time'}</b> — ${esc(a.text)}</p><p style="margin:10px 0 0">${a.pass ? `<button class="btn" id="next-stage">${state.stage === STAGES.length ? 'All 16 cleared — bonus level' : state.stage >= MAX_LEVEL ? 'Another board at the top' : 'Next level'}</button>` : '<button class="btn" id="scramble">New board, same level</button>'}</p>` : '<p class="sub" style="margin:0">Hints are hidden until you commit. Click a corner, then Keep.</p>'}</div>`;
+      ${a ? `<p class="grade" id="drill-result" tabindex="-1"><b>${a.pass ? 'Level cleared' : 'Not this time'}</b>: ${esc(a.text)}</p><p style="margin:10px 0 0">${a.pass ? `<button class="btn" id="next-stage">${state.stage === STAGES.length ? 'All 16 cleared: bonus level' : state.stage >= MAX_LEVEL ? 'Another board at the top' : 'Next level'}</button>` : '<button class="btn" id="scramble">New board, same level</button>'}</p>` : '<p class="sub" style="margin:0">Hints are hidden until you commit. Click a corner, then Keep.</p>'}</div>`;
     const top = Math.min(MAX_LEVEL, Math.max(STAGES.length, state.stage, maxCleared()));
     const cl0 = cleared();
     out += html`<div class="card"><h2>Levels <span>${cl0.filter(x => x <= STAGES.length).length} of ${STAGES.length} cleared · ${esc(tableLabel(table()))}</span></h2>
@@ -868,7 +868,7 @@ function render() {
     const diff = (lookahead() ? compareLookahead : compare)(best, r);
     const g = grade(r, ranking, state.players, lookahead() ? 'opening' : 'corner');
     out += html`<div class="card pick-card"><h2>Your pick <span>${reveal() ? gradePosition(g) : 'preview'}</span></h2>
-      ${reveal() ? `<p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>` : ''}
+      ${reveal() ? `<p class="grade"><b>${g.label}</b>: ${esc(g.why)}</p>` : ''}
       <p class="sub" id="pick-resources">${esc(describe(r))}</p>
       <div class="pick-actions"><button class="btn" id="keep" data-corner="${r.id}" aria-describedby="pick-resources">Keep as ${stage} settlement</button><button class="btn ghost" id="cancel-pick">Cancel</button></div>
       ${reveal() ? '<details class="analysis-details" data-disclosure="pick"><summary>Why this corner?</summary>' + reasons(r) : `<p class="sub">${state.drill ? 'Score and reasons appear once you commit.' : 'Turn on <b>Show best</b> for the score and reasons, or commit to see the verdict.'}</p>`}
@@ -896,7 +896,7 @@ function render() {
   out += html`<div class="card"><details data-disclosure="method"><summary>How the ranking works</summary>
     <p>Production (pips on the surrounding number tokens) is the base score, weighted by how valuable each resource is under the ${esc(plan.label.toLowerCase())} and how scarce it is on this particular board. Bonuses are small on purpose: wood+brick or wheat+ore together, a port you can actually feed, room to grow two roads away, and (for the second settlement) covering resources your first one lacks. Repeating a number costs a little. No robber penalty: game data shows 6s and 8s deliver their pips. The Cities &amp; Knights switch only re-weights these same terms (ore, wheat, wood and commodity hexes up, brick and ports down); it does not simulate the starting city, commodities, knights or barbarians. The ordering principles are the experts'; the exact weights are ours, tuned so production stays dominant.</p>
     <p><b>Look-ahead (experimental).</b> Choose it under Ranking in Table settings. It ranks your next settlement for your turn by the opening it leads to: the corner plus the best second settlement the projected draft leaves you, the safe second pick strong players describe. Harbour and room-to-grow credits count only spots still open when setup ends, and a spot both settlements could use counts once. It is for the base game: in Cities &amp; Knights your second piece is a city, which it does not model. The other seats follow the classic model, so real tables can differ. The published bot test covers the classic ranking in four-player base games; other player counts and Cities &amp; Knights are not comparably tested. Drill always uses the classic ranking, and passing a level means matching it, not proof of real-game skill.</p>
-    <p>Every rule comes from what strong players publish — the King of Catan expert group, Colonist.io guides, the Cities &amp; Knights strategy guide and a 400-game statistical check. The full source table is in <a href="docs/RESEARCH.md" target="_blank" rel="noopener">docs/RESEARCH.md</a>. This is an opening heuristic, not a win probability.</p></details></div>`;
+    <p>Every rule comes from what strong players publish: the King of Catan expert group, Colonist.io guides, the Cities &amp; Knights strategy guide and a 400-game statistical check. The full source table is in <a href="docs/RESEARCH.md" target="_blank" rel="noopener">docs/RESEARCH.md</a>. This is an opening heuristic, not a win probability.</p></details></div>`;
 
   panel.innerHTML = out;
   const pickCard = panel.querySelector('.pick-card');
