@@ -69,7 +69,9 @@ test('a starting road you place is graded, moves, undoes and survives a reload',
   assert.equal(await page.locator('#svg .road.me.hinted').count(), 1, 'the suggestion is drawn dashed beside a different road');
   assert.equal(await page.locator('#svg .road-slot').count(), 0, 'slots give way once the settlement has its road');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'road-grade-43');
-  // a click on a corner still previews a settlement and never lays a road
+  // a click on a corner still previews a settlement and never lays a road (the grade scrolled into view, so bring the
+  // ring back on screen first)
+  await page.locator('#svg .best-ring').scrollIntoViewIfNeeded();
   const corner = await page.locator('#svg .best-ring').boundingBox();
   await page.mouse.click(corner.x + corner.width / 2, corner.y + corner.height / 2);
   assert.equal(await page.locator('.pick-card').count(), 1);
