@@ -58,6 +58,7 @@ test('a starting road you place is graded, moves, undoes and survives a reload',
   const suggested = suggestRoad(board, { players: 4, seat: 1, cak: false }, 43).edge;
   const sides = (await page.locator('#svg .road-hit').evaluateAll(a => a.map(x => Number(x.dataset.edge)))).filter(e => e !== suggested);
   // a mouse click on the side itself (the board's own hit test), away from the suggested direction
+  await page.locator(`#svg .road-hit[data-edge="${sides[0]}"]`).scrollIntoViewIfNeeded();   // Keep scrolled the verdict into view
   const box = await page.locator(`#svg .road-hit[data-edge="${sides[0]}"]`).boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   const first = await roadGrade(page);
@@ -115,6 +116,7 @@ test('blind practice holds a placed road’s grade until both settlements are do
   const page = await open(t, { width: 390, height: 844 }, '?seed=42&players=4&seat=1&best=0');
   await page.locator('#svg .vx.legal[aria-label="Corner 43"]').press('Enter'); await page.locator('#keep').click();
   assert.equal(await page.locator('#svg .road, .verdict .road').count(), 0);
+  await page.locator('#svg .road-hit').first().scrollIntoViewIfNeeded();   // on a phone, Keep scrolls the verdict to the top
   const box = await page.locator('#svg .road-hit').first().boundingBox();   // a vertical side has no width, so tap its middle
   await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
   assert.equal(await page.locator('#svg .my-road').count(), 1);
