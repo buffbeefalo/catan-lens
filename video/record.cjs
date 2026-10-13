@@ -147,9 +147,23 @@ const moveTime = (a, b) => Math.min(1.05, 0.42 + Math.hypot(b[0] - a[0], b[1] - 
       async click(sel) {
         await u.hover(sel);
         const b = await page.locator(sel).first().boundingBox();
+        // Road slots sit on the board after Keep: a scripted corner click must land on the corner itself, no scripted
+        // click may lay a road, and Keep must add exactly one settlement that stays on screen.
+        if (/\.vx\b/.test(sel)) {
+          const under = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.getAttribute('class') || '', [b.x + b.width / 2, b.y + b.height / 2]);
+          if (!/\bvx\b/.test(under)) throw new Error(`${v.id}: the click on ${sel} would land on "${under}", not the corner`);
+        }
+        const roads = await page.locator('#svg .my-road').count(), kept = await page.locator('#svg .piece.me').count();
         tl.clicks.push({ t: +T.toFixed(3), at: cursor.map(n => +n.toFixed(1)), box: [b.x, b.y, b.x + b.width, b.y + b.height].map(n => +n.toFixed(1)), what: sel });
         await page.locator(sel).first().click({ force: true });   // force: thin SVG lines (harbour edges) never pass the visibility check
         await page.waitForTimeout(250);
+        if (await page.locator('#svg .my-road').count() !== roads) throw new Error(`${v.id}: the click on ${sel} laid a road`);
+        if (sel === '#keep') {
+          const pieces = page.locator('#svg .piece.me'), view = page.viewportSize();
+          if (await pieces.count() !== kept + 1) throw new Error(`${v.id}: Keep did not add exactly one settlement`);
+          for (const box of await Promise.all((await pieces.all()).map(p => p.boundingBox())))
+            if (!box || box.x + box.width < 0 || box.y + box.height < 0 || box.x > view.width || box.y > view.height) throw new Error(`${v.id}: a kept settlement is off screen`);
+        }
         await snap(T + 0.07);
         T += 0.5;
       },

@@ -47,6 +47,16 @@ video/.venv/bin/python video/qa.py --ffmpeg ffmpeg
 video/.venv/bin/python video/readme_media.py
 ```
 
+Refreshing the pictures only (the app's screens changed, the narration did not): keep the cached narration,
+then run steps 2 to 6, which re-record, re-render, re-check and redraw the README images. Before publishing, read
+each transcript (`video/out/<id>.txt`) against the new pictures; reuse a line that is still accurate, and if a
+picture now contradicts one, re-voice only that line (`narrate.py --resume`). The recorder stops if a scripted
+corner click would land on anything but the corner (road slots sit on the board after Keep), if any scripted
+click lays a road, or if Keep does not add exactly one settlement that stays on screen. Then require all eight
+acceptance checks and watch both videos and look at every README image yourself. The videos and images are
+binary files made by this local pipeline; record the actual results below and leave any unfinished media work
+visibly pending rather than describing it as done.
+
 `video/out/*.vtt`, `*.txt` and `*.jpg` go into `public/media/`. The MP4s are attached to a GitHub Release; the Pages
 workflow copies them into the published site, so they never enter git history.
 For local playback checks, also copy the MP4s into `public/media/`. The local server supports seeking;
@@ -114,3 +124,13 @@ takes (4 to 7 of 12, against 9 of 12), so the defaults stay. Because the overvie
 is now shorter, it frames the first-builds row on "first builds" and the income section on "Income is an
 average", giving each camera move time to arrive. These checks still do not establish natural-sounding
 speech.
+
+A second 2026-10-12 refresh updates only the pictures for starting-road placement. After each Keep, the free
+sides of a kept settlement now show as dashed road slots, and the card invites you to place your starting
+road. A kept settlement's suggested road is now worked out as of its own turn, so in the overview the first
+settlement's road no longer switches sides when the second settlement is kept. No scene places a road, and
+the narration, captions, transcripts and posters are byte-for-byte unchanged. The narration was reviewed
+against the new pictures and still describes them accurately. Both videos stay 59.2 and 157.9 seconds and
+again passed all eight acceptance checks, including 173/173 and 472/472 recognised words, 3/3 and 2/2 names
+heard as cuh-TAHN, and all 21/52 caption cues. Of the README images, only the Drill still changed: Drill
+deals a fresh random board on every recording.
