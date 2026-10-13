@@ -205,8 +205,8 @@ test('a road tied for the best direction is not shown a better side', async t =>
 });
 
 test('road tokens that do not fit the board are dropped from a shared link', async t => {
-  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&seat=1&me=43&seq=r43-46,m43,r43-999,r0-1,r43-33,r43-46,r43-46,r61');
-  assert.equal(seqOf(page), 'm43,r43-46', 'a road before its settlement, off the board, away from your settlements, not along a side, repeated or malformed is dropped');
+  const page = await open(t, { width: 1400, height: 900 }, '?seed=42&players=4&seat=1&me=43&seq=r43-46,m43,r43-43,r43-999,r0-1,r43-33,r43-46,r43-46,r61');
+  assert.equal(seqOf(page), 'm43,r43-46', 'a road before its settlement, from a settlement to itself, off the board, away from your settlements, not along a side, repeated or malformed is dropped');
   assert.ok(!Number.isInteger(Number('r43-46'.slice(1))), 'an app without roads reads no corner number from the token, so it drops it');
   assert.equal(await page.locator('#svg .my-road').count(), 1);
   assert.match(await roadGrade(page), ROAD_GRADE);

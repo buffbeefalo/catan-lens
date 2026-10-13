@@ -152,7 +152,7 @@ function rebuild() {
   state.me = []; state.opp = []; state.history = [];
   for (const h of hist) {
     if (h.k === 'road') {   // a road after its settlement, along one of its sides; a repeat of the current road adds nothing
-      const id = board.graph.vertices[h.at]?.edges.find(e => board.graph.edges[e].v.includes(h.to));
+      const id = h.to === h.at ? undefined : board.graph.vertices[h.at]?.edges.find(e => board.graph.edges[e].v.includes(h.to));   // a road joins two corners
       if (id !== undefined && roadOwner(id) === h.at && roadEdge(h.at) !== id) state.history.push({ k: 'road', id, at: h.at, to: h.to });
       continue;
     }
