@@ -133,6 +133,14 @@ const assert = require('node:assert/strict');
   await page.locator('#keep').click();
   assert.match(await page.locator('.verdict h2').first().innerText(), /#1 of \d+/);
 
+  // Keeping the recommendation changes neither its road nor the second settlement the card promised (seed 1, seat 1).
+  await page.goto(BASE + '?players=4&seed=1&seat=1&policy=draft-aware-2026-10-12', { waitUntil: 'networkidle' });
+  const roadBefore = await page.locator('.best-card .road').innerText();
+  const promised = (await page.locator('#best-second').innerText()).match(/^Then your second settlement: (.+), if the other seats pick by this model\.$/)[1];
+  await page.locator('#preview-best').click(); await page.locator('#keep').click();
+  assert.equal(await page.locator('.verdict').first().locator('.road').innerText(), roadBefore, 'the kept settlement keeps its road');
+  assert.equal(await page.locator('.best-card .sub').first().innerText(), promised, 'the promised second is the one now recommended');
+
   // Six players on the large board: time the switch.
   await page.goto(BASE + '?players=6&seed=11&seat=1', { waitUntil: 'networkidle' });
   await showSettings(page);
