@@ -233,7 +233,7 @@ settlements could use counts once.
 
 The card shows both settlements' parts, names the projected second settlement and a credible alternative
 with the resource tradeoff, and says what the projection assumes: every seat that has not placed picks by
-the classic model, in turn order. A real table can differ. **Other ways the table could pick** ranks the same
+the classic model, in turn order. A real table can differ. Road advice, and the grade of a road you place, use the same projection. **Other ways the table could pick** ranks the same
 position again with those seats taking the most pips, or the most new resources, and says where the
 recommendation lands; it never changes the ranking. Grades and percentages compare opening values. The
 look-ahead is for the base game: in Cities & Knights your second piece is a city, which it does not model.
