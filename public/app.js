@@ -1,13 +1,13 @@
 import { generateBoard, randomSeed, PIPS, boardFrom, blankBoard, encodeBoard, decodeBoard, checkTiles, landReadiness, harborStatus } from './board.js';
 import { hexCorners, legalVertices, nearestVertex, nearestCoastalEdge } from './geometry.js';
 import { suggestRoad, gradeRoad, placementContext, rankSpots, compare, grade, simulateDraft, openingFacts, PLANS, PLAN_CHOICES, planFor } from './score.js';
-import { rankLookahead, projectionFor, projectDraft, compareLookahead } from './lookahead.js';
+import { rankLookahead, projectionFor, projectDraft, compareLookahead, POLICY } from './lookahead.js';
 import { STAGES, MAX_LEVEL, stageFor, setupStage, findSeed, judge, ladderKey, tableLabel, normalizeProgress, applyProgressActions } from './drill.js';
 import { setupThemeSwitch } from './theme.js';
 import { openPictureReader } from './picture.js';
 
 const $ = s => document.querySelector(s);
-const initialState = () => ({ setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], seq: null, mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check', policy: 'classic', plan: 'auto', checkHexes: [] });
+const initialState = () => ({ setup: 'base', seed: 1, players: 4, seat: 1, cak: false, balanced: true, showBest: true, randomSeat: false, me: [], opp: [], history: [], seq: null, mode: 'me', pick: null, drill: false, drillSetup: false, stage: 1, answered: null, attempts: 0, custom: false, customHexes: [], customHarbors: {}, tool: null, numHex: null, linkError: null, portMode: 'check', policy: 'classic', policyNotice: false, plan: 'auto', checkHexes: [] });
 const state = initialState();
 let board = null, analysisBoard = null, ranking = [], draft = [], entry = { ready: false };
 let boardTouch = null;
@@ -28,7 +28,10 @@ function readUrl() {
   state.showBest = q.get('best') !== '0';
   state.portMode = ['ignore', 'entered'].includes(q.get('ports')) ? q.get('ports') : 'check';
   state.randomSeat = q.get('rseat') === '1';
-  state.policy = q.get('policy') === 'draft' ? 'draft' : 'classic';   // absent or unknown: the classic ranking
+  // Links name the look-ahead by its dated id, so a link keeps its meaning if a later version changes the policy.
+  // Absent: the classic ranking. Unknown: the classic ranking, and the page says so once.
+  state.policy = q.get('policy') === POLICY ? 'draft' : 'classic';
+  state.policyNotice = q.has('policy') && !['classic', POLICY].includes(q.get('policy'));
   state.plan = PLAN_CHOICES.includes(q.get('plan')) ? q.get('plan') : 'auto';
   state.drill = q.get('drill') === '1';
   state.drillSetup = state.drill && q.get('setup') === '1';
@@ -63,7 +66,7 @@ function currentQuery(snapshot = state, customBoard = board) {
   if (snapshot.linkError) return snapshot.linkError.query;
   const q = new URLSearchParams({ players: snapshot.players, seed: snapshot.seed, seat: snapshot.seat, cak: snapshot.cak ? 1 : 0, bal: snapshot.balanced ? 1 : 0, best: snapshot.showBest ? 1 : 0, rseat: snapshot.randomSeat ? 1 : 0 });
   if (snapshot.plan !== 'auto') q.set('plan', snapshot.plan);
-  if (snapshot.policy === 'draft') q.set('policy', 'draft');
+  if (snapshot.policy === 'draft') q.set('policy', POLICY);
   if (snapshot.drill) {
     q.set('drill', 1);
     if (snapshot.drillSetup) q.set('setup', 1);
@@ -564,7 +567,7 @@ function keepPick() {
   if (state.drill && state.answered !== null) return;   // the level is answered; scramble or advance
   if (state.drill) {
     const r = ranking.find(x => x.id === state.pick);
-    const g = grade(r, ranking, state.players);
+    const g = grade(r, ranking, state.players, lookahead() ? 'opening' : 'corner');
     state.answered = { ...judge(stageFor(state.stage, table()), g), g }; state.attempts += 1;
     if (state.answered.pass && !cleared().includes(state.stage)) markCleared(state.stage);
   }
@@ -609,7 +612,7 @@ function placedVerdicts() {
       : rankSpots(analysisBoard, settings(), context);
     const r = rk.find(x => x.id === h.id);
     const edge = roadEdge(h.id);
-    if (r) out.push({ r, g: grade(r, rk, state.players), diff: (lookahead() ? compareLookahead : compare)(rk[0], r), n: context.mine.length + 1, road: edge === undefined ? null : gradeRoad(analysisBoard, settings(), h.id, edge, roadContext(h.id)) });
+    if (r) out.push({ r, g: grade(r, rk, state.players, lookahead() ? 'opening' : 'corner'), diff: (lookahead() ? compareLookahead : compare)(rk[0], r), n: context.mine.length + 1, road: edge === undefined ? null : gradeRoad(analysisBoard, settings(), h.id, edge, roadContext(h.id)) });
   }
   return out;
 }
@@ -732,7 +735,7 @@ function render() {
   const plan = PLANS[planFor(settings())];
   const chosenPlan = !state.cak && settings().plan;
   const portNote = !state.custom ? '' : entry.excludePorts ? ' · harbour effects excluded' : !entry.portsReady ? ' · check harbours before advice' : !entry.ports.standard ? ' · custom harbour layout' : '';
-  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}`;
+  $('#plan-note').textContent = `${plan.label}${chosenPlan ? ' (your choice)' : ''}${state.cak ? ' (weighting only — no knights, commodities or barbarians simulated)' : ''} · ${lookahead() ? 'look-ahead ranking (experimental)' : HEUR} · not a win probability${board.balanceFailed ? ' · 6 and 8 could not be separated for this seed' : ''}${board.custom ? ' · your board' : ''}${portNote}${state.policyNotice ? ' · this link names a ranking this version does not have, so the classic ranking is shown' : ''}`;
   drawMarks();
   const panel = $('#panel');
   const active = panel.querySelector(':focus');
@@ -827,7 +830,7 @@ function render() {
     const r = ranking.find(x => x.id === state.pick);
     const idx = ranking.indexOf(r) + 1;
     const diff = (lookahead() ? compareLookahead : compare)(best, r);
-    const g = grade(r, ranking, state.players);
+    const g = grade(r, ranking, state.players, lookahead() ? 'opening' : 'corner');
     out += html`<div class="card pick-card"><h2>Your pick <span>${reveal() ? gradePosition(g) : 'preview'}</span></h2>
       ${reveal() ? `<p class="grade"><b>${g.label}</b> — ${esc(g.why)}</p>` : ''}
       <p class="sub" id="pick-resources">${esc(describe(r))}</p>
@@ -941,7 +944,7 @@ const POLICY_OPTIONS = [['classic', 'Classic', 'Score each corner on its own: th
   ['draft', 'Look-ahead', 'Experimental: value each corner by the opening it leads to, including your projected second settlement']];
 function controls() {
   choices('#plan', PLAN_OPTIONS, state.plan, v => { state.plan = v; controls(); recompute(); });
-  choices('#policy', POLICY_OPTIONS, state.policy, v => { state.policy = v; controls(); recompute(); });
+  choices('#policy', POLICY_OPTIONS, state.policy, v => { state.policy = v; state.policyNotice = false; controls(); recompute(); });
   for (const b of $('#plan').querySelectorAll('button')) b.disabled = state.drill || state.cak || !!state.linkError;
   for (const b of $('#policy').querySelectorAll('button')) b.disabled = state.drill || !!state.linkError;
   seg('#players', [3, 4, 5, 6], state.players, setPlayers);

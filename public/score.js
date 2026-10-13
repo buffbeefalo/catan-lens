@@ -278,7 +278,8 @@ export function compare(best, pick) {
 // "good" = one of the top N corners where N is the player count: those are the corners an
 // N-player table will fight over, so landing one is a good outcome even if it is not #1.
 // The 90% share line between "fair" and "weak" is the author's choice (see RESEARCH.md).
-export function grade(pick, ranking, players) {
+// `unit` names what the ranking ranks: 'corner' (classic) or 'opening' (the look-ahead ranks whole openings).
+export function grade(pick, ranking, players, unit = 'corner') {
   const total = ranking.length;
   const ranked = ranking.find(r => r.id === pick?.id);
   if (!ranked) return { rank: total + 1, total, pct: 0, gap: null, tier: 'weak', label: 'Unavailable pick', why: 'this corner is not in the current legal ranking.' };
@@ -289,10 +290,10 @@ export function grade(pick, ranking, players) {
   const tier = rank === 1 ? 'great' : rank <= players ? 'good' : pct !== null && pct >= 90 ? 'fair' : 'weak';
   const label = { great: 'Great pick', good: 'Good pick', fair: 'Fair pick', weak: 'Weak pick' }[tier];
   const why = {
-    great: 'the best open corner on the board.',
-    good: `one of the top ${players} open corners, the ones a ${players}-player table fights over.`,
-    fair: `not in the top ${players}, but it still scores ${pct}% of the best corner.`,
-    weak: pct === null ? `outside the top ${players} and ${gap.toFixed(2)} points below the best corner.` : `outside the top ${players} and only ${pct}% of the best corner.`,
+    great: unit === 'opening' ? 'the best opening on the board.' : 'the best open corner on the board.',
+    good: unit === 'opening' ? `one of the top ${players} openings.` : `one of the top ${players} open corners, the ones a ${players}-player table fights over.`,
+    fair: `not in the top ${players}, but it still scores ${pct}% of the best ${unit}.`,
+    weak: pct === null ? `outside the top ${players} and ${gap.toFixed(2)} points below the best ${unit}.` : `outside the top ${players} and only ${pct}% of the best ${unit}.`,
   }[tier];
   return { rank, total, pct, gap, tier, label, why };
 }

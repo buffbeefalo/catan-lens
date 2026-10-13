@@ -228,7 +228,8 @@ in every projection, and Cities & Knights keeps its own weighting.
 second settlement the projected draft leaves you, the safe second pick strong players describe. Room to
 grow then counts only a corner still open when setup ends. The card shows both parts, names the projected
 second settlement, and says what the projection assumes: every seat that has not placed picks by the
-classic model, in turn order. A real table can differ. Drill always uses the classic ranking.
+classic model, in turn order. A real table can differ. Grades and percentages then compare opening values.
+Drill always uses the classic ranking.
 
 Why add it: in 1,200 simulated four-player positions (300 boards, every seat), taking the best corner
 alone and then the best second corner left gave a weaker two-settlement opening, by the model's own

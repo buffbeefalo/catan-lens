@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateBoard, boardFrom, PIPS } from '../public/board.js';
-import { rankSpots, scoreVertex, simulateDraft } from '../public/score.js';
+import { rankSpots, scoreVertex, simulateDraft, grade } from '../public/score.js';
 import { legalVertices } from '../public/geometry.js';
 import { POLICY, projectDraft, projectionFor, rankFirst, rankSecond, rankLookahead, compareLookahead } from '../public/lookahead.js';
 
@@ -249,4 +249,14 @@ test('a repeated position is answered from memory, and projectionFor matches the
   assert.deepEqual(shown.map(r => r.id).sort((x, y) => x - y), legalVertices(b.graph, [first, ...opp]).sort((x, y) => x - y));
   const last = shown[shown.length - 1];
   assert.deepEqual(projectionFor(b, s, { me: [first], opp }, last.id).filter(d => d.you).map(d => d.id), [first, last.id]);
+});
+
+test('look-ahead grades speak of openings; classic grades keep their corner wording', () => {
+  const b = generateBoard({ seed: 3 }), s = S({ seat: 4 }), opp = before(b, s);
+  const la = rankLookahead(b, s, { me: [], opp }), classic = rankSpots(b, s, { mine: [], occupied: opp });
+  assert.equal(grade(la[0], la, 4, 'opening').why, 'the best opening on the board.');
+  assert.equal(grade(la[2], la, 4, 'opening').why, 'one of the top 4 openings.');
+  assert.match(grade(la[20], la, 4, 'opening').why, /% of the best opening\.$/);
+  assert.equal(grade(classic[0], classic, 4).why, 'the best open corner on the board.');
+  assert.match(grade(classic[20], classic, 4).why, /% of the best corner\.$/);
 });

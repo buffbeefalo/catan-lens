@@ -25,7 +25,7 @@ const assert = require('node:assert/strict');
   // Look-ahead: the ring, the card, the stats and the projection all name the same opening.
   const started = Date.now();
   await page.locator('#policy button', { hasText: 'Look-ahead' }).click();
-  assert.equal(query().get('policy'), 'draft');
+  assert.equal(query().get('policy'), 'draft-aware-2026-10-12');
   assert.deepEqual(await ring(), [33]);
   const card = page.locator('.best-card');
   assert.match(await card.innerText(), /Then your second settlement: /);
@@ -57,6 +57,7 @@ const assert = require('node:assert/strict');
   const pick = page.locator('.pick-card');
   assert.match(await pick.locator('h2').innerText(), /#\d+ of \d+/);
   assert.match(await pick.innerText(), /Second-settlement outlook: \d+\.\d\d for #1 versus \d+\.\d\d for your pick\./);
+  assert.match(await pick.locator('.grade').innerText(), /(top \d openings|best opening)/, 'look-ahead grades speak of openings');
   await page.locator('#cancel-pick').click();
 
   // A plan for your own seat: link, note and summary; Cities & Knights keeps its own weighting.
@@ -71,14 +72,19 @@ const assert = require('node:assert/strict');
   await page.locator('#plan button', { hasText: 'By seat' }).click();
   assert.equal(query().has('plan'), false);
 
-  // Hostile values fall back to the defaults.
+  // Hostile or unknown values fall back to the defaults; an unknown ranking says so once, until a ranking is chosen.
   await page.goto(BASE + '?players=4&seed=3&policy=evil&plan=%3Cb%3E', { waitUntil: 'networkidle' });
   await showSettings(page);
   assert.equal(await pressed('#policy'), 'Classic');
   assert.equal(await pressed('#plan'), 'By seat');
+  assert.match(await page.locator('#plan-note').innerText(), /this link names a ranking this version does not have, so the classic ranking is shown/);
+  await page.locator('#policy button', { hasText: 'Classic' }).click();
+  assert.doesNotMatch(await page.locator('#plan-note').innerText(), /names a ranking/);
+  await page.goto(BASE + '?players=4&seed=3&seat=4&policy=classic', { waitUntil: 'networkidle' });
+  assert.doesNotMatch(await page.locator('#plan-note').innerText(), /names a ranking/, 'an explicit classic link is not unknown');
 
   // A late seat with nobody marked: the advice says what it assumes about the seats before it.
-  await page.goto(BASE + '?players=4&seed=3&seat=3&policy=draft', { waitUntil: 'networkidle' });
+  await page.goto(BASE + '?players=4&seed=3&seat=3&policy=draft-aware-2026-10-12', { waitUntil: 'networkidle' });
   assert.match(await page.locator('.best-card .lookahead-note').innerText(), /^Seats 1 and 2 have not placed yet, so this counts your settlement as placed now/);
 
   // Drill ranks with the classic policy and locks both controls; leaving it restores the look-ahead.
@@ -87,12 +93,12 @@ const assert = require('node:assert/strict');
   assert.ok(await page.locator('#policy button, #plan button').evaluateAll(xs => xs.every(x => x.disabled)));
   assert.match(await page.locator('.card.drill').innerText(), /Each level checks whether you match the classic ranking/);
   await page.locator('#practice').click();
-  assert.equal(query().get('policy'), 'draft');
+  assert.equal(query().get('policy'), 'draft-aware-2026-10-12');
   await showSettings(page);
   assert.equal(await pressed('#policy'), 'Look-ahead');
 
   // Blind practice with the look-ahead on: nothing is revealed before Keep.
-  await page.goto(last + '&policy=draft&best=0', { waitUntil: 'networkidle' });
+  await page.goto(last + '&policy=draft-aware-2026-10-12&best=0', { waitUntil: 'networkidle' });
   assert.deepEqual(await ring(), []);
   assert.equal(await page.locator('.best-card, #marks .badge, #marks .road, .lookahead-note, .alternative-note').count(), 0);
   await page.locator('#hits .vx[aria-label="Corner 33"]').press('Enter');
